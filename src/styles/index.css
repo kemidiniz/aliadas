@@ -19,7 +19,8 @@
   --texto-suave: #5C4750;    /* ~8:1, AA para texto pequeno */
   --destaque: var(--vinho);  /* títulos, links, botões */
   --sobre-destaque: var(--off-white);
-  --linha: #E3D7CC;
+  --linha: #E3D7CC;          /* linhas decorativas */
+  --borda-campo: #8C7A82;    /* bordas de campos: 3,8:1 */
   --logo-resto: var(--vinho);
   --erro: #9B1C1C;
   --foco: var(--vinho);
@@ -33,6 +34,7 @@
   --destaque: #F2A493;        /* coral claro p/ texto pequeno: ~9:1 */
   --sobre-destaque: var(--vinho-noite);
   --linha: #3D2630;
+  --borda-campo: #7A5E69;    /* 3,2:1 */
   --logo-resto: var(--off-white);
   --erro: #FCA5A5;
   --foco: var(--coral);
@@ -49,6 +51,7 @@
   --color-destaque: var(--destaque);
   --color-sobre-destaque: var(--sobre-destaque);
   --color-linha: var(--linha);
+  --color-campo: var(--borda-campo);
   --color-logo: var(--logo-resto);
   --color-erro: var(--erro);
 
