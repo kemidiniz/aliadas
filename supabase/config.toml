@@ -1,0 +1,10 @@
+# Configuração do Supabase CLI (usada no deploy das Edge Functions).
+project_id = "aliadas"
+
+[functions.recomendar]
+# Chamada pelo banco (gatilho com segredo) e pela usuária logada.
+# A própria função verifica o segredo OU o JWT da usuária.
+verify_jwt = false
+
+[functions.excluir-conta]
+verify_jwt = false

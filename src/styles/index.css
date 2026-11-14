@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/* modo escuro controlado pela classe .dark no <html> (manual + preferência do sistema) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   TOKENS DE COR: troque aqui para mudar a identidade inteira.
+   ============================================================ */
+:root {
+  --vinho: #6B1E3A;
+  --coral: #E0654A;
+  --off-white: #FBF8F3;
+  --vinho-noite: #1A0F14;
+
+  /* papéis (tema claro) */
+  --fundo: var(--off-white);
+  --superficie: #F4EEE6;     /* blocos discretos, sem sombra */
+  --texto: #2A1A20;          /* contraste ~15:1 sobre o fundo */
+  --texto-suave: #5C4750;    /* ~8:1, AA para texto pequeno */
+  --destaque: var(--vinho);  /* títulos, links, botões */
+  --sobre-destaque: var(--off-white);
+  --linha: #E3D7CC;
+  --logo-resto: var(--vinho);
+  --erro: #9B1C1C;
+  --foco: var(--vinho);
+}
+
+.dark {
+  --fundo: var(--vinho-noite);
+  --superficie: #26171E;
+  --texto: var(--off-white);  /* ~17:1 */
+  --texto-suave: #D3C3C9;     /* ~11:1 */
+  --destaque: #F2A493;        /* coral claro p/ texto pequeno: ~9:1 */
+  --sobre-destaque: var(--vinho-noite);
+  --linha: #3D2630;
+  --logo-resto: var(--off-white);
+  --erro: #FCA5A5;
+  --foco: var(--coral);
+}
+
+@theme inline {
+  --color-vinho: var(--vinho);
+  --color-coral: var(--coral);
+  --color-off-white: var(--off-white);
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-texto: var(--texto);
+  --color-suave: var(--texto-suave);
+  --color-destaque: var(--destaque);
+  --color-sobre-destaque: var(--sobre-destaque);
+  --color-linha: var(--linha);
+  --color-logo: var(--logo-resto);
+  --color-erro: var(--erro);
+
+  --font-titulo: "Quicksand", ui-rounded, system-ui, sans-serif;
+  --font-texto: "Nunito", ui-rounded, system-ui, sans-serif;
+}
+
+html {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--font-texto);
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+html.dark { color-scheme: dark; }
+
+body { min-height: 100dvh; }
+
+h1, h2, h3, h4, nav, .minusculas {
+  font-family: var(--font-titulo);
+  text-transform: lowercase;
+}
+
+/* foco visível e consistente em tudo que é interativo */
+:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+::selection { background: var(--coral); color: var(--vinho-noite); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
