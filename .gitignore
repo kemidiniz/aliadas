@@ -1,0 +1,27 @@
+# segredos: nunca versionar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# dependências e build
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# supabase local
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
+supabase/functions/**/.env
+
+# sistema / editor
+.DS_Store
+*.log
+.vercel
+.netlify
+.idea/
+.vscode/*
+!.vscode/extensions.json
