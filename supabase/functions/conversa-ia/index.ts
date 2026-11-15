@@ -1,6 +1,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2.119.0";
 import { segredoConfere } from "../_shared/http.ts";
-import { minimized, SYSTEM, RESPONSE_SCHEMA, validateOutput } from "./core.ts";
+import {
+  minimized,
+  SYSTEM,
+  RESPONSE_SCHEMA,
+  validateOutput,
+  usageCounts,
+  providerError,
+} from "./core.ts";
 const db = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -59,17 +66,18 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
         }),
       },
     );
-    if (!resp.ok)
-      throw Error(
-        resp.status === 429
-          ? "limite_provedor"
-          : resp.status === 401 || resp.status === 403
-            ? "acesso_provedor"
-            : "falha_provedor",
-      );
+    if (!resp.ok) throw Error(providerError(resp.status));
     const body = await resp.json();
-    input = body.usageMetadata?.promptTokenCount ?? 0;
-    output = body.usageMetadata?.candidatesTokenCount ?? 0;
+    const usage = usageCounts(body.usageMetadata);
+    input = usage.input;
+    output = usage.output;
+    if (body.candidates?.[0]?.finishReason === "MAX_TOKENS")
+      throw Error("saida_truncada");
+    if (
+      body.promptFeedback?.blockReason ||
+      body.candidates?.[0]?.finishReason === "SAFETY"
+    )
+      throw Error("bloqueado_provedor");
     const raw = body.candidates?.[0]?.content?.parts
       ?.filter((p: { thought?: boolean }) => !p.thought)
       .map((p: { text?: string }) => p.text || "")
@@ -83,13 +91,19 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
       "limite_provedor",
       "acesso_provedor",
       "falha_provedor",
+      "modelo_indisponivel",
+      "configuracao_provedor",
+      "saida_truncada",
+      "bloqueado_provedor",
       "saida_invalida",
       "categorias_invalidas",
     ];
     code =
-      e instanceof Error && allowed.includes(e.message)
-        ? e.message
-        : "falha_ia";
+      e instanceof SyntaxError
+        ? "saida_invalida"
+        : e instanceof Error && allowed.includes(e.message)
+          ? e.message
+          : "falha_ia";
   }
   const { error: saveError } = await db.rpc("mvp_finish_job", {
     job: job.job_id,

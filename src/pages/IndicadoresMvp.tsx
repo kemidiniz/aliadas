@@ -46,7 +46,7 @@ export default function IndicadoresMvp() {
   return (
     <section>
       <h2 className="mb-4 font-titulo text-2xl font-bold">
-        indicadores da jornada
+        Indicadores da jornada
       </h2>
       <dl className="grid gap-4 sm:grid-cols-3">
         {Object.entries({
@@ -70,7 +70,7 @@ export default function IndicadoresMvp() {
         ))}
       </dl>
       <p className="my-5 text-sm text-suave">
-        conversa confirmada: ao menos uma participante informou que aconteceu.
+        Conversa confirmada: ao menos uma participante informou que aconteceu.
         útil: ao menos uma confirmação positiva com nota 4 ou 5. divergências
         ficam identificadas. ausência de resposta não confirma encontros.
         resposta: avaliações / duas participantes por conexão aceita.
@@ -78,7 +78,7 @@ export default function IndicadoresMvp() {
       <h3 className="mb-3 font-semibold">execuções da automação</h3>
       {!logs.length ? (
         <p>
-          nenhuma execução registrada. isso não comprova funcionamento da IA.
+          Nenhuma execução registrada. isso não comprova funcionamento da IA.
         </p>
       ) : (
         <ul className="space-y-3">

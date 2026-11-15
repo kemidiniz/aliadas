@@ -1,4 +1,7 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
+import { useConversationJob } from "../lib/useConversationJob";
+import { conversationStatus } from "../lib/conversationStatus";
+import LandingInstitucional from "./LandingInstitucional";
 import { Pagina, Titulo } from "../components/Pagina";
 import { Botao, BotaoLink } from "../components/Botao";
 import { CampoArea } from "../components/Campo";
@@ -7,6 +10,7 @@ import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
 import {
+  AREAS_PRO,
   GOALS_PRO,
   INTENTIONS_PRO,
   type ProProfile,
@@ -25,7 +29,16 @@ export default function InicioProfissional() {
   const [draft, setDraft] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const draftEdited = useRef(false);
+  const lastRequest = useRef<string | undefined>(undefined);
+  const {
+    job,
+    stalled,
+    refresh: refreshJob,
+  } = useConversationJob(request?.id, load);
+  const loadRevision = useRef(0);
   async function load() {
+    const version = ++loadRevision.current;
     if (!session) {
       setReady(true);
       return;
@@ -44,6 +57,7 @@ export default function InicioProfissional() {
         .limit(1),
       supabase.rpc("mvp_cards"),
     ]);
+    if (version !== loadRevision.current) return;
     if (p.error || r.error || c.error) {
       setMsg(
         "não foi possível carregar sua jornada. tente novamente ou procure a curadoria.",
@@ -55,20 +69,34 @@ export default function InicioProfissional() {
     if (p.data && !p.data.intentions.includes(intention))
       setIntention(p.data.intentions[0]);
     const rec = r.data?.[0] as ProRequest | undefined;
+    if (rec?.id !== lastRequest.current) {
+      draftEdited.current = false;
+      lastRequest.current = rec?.id;
+    }
     setRequest(rec ?? null);
     setCard(
       ((c.data as ProCard[]) ?? []).find((x) => x.id === rec?.candidate_id) ??
         null,
     );
-    setDraft(
-      rec?.draft ??
-        "oi! gostaria de conversar com você sobre um objetivo profissional. podemos combinar?",
-    );
+    if (!draftEdited.current)
+      setDraft(
+        rec?.draft ??
+          "oi! gostaria de conversar com você sobre um objetivo profissional. podemos combinar?",
+      );
     setReady(true);
   }
   useEffect(() => {
+    setReady(false);
+    setPro(null);
+    setRequest(null);
+    setCard(null);
+    draftEdited.current = false;
+    lastRequest.current = undefined;
     load();
-  }, [session]); // sessão identifica a jornada; recarregar é uma ação explícita
+    return () => {
+      loadRevision.current++;
+    };
+  }, [session?.user.id]); // sessão identifica a jornada; recarregar é uma ação explícita
   async function create(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -98,55 +126,17 @@ export default function InicioProfissional() {
   }
   if (carregando || (!ready && session))
     return (
-      <Pagina titulo="início">
+      <Pagina titulo="Início">
         <Carregando />
       </Pagina>
     );
-  if (!session)
-    return (
-      <Pagina titulo="aliadas">
-        <section className="py-4">
-          <p className="mb-4 font-semibold text-coral">
-            conexões profissionais com propósito
-          </p>
-          <h1 className="max-w-4xl font-titulo text-4xl font-bold leading-tight text-destaque sm:text-6xl">
-            uma conversa pode abrir novos caminhos.
-          </h1>
-          <p className="mt-6 text-xl">
-            conecte-se com mulheres para trocar experiências, preparar uma
-            entrevista ou receber uma opinião sobre seu projeto. de qualquer
-            área, na universidade ou na vida profissional.
-          </p>
-          <div className="my-8 grid gap-5 sm:grid-cols-2">
-            {Object.entries(INTENTIONS_PRO).map(([k, v]) => (
-              <div key={k} className="rounded-3xl border border-linha p-6">
-                <h2 className="font-titulo text-2xl font-bold">{v}</h2>
-                <p className="mt-3">
-                  {k === "buscar"
-                    ? "quero conversar sobre um assunto, desafio ou objetivo profissional."
-                    : "estou disponível para dividir experiências e conhecimentos."}
-                </p>
-              </div>
-            ))}
-          </div>
-          <BotaoLink to="/entrar">criar meu perfil</BotaoLink>
-          <p className="mt-4 text-sm text-suave">
-            confirme seu e-mail, crie um perfil e escolha seu objetivo. a
-            conexão só acontece com a aprovação das duas.
-          </p>
-          <p className="mt-8">
-            incluímos mulheres cis e trans e pessoas não binárias. não é
-            mentoria formal nem atendimento terapêutico.
-          </p>
-        </section>
-      </Pagina>
-    );
+  if (!session) return <LandingInstitucional />;
   if (!perfil || !pro)
     return (
-      <Pagina titulo="início">
+      <Pagina titulo="Início">
         <Titulo>vamos completar seu perfil profissional?</Titulo>
         <p className="mb-6">
-          o cadastro agora está em uma página. suas informações anteriores
+          O cadastro agora está em uma página. suas informações anteriores
           continuam preservadas.
         </p>
         {msg && <Aviso tipo="erro">{msg}</Aviso>}
@@ -155,10 +145,10 @@ export default function InicioProfissional() {
     );
   if (perfil.status !== "aprovado")
     return (
-      <Pagina titulo="início">
+      <Pagina titulo="Início">
         <Titulo>seu perfil está com a curadoria</Titulo>
         <Aviso>
-          para proteger a comunidade, novas conversas ficam disponíveis após a
+          Para proteger a comunidade, novas conversas ficam disponíveis após a
           aprovação. se seu perfil está pausado, fale com a curadoria pelo
           feedback.
         </Aviso>
@@ -174,7 +164,7 @@ export default function InicioProfissional() {
     >
       <fieldset>
         <legend className="mb-3 font-semibold">
-          como você quer participar agora?
+          Como você quer participar agora?
         </legend>
         <div className="flex flex-wrap gap-5">
           {Object.entries(INTENTIONS_PRO)
@@ -196,7 +186,7 @@ export default function InicioProfissional() {
       </fieldset>
       <label className="block">
         <span className="mb-2 block font-semibold">
-          objetivo principal da conversa
+          Objetivo principal da conversa
         </span>
         <select
           className="w-full rounded-xl border-2 border-campo bg-fundo p-3"
@@ -211,8 +201,8 @@ export default function InicioProfissional() {
         </select>
       </label>
       <CampoArea
-        rotulo="um pouco de contexto (opcional)"
-        ajuda="não inclua nomes, contatos, dados sensíveis ou informações confidenciais. esta descrição não vai para a IA."
+        rotulo="Um pouco de contexto (opcional)"
+        ajuda="Não inclua nomes, contatos, dados sensíveis ou informações confidenciais. esta descrição não vai para a IA."
         maxLength={400}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
@@ -222,19 +212,20 @@ export default function InicioProfissional() {
         carregando={busy}
         disabled={!pro.available || !pro.intentions.includes(intention)}
       >
-        encontrar uma aliada
+        Encontrar uma aliada
       </Botao>
       <p className="text-sm text-suave">
-        até três solicitações em 24 horas. você escolhe se quer enviar o
+        Até três solicitações em 24 horas. você escolhe se quer enviar o
         convite.
       </p>
     </form>
   );
   return (
-    <Pagina titulo="início">
-      <Titulo sub="escolha um objetivo. a gente aproxima experiências para uma conversa profissional.">
-        encontre uma aliada
+    <Pagina titulo="Início">
+      <Titulo sub="Escolha um objetivo. a gente aproxima experiências para uma conversa profissional.">
+        Encontre uma aliada
       </Titulo>
+      {busy && <Aviso>{conversationStatus(null, true)}</Aviso>}
       {msg && (
         <div className="mb-5">
           <Aviso>{msg}</Aviso>
@@ -243,7 +234,7 @@ export default function InicioProfissional() {
       {request ? (
         <details className="mb-6 rounded-xl border border-linha p-4">
           <summary className="cursor-pointer font-semibold">
-            mudar o objetivo ou buscar outra aliada
+            Mudar o objetivo ou buscar outra aliada
           </summary>
           <div className="mt-4">{requestForm}</div>
         </details>
@@ -256,17 +247,36 @@ export default function InicioProfissional() {
           aria-live="polite"
         >
           <h2 className="font-titulo text-2xl font-bold">
-            sua sugestão de conversa
+            Sua indicação de aliada
           </h2>
+          <p role="status" className="mt-3 text-sm font-medium text-destaque">
+            {conversationStatus(
+              job
+                ? { ...job, has_candidate: Boolean(card) }
+                : {
+                    state:
+                      request.mode === "generativa" ? "concluida" : "sem_ia",
+                    mode: request.mode,
+                    has_candidate: Boolean(card),
+                  },
+              false,
+              stalled,
+            )}
+          </p>
           {!card ? (
             <p className="mt-4">
-              nenhuma aliada elegível disponível agora. a comunidade cresce com
+              Nenhuma aliada elegível disponível agora. a comunidade cresce com
               novas participantes; tente outro objetivo mais tarde.
             </p>
           ) : (
             <>
               <p className="mt-4 text-xl font-semibold">{card.name}</p>
               <p>{card.occupation}</p>
+              <p className="mt-2 text-sm text-suave">
+                {card.areas
+                  .map((x) => AREAS_PRO[x as keyof typeof AREAS_PRO] ?? x)
+                  .join(", ")}
+              </p>
               <p className="mt-4 text-sm font-semibold">
                 {request.mode === "generativa"
                   ? "apoio de IA generativa • revise antes de convidar"
@@ -285,25 +295,34 @@ export default function InicioProfissional() {
               )}
               <div className="mt-5">
                 <CampoArea
-                  rotulo="sua mensagem inicial"
-                  ajuda="revise e edite antes de convidar. não inclua contatos nem links: eles só serão liberados após o aceite mútuo."
+                  rotulo="Sua mensagem inicial"
+                  ajuda="Revise e edite antes de convidar. não inclua contatos nem links: eles só serão liberados após o aceite mútuo."
                   maxLength={600}
                   value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
+                  onChange={(e) => {
+                    draftEdited.current = true;
+                    setDraft(e.target.value);
+                  }}
                 />
                 <Botao
                   carregando={busy}
                   disabled={!draft.trim()}
                   onClick={invite}
                 >
-                  aprovar e enviar convite
+                  Aprovar e enviar convite
                 </Botao>
               </div>
             </>
           )}
           <div className="mt-4">
-            <Botao variante="discreto" onClick={load}>
-              atualizar resultado
+            <Botao
+              variante="discreto"
+              onClick={() => {
+                load();
+                refreshJob();
+              }}
+            >
+              Atualizar resultado
             </Botao>
           </div>
         </section>

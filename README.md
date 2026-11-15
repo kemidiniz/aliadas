@@ -30,7 +30,7 @@ node tests/mvp-browser.mjs
 
 ## situação da entrega
 
-**Versão autorizada para produção, com migrations MVP e funções aplicadas. Link principal: https://aliadas-indol.vercel.app. Consulte o registro de ativação em docs/MVP.md.** IA externa **não validada**: não há chave Gemini, nem comprovação atual de modelo/limites/termos gratuitos. Nenhuma cobrança foi habilitada. O produto mostra claramente “compatibilidade básica • sem IA generativa” enquanto não há resultado real e validado do provedor.
+**Versão autorizada para produção, com migrations MVP e funções aplicadas. Link principal: https://aliadas-indol.vercel.app. Consulte o registro de ativação em docs/MVP.md.** IA externa **não validada**: os secrets estão presentes e o modelo foi identificado, mas faltam geração real e comprovação técnica de limites/termos atuais. Nenhuma cobrança foi habilitada. O produto mostra claramente “compatibilidade básica • sem IA generativa” enquanto não há resultado real e validado do provedor.
 
 - [Entrega e ativação](docs/MVP.md): arquivos, migrations, limites, comandos e pendências.
 - [Segurança e RLS](docs/SEGURANCA.md): regras atuais e histórico.
@@ -39,3 +39,7 @@ node tests/mvp-browser.mjs
 - [Guia Supabase histórico](docs/SUPABASE.md): não ativar o fluxo antigo da Anthropic/Make no MVP.
 
 Não executar deploy, migrations remotas, seed em produção ou contratar serviços sem autorização explícita. Não reaproveitar automaticamente o e-mail de autenticação como contato.
+
+A finalização visual e administrativa foi autorizada posteriormente pela titular. A migration 015 e o bootstrap da conta principal foram aplicados e auditados; nenhuma outra conta foi promovida. Veja `docs/VALIDACAO.md` (tabela requisito/implementado/comprovado/pendente/próxima ação) e `docs/AUDITORIA-SEGURANCA.md`. A migration 015 e o bootstrap exigem autorização expressa.
+
+Relatório objetivo da finalização: [docs/FINALIZACAO.md](docs/FINALIZACAO.md). A autorização expressa e os resultados de aplicação do backend estão registrados no relatório de finalização.

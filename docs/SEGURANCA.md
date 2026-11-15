@@ -116,3 +116,15 @@ A seção abaixo descreve a versão anterior. Busca/pitch/mural não fazem parte
 | **entrada com LinkedIn** | perfil pendente que informa o LinkedIn é aprovado na hora (gatilho em `contacts`). Risco aceito no MVP: o link não é verificado automaticamente; a curadoria pode reprovar ou pausar e as denúncias continuam valendo |
 | **meu pitch** | os textos são montados no próprio navegador e o rascunho fica só no aparelho (localStorage). Nada é enviado para servidor ou IA |
 | **mural de conquistas** | campo `conquista` nos posts; mesmas regras do fórum (só aprovadas, denúncia, curadoria oculta) |
+
+## Finalização: embaixadoras, estado assíncrono e auditoria
+
+Ver `AUDITORIA-SEGURANCA.md` para a revisão individual das funções observadas em produção. Foram consultadas somente definições e privilégios; não foram aplicadas revogações ou permissões remotas.
+
+A migration 015 preparada adiciona `principal_administrator`, `ambassador_permissions` e `admin_access_audit`, com RLS e sem escrita direta de participantes. Preserva public.roles e o papel curadora. O bootstrap separado usa o UUID conferido pela titular; não usa e-mail ou metadados. Só service_role pode iniciar a principal, uma vez. Depois disso, somente essa principal gerencia embaixadoras por RPC autenticada.
+
+Embaixadoras não recebem is_curadora=true: esse helper está ligado a capacidades antigas amplas. A revisão de perfis e o tratamento de denúncias são projeções/RPCs separadas, sem contatos privados. Indicadores, auditoria e delegação permanecem reservados à principal (ou acesso legado durante a transição antes do bootstrap). Revogação é imediata no banco; a interface atualiza permissões ao retomar o foco e ao executar ações administrativas. O acesso de uma sessão existente não permite continuar usando RPCs revogadas.
+
+A identidade principal é protegida contra exclusão acidental por FK RESTRICT. A eventual exclusão/transferência da conta principal exige procedimento administrativo verificado, não o botão comum de embaixadoras; participantes comuns continuam com exclusão de conta preservada.
+
+`mvp_job_status` retorna apenas estado, modo e código seguro da solicitação da própria pessoa. Não libera logs ou ids de terceiros. O helper mvp_blocked também foi limitado para não informar bloqueios entre outras pessoas. A migration e o bootstrap não foram aplicados em produção nesta finalização.

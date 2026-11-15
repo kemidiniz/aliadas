@@ -322,4 +322,5 @@ select tst.ok((select output_json->>'removido' from public.ai_runs where funcao 
 
 \echo ''
 \ir mvp_test.sql
+\ir admin_test.sql
 \echo 'TODOS OS TESTES DE RLS PASSARAM'

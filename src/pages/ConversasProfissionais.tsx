@@ -40,9 +40,9 @@ export default function ConversasProfissionais() {
     load();
   }, [session]);
   return (
-    <Pagina titulo="minhas conversas">
-      <Titulo sub="seus convites, encontros e resultados em um só lugar.">
-        minhas conversas
+    <Pagina titulo="Minhas conversas">
+      <Titulo sub="Seus convites, encontros e resultados em um só lugar.">
+        Minhas conversas
       </Titulo>
       {error && <Aviso tipo="erro">{error}</Aviso>}
       {!invites ? (
@@ -86,6 +86,7 @@ function Conversa({
   const [contacts, setContacts] = useState<ProContacts | null>(null);
   const [proposal, setProposal] = useState("");
   const [happened, setHappened] = useState("");
+  const [savedHappened, setSavedHappened] = useState<boolean | null>(null);
   const [utility, setUtility] = useState("");
   const [outcome, setOutcome] = useState("clareza");
   const [msg, setMsg] = useState("");
@@ -110,6 +111,7 @@ function Conversa({
       .then(({ data }) => {
         if (data) {
           setHappened(data.happened ? "sim" : "nao");
+          setSavedHappened(data.happened);
           setUtility(String(data.utility ?? ""));
           setOutcome(data.outcome);
         }
@@ -121,7 +123,10 @@ function Conversa({
     const { error } = await supabase.rpc(name, args);
     setBusy(false);
     setMsg(error ? mensagemAmigavel(error) : "salvo.");
-    if (!error) await reload();
+    if (!error) {
+      if (name === "mvp_feedback") setSavedHappened(Boolean(args.happened));
+      await reload();
+    }
   }
   async function block() {
     setBusy(true);
@@ -140,10 +145,16 @@ function Conversa({
       <p>{card?.occupation}</p>
       <p className="text-sm text-suave">
         {i.state === "pendente"
-          ? "aguardando aceite"
+          ? i.sender_id === session!.user.id
+            ? "Convite enviado · aguardando aceite"
+            : "Convite recebido · aguardando sua decisão"
           : i.state === "aceita"
-            ? "conexão aceita pelas duas"
-            : "convite recusado"}
+            ? savedHappened === true
+              ? "Realizado · confirmado por você"
+              : i.sender_time && i.sender_time === i.recipient_time
+                ? "Horário confirmado pelas duas"
+                : "Aceito · combinando a conversa"
+            : "Convite recusado"}
       </p>
       <p className="break-words">{i.message}</p>
       {msg && <Aviso>{msg}</Aviso>}
@@ -153,14 +164,14 @@ function Conversa({
             carregando={busy}
             onClick={() => rpc("mvp_respond", { invite: i.id, accept: true })}
           >
-            aceitar convite
+            Aceitar convite
           </Botao>
           <Botao
             variante="secundario"
             carregando={busy}
             onClick={() => rpc("mvp_respond", { invite: i.id, accept: false })}
           >
-            agora não
+            Agora não
           </Botao>
         </div>
       )}
@@ -169,7 +180,7 @@ function Conversa({
           <div>
             <h3 className="font-semibold">escolham como conversar</h3>
             <p className="text-sm text-suave">
-              somente os canais autorizados pela outra participante aparecem
+              Somente os canais autorizados pela outra participante aparecem
               aqui. não há envio automático nem chat interno.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
@@ -198,7 +209,7 @@ function Conversa({
                   className="text-destaque underline"
                   href={`mailto:${contacts.email}`}
                 >
-                  e-mail
+                  E-mail
                 </a>
               )}
               {contacts?.meet && (
@@ -218,17 +229,17 @@ function Conversa({
               !contacts.email &&
               !contacts.meet && (
                 <p className="mt-3">
-                  a outra participante ainda não disponibilizou um contato. você
+                  A outra participante ainda não disponibilizou um contato. você
                   pode atualizar os seus em meu perfil.
                 </p>
               )}
           </div>
           <details className="rounded-xl bg-superficie p-4">
             <summary className="cursor-pointer font-semibold">
-              combinar uma chamada
+              Combinar uma chamada
             </summary>
             <p className="my-3">
-              períodos em comum (horário de Brasília):{" "}
+              Períodos em comum (horário de Brasília):{" "}
               {contacts?.common_slots?.map(slotsLabel).join(", ") ||
                 "nenhum período em comum informado"}
               . combinem o horário exato pelos contatos autorizados e confirmem
@@ -236,8 +247,8 @@ function Conversa({
               salvar o link em meu perfil.
             </p>
             <CampoTexto
-              rotulo="horário combinado"
-              ajuda="informe data, hora e fuso, por exemplo 20/11 às 15h, Brasília. não cria evento automaticamente."
+              rotulo="Horário combinado"
+              ajuda="Informe data, hora e fuso, por exemplo 20/11 às 15h, Brasília. não cria evento automaticamente."
               maxLength={120}
               value={proposal}
               onChange={(e) => setProposal(e.target.value)}
@@ -247,26 +258,26 @@ function Conversa({
               disabled={busy || !proposal.trim()}
               onClick={() => rpc("mvp_schedule", { invite: i.id, proposal })}
             >
-              confirmar minha proposta
+              Confirmar minha proposta
             </Botao>
             <p className="mt-3">
-              proposta de quem convidou: {i.sender_time || "aguardando"}
+              Proposta de quem convidou: {i.sender_time || "aguardando"}
             </p>
             <p>proposta de quem aceitou: {i.recipient_time || "aguardando"}</p>
             {i.sender_time && i.sender_time === i.recipient_time && (
               <p className="font-semibold">
-                as duas confirmaram o mesmo horário.
+                As duas confirmaram o mesmo horário.
               </p>
             )}
           </details>
           <fieldset className="space-y-4 rounded-xl bg-superficie p-5">
             <legend className="font-semibold">como foi a conversa?</legend>
             <p className="text-sm text-suave">
-              cada participante responde por si. não gravamos mensagens nem
+              Cada participante responde por si. não gravamos mensagens nem
               chamadas.
             </p>
             <label className="block">
-              a conversa aconteceu?
+              A conversa aconteceu?
               <select
                 className="ml-3 rounded-lg border border-campo bg-fundo p-2"
                 value={happened}
@@ -280,7 +291,7 @@ function Conversa({
             {happened === "sim" && (
               <>
                 <label className="block">
-                  de 1 a 5, quanto contribuiu para o objetivo profissional?
+                  De 1 a 5, quanto contribuiu para o objetivo profissional?
                   <select
                     className="ml-3 rounded-lg border border-campo bg-fundo p-2"
                     value={utility}
@@ -293,7 +304,7 @@ function Conversa({
                   </select>
                 </label>
                 <label className="block">
-                  principal resultado da troca
+                  Principal resultado da troca
                   <select
                     className="ml-3 rounded-lg border border-campo bg-fundo p-2"
                     value={outcome}
@@ -326,7 +337,7 @@ function Conversa({
                 })
               }
             >
-              salvar minha avaliação
+              Salvar minha avaliação
             </Botao>
           </fieldset>
         </>
@@ -336,27 +347,27 @@ function Conversa({
           variante="discreto"
           onClick={() => setConfirmBlock(!confirmBlock)}
         >
-          bloquear participante
+          Bloquear participante
         </Botao>
         <Botao variante="discreto" onClick={() => setReport(!report)}>
-          denunciar
+          Denunciar
         </Botao>
       </div>
       {confirmBlock && (
         <div>
           <p>
-            o bloqueio interrompe novos convites e o acesso aos contatos.
+            O bloqueio interrompe novos convites e o acesso aos contatos.
             contatos já vistos não podem ser recuperados.
           </p>
           <Botao variante="perigo" carregando={busy} onClick={block}>
-            confirmar bloqueio
+            Confirmar bloqueio
           </Botao>
         </div>
       )}
       {report && (
         <div>
           <CampoTexto
-            rotulo="motivo da denúncia (somente a curadoria lê)"
+            rotulo="Motivo da denúncia (somente a curadoria lê)"
             minLength={5}
             maxLength={800}
             value={reason}
@@ -367,7 +378,7 @@ function Conversa({
             disabled={busy || reason.trim().length < 5}
             onClick={() => rpc("mvp_report", { target: other, reason })}
           >
-            enviar denúncia
+            Enviar denúncia
           </Botao>
         </div>
       )}

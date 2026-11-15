@@ -1,4 +1,5 @@
-import { SenhaPerfil } from '../components/SenhaPerfil';
+import { CHAVE_NOVA_SENHA } from "../lib/auth";
+import { SenhaPerfil } from "../components/SenhaPerfil";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Pagina, Titulo } from "../components/Pagina";
@@ -51,7 +52,7 @@ export function Multi({
         {Object.entries(options).map(([k, v]) => (
           <label
             key={k}
-            className="flex items-start gap-3 rounded-xl border border-campo p-3"
+            className="flex items-start gap-3 rounded-lg px-2 py-2 hover:bg-superficie"
           >
             <input
               type="checkbox"
@@ -75,6 +76,9 @@ export function Multi({
 export default function PerfilProfissional() {
   const { session, perfil, recarregar, sair } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [recoveryAtOpen] = useState(() =>
+    Boolean(sessionStorage.getItem(CHAVE_NOVA_SENHA)),
+  );
   const [p, setP] = useState(initial);
   const [name, setName] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
@@ -106,7 +110,7 @@ export default function PerfilProfissional() {
       if (!active) return;
       if (pr.error || co.error)
         setMsg(
-          "não foi possível carregar o perfil. confira se as migrations do MVP foram aplicadas.",
+          "Não foi possível carregar seu perfil. Atualize a página ou tente novamente em instantes.",
         );
       else {
         if (pr.data) setP(pr.data as ProProfile);
@@ -128,8 +132,13 @@ export default function PerfilProfissional() {
       !p.themes.length ||
       !p.intentions.length ||
       !p.channels.length
-    )
-      return setMsg("preencha as opções profissionais e confirme os termos.");
+    ) {
+      document.getElementById("experiencias")?.setAttribute("open", "");
+      document.getElementById("preferencias")?.setAttribute("open", "");
+      return setMsg(
+        "Selecione as áreas, temas, preferências e confirme os termos.",
+      );
+    }
     if (p.areas.length > 8 || p.themes.length > 8)
       return setMsg("selecione até oito opções em cada grupo.");
     if (photo) {
@@ -164,97 +173,124 @@ export default function PerfilProfissional() {
   }
   if (loading)
     return (
-      <Pagina titulo="meu perfil">
+      <Pagina titulo="Meu perfil">
         <Carregando />
       </Pagina>
     );
   return (
-    <Pagina titulo="meu perfil">
-      <Titulo sub="um perfil, muitas possibilidades de troca. não é necessário ter empresa, universidade ou LinkedIn.">
-        meu perfil
+    <Pagina titulo="Meu perfil">
+      <Titulo sub="Um perfil, muitas possibilidades de troca. não é necessário ter empresa, universidade ou LinkedIn.">
+        Meu perfil
       </Titulo>
       {msg && (
         <div className="mb-6">
           <Aviso>{msg}</Aviso>
         </div>
       )}
-      <SenhaPerfil />
+      {recoveryAtOpen && <SenhaPerfil />}
       <form onSubmit={save} className="space-y-8">
-        <div className="grid gap-6 sm:grid-cols-2">
-          <CampoTexto
-            rotulo="nome de apresentação profissional"
-            value={name}
-            minLength={2}
-            maxLength={40}
-            required
-            onChange={(e) => setName(e.target.value)}
-          />
-          <CampoTexto
-            rotulo="ocupação, curso ou formação"
-            ajuda="não inclua contatos, links ou informações confidenciais."
-            value={p.occupation}
-            minLength={2}
-            maxLength={120}
-            required
-            onChange={(e) => setP({ ...p, occupation: e.target.value })}
-          />
-        </div>
-        <div className="mb-3">
-          <Avatar apelido={name} fotoPath={perfil?.foto_path ?? null} />
-        </div>
-        <label className="block space-y-2">
-          <span>foto (opcional, até 2 MB)</span>
-          <input
-            className="block w-full"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
-          />
-        </label>
-        <label className="block space-y-2">
-          <span>momento de carreira</span>
-          <select
-            className="block w-full rounded-xl border-2 border-campo bg-fundo p-3"
-            value={p.moment}
-            onChange={(e) => setP({ ...p, moment: e.target.value })}
-          >
-            {Object.entries(MOMENTS_PRO).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Multi
-          label="áreas de conhecimento ou experiência (até oito)"
-          options={AREAS_PRO}
-          values={p.areas}
-          onChange={(areas) => setP({ ...p, areas })}
-        />
-        <Multi
-          label="temas sobre os quais gostaria de conversar"
-          options={GOALS_PRO}
-          values={p.themes}
-          onChange={(themes) => setP({ ...p, themes })}
-        />
-        <Multi
-          label="como quer participar? pode escolher as duas"
-          options={INTENTIONS_PRO}
-          values={p.intentions}
-          onChange={(intentions) => setP({ ...p, intentions })}
-        />
-        <Multi
-          label="canais que aceita compartilhar após o aceite mútuo"
-          options={CHANNELS_PRO}
-          values={p.channels}
-          onChange={(channels) => setP({ ...p, channels })}
-        />
-        <details className="rounded-2xl border border-linha p-5">
+        <section className="space-y-5">
+          <h2>Informações profissionais</h2>
+          <p className="text-sm text-suave">
+            O essencial para apresentar sua trajetória. Não é necessário
+            informar vínculo institucional.
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <CampoTexto
+              rotulo="Nome de apresentação profissional"
+              value={name}
+              minLength={2}
+              maxLength={40}
+              required
+              onChange={(e) => setName(e.target.value)}
+            />
+            <CampoTexto
+              rotulo="Ocupação, curso ou formação"
+              ajuda="Não inclua contatos, links ou informações confidenciais."
+              value={p.occupation}
+              minLength={2}
+              maxLength={120}
+              required
+              onChange={(e) => setP({ ...p, occupation: e.target.value })}
+            />
+          </div>
+          <div className="mb-3">
+            <Avatar apelido={name} fotoPath={perfil?.foto_path ?? null} />
+          </div>
+          <label className="block space-y-2">
+            <span>foto (opcional, até 2 MB)</span>
+            <input
+              className="block w-full"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+            />
+          </label>
+          <label className="block space-y-2">
+            <span>momento de carreira</span>
+            <select
+              className="block w-full rounded-xl border-2 border-campo bg-fundo p-3"
+              value={p.moment}
+              onChange={(e) => setP({ ...p, moment: e.target.value })}
+            >
+              {Object.entries(MOMENTS_PRO).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+        <details id="experiencias" className="profile-section">
+          <summary>
+            Experiências e temas{" "}
+            <span className="section-count">
+              {p.areas.length} áreas · {p.themes.length} temas
+            </span>
+          </summary>
+          <div className="mt-6 space-y-7">
+            <Multi
+              label="Áreas de conhecimento ou experiência (até oito)"
+              options={AREAS_PRO}
+              values={p.areas}
+              onChange={(areas) => setP({ ...p, areas })}
+            />
+            <Multi
+              label="Temas sobre os quais gostaria de conversar"
+              options={GOALS_PRO}
+              values={p.themes}
+              onChange={(themes) => setP({ ...p, themes })}
+            />
+          </div>
+        </details>
+        <details id="preferencias" className="profile-section">
+          <summary>
+            Preferências de conversa{" "}
+            <span className="section-count">
+              {p.intentions.length} modalidades · {p.channels.length} canais
+            </span>
+          </summary>
+          <div className="mt-6 space-y-7">
+            <Multi
+              label="Como quer participar? pode escolher as duas"
+              options={INTENTIONS_PRO}
+              values={p.intentions}
+              onChange={(intentions) => setP({ ...p, intentions })}
+            />
+            <Multi
+              label="Canais que aceita compartilhar após o aceite mútuo"
+              options={CHANNELS_PRO}
+              values={p.channels}
+              onChange={(channels) => setP({ ...p, channels })}
+            />
+          </div>
+        </details>
+        <details className="profile-section">
           <summary className="cursor-pointer font-titulo text-lg font-semibold">
-            contatos privados e disponibilidade
+            Contatos privados
           </summary>
           <p className="my-4 text-sm text-suave">
-            todos os campos são opcionais. preencher um canal e autorizá-lo
+            Todos os campos são opcionais. preencher um canal e autorizá-lo
             acima permite compartilhá-lo somente após o aceite mútuo. seu e-mail
             de login nunca é copiado para cá.
           </p>
@@ -279,105 +315,117 @@ export default function PerfilProfissional() {
               />
             ))}
           </div>
-          <fieldset>
-            <legend className="mb-3 font-semibold">
-              dias e períodos disponíveis para chamadas (horário de Brasília)
-            </legend>
-            {DAYS_PRO.map((day, i) => (
-              <div key={day} className="mb-3 flex flex-wrap gap-4">
-                <span className="w-20">{day}</span>
-                {["manha", "tarde", "noite"].map((period) => {
-                  const slot = `${i + 1}_${period}`;
-                  return (
-                    <label key={slot} className="flex gap-2">
-                      <input
-                        type="checkbox"
-                        checked={p.slots.includes(slot)}
-                        onChange={(e) =>
-                          setP({
-                            ...p,
-                            slots: e.target.checked
-                              ? [...p.slots, slot]
-                              : p.slots.filter((x) => x !== slot),
-                          })
-                        }
-                      />
-                      {period === "manha" ? "manhã" : period}
-                    </label>
-                  );
-                })}
-              </div>
-            ))}
-          </fieldset>
         </details>
-        <label className="flex gap-3">
-          <input
-            type="checkbox"
-            checked={p.available}
-            onChange={(e) => setP({ ...p, available: e.target.checked })}
-          />
-          estou disponível para novas conversas
-        </label>
-        <label className="flex items-start gap-3">
-          <input
-            className="mt-1"
-            type="checkbox"
-            checked={p.ai_consent}
-            onChange={(e) => setP({ ...p, ai_consent: e.target.checked })}
-          />
-          <span>
-            autorizo enviar apenas categorias de áreas, momento de carreira e
-            objetivos ao Gemini para preparar justificativa, perguntas e um
-            rascunho. no plano gratuito, o provedor pode usar os dados para
-            melhorar seus modelos, conforme seus termos. não serão enviados
-            nomes, contatos, links, ocupação em texto livre ou descrições. posso
-            retirar esta autorização aqui. sem ela, uso a compatibilidade
-            básica, sem IA externa.
-          </span>
-        </label>
-        <label className="flex items-start gap-3">
-          <input
-            className="mt-1"
-            required
-            type="checkbox"
-            checked={terms}
-            onChange={(e) => setTerms(e.target.checked)}
-          />
-          <span>
-            sou mulher cis, trans ou pessoa não binária e aceito os{" "}
-            <Link to="/termo-de-conduta" className="underline">
-              termos de uso
-            </Link>{" "}
-            e a{" "}
-            <Link to="/privacidade" className="underline">
-              privacidade
-            </Link>
-            . entendo que os contatos só serão compartilhados após aceite mútuo
-            e que posso editar ou excluir meus dados.
-          </span>
-        </label>
+        <details className="profile-section">
+          <summary>
+            Disponibilidade{" "}
+            <span className="section-count">{p.slots.length} períodos</span>
+          </summary>
+          <div className="mt-5">
+            <fieldset>
+              <legend className="mb-3 font-semibold">
+                Dias e períodos disponíveis para chamadas (horário de Brasília)
+              </legend>
+              {DAYS_PRO.map((day, i) => (
+                <div key={day} className="mb-3 flex flex-wrap gap-4">
+                  <span className="w-20">{day}</span>
+                  {["manha", "tarde", "noite"].map((period) => {
+                    const slot = `${i + 1}_${period}`;
+                    return (
+                      <label key={slot} className="flex gap-2">
+                        <input
+                          type="checkbox"
+                          checked={p.slots.includes(slot)}
+                          onChange={(e) =>
+                            setP({
+                              ...p,
+                              slots: e.target.checked
+                                ? [...p.slots, slot]
+                                : p.slots.filter((x) => x !== slot),
+                            })
+                          }
+                        />
+                        {period === "manha" ? "manhã" : period}
+                      </label>
+                    );
+                  })}
+                </div>
+              ))}
+            </fieldset>
+          </div>
+        </details>
+        <section className="space-y-6">
+          <h2>Privacidade e consentimentos</h2>
+          <label className="flex gap-3">
+            <input
+              type="checkbox"
+              checked={p.available}
+              onChange={(e) => setP({ ...p, available: e.target.checked })}
+            />
+            Estou disponível para novas conversas
+          </label>
+          <label className="flex items-start gap-3">
+            <input
+              className="mt-1"
+              type="checkbox"
+              checked={p.ai_consent}
+              onChange={(e) => setP({ ...p, ai_consent: e.target.checked })}
+            />
+            <span>
+              Autorizo enviar apenas categorias de áreas, momento de carreira e
+              objetivos ao Gemini para preparar justificativa, perguntas e um
+              rascunho. no plano gratuito, o provedor pode usar os dados para
+              melhorar seus modelos, conforme seus termos. não serão enviados
+              nomes, contatos, links, ocupação em texto livre ou descrições.
+              posso retirar esta autorização aqui. sem ela, uso a
+              compatibilidade básica, sem IA externa.
+            </span>
+          </label>
+          <label className="flex items-start gap-3">
+            <input
+              className="mt-1"
+              required
+              type="checkbox"
+              checked={terms}
+              onChange={(e) => setTerms(e.target.checked)}
+            />
+            <span>
+              Sou mulher cis, trans ou pessoa não binária e aceito os{" "}
+              <Link to="/termo-de-conduta" className="underline">
+                Termos de uso
+              </Link>{" "}
+              e a{" "}
+              <Link to="/privacidade" className="underline">
+                Privacidade
+              </Link>
+              . entendo que os contatos só serão compartilhados após aceite
+              mútuo e que posso editar ou excluir meus dados.
+            </span>
+          </label>
+        </section>
         <Botao type="submit" carregando={busy}>
-          salvar meu perfil
+          Salvar meu perfil
         </Botao>
       </form>
+      {!recoveryAtOpen && <SenhaPerfil />}
       <div className="mt-10 flex flex-wrap gap-4">
         <Botao variante="discreto" onClick={() => sair()}>
-          sair da conta
+          Sair da conta
         </Botao>
         <Botao variante="perigo" onClick={() => setRemove(true)}>
-          excluir minha conta
+          Excluir minha conta
         </Botao>
       </div>
       {remove && (
         <div className="mt-5 rounded-xl border border-erro p-5">
           <p>
-            esta ação apaga seu perfil, contatos e conversas. deseja continuar?
+            Esta ação apaga seu perfil, contatos e conversas. deseja continuar?
           </p>
           <Botao variante="perigo" carregando={busy} onClick={deleteAccount}>
-            confirmar exclusão
+            Confirmar exclusão
           </Botao>
           <Botao variante="discreto" onClick={() => setRemove(false)}>
-            cancelar
+            Cancelar
           </Botao>
         </div>
       )}

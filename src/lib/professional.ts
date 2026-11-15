@@ -48,7 +48,7 @@ export const DAYS_PRO = [
 ];
 export const slotsLabel = (slot: string) => {
   const [day, period] = slot.split("_");
-  return `${DAYS_PRO[Number(day) - 1]} à ${period === "manha" ? "manhã" : period === "tarde" ? "tarde" : "noite"}`;
+  return `${DAYS_PRO[Number(day) - 1]} · ${period === "manha" ? "manhã" : period === "tarde" ? "tarde" : "noite"}`;
 };
 export type ProProfile = {
   profile_id: string;

@@ -68,3 +68,28 @@ test("resposta requer duas perguntas, limites e nenhum contato", () => {
   );
   assert.throws(() => validateOutput({ ...valid, contact: "privado" }));
 });
+
+test("consumo inclui tokens de raciocínio sem aceitar valores inválidos", async () => {
+  const { usageCounts } =
+    await import("../supabase/functions/conversa-ia/core.ts");
+  assert.deepEqual(
+    usageCounts({
+      promptTokenCount: 10,
+      candidatesTokenCount: 12,
+      thoughtsTokenCount: 5,
+    }),
+    { input: 10, output: 17 },
+  );
+  assert.deepEqual(
+    usageCounts({ promptTokenCount: -1, candidatesTokenCount: "chave" }),
+    { input: 0, output: 0 },
+  );
+});
+test("erros de modelo, acesso e cota têm códigos sem expor corpo externo", async () => {
+  const { providerError } =
+    await import("../supabase/functions/conversa-ia/core.ts");
+  assert.equal(providerError(404), "modelo_indisponivel");
+  assert.equal(providerError(429), "limite_provedor");
+  assert.equal(providerError(403), "acesso_provedor");
+  assert.equal(providerError(500), "falha_provedor");
+});

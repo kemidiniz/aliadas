@@ -63,6 +63,9 @@ let requests = [],
   savedProfile = null,
   feedback = null;
 const calls = [];
+const ci = (value) =>
+  new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+let jobState = "sem_ia";
 const browser = await chromium.launch({
   headless: true,
   executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
@@ -73,11 +76,13 @@ try {
   const g = await guest.newPage();
   await g.goto(base);
   await g
-    .getByRole("heading", { name: "uma conversa pode abrir novos caminhos." })
+    .getByRole("heading", {
+      name: ci("uma conversa pode abrir novos caminhos."),
+    })
     .waitFor();
   assert.equal(
     await g
-      .getByRole("navigation", { name: "principal" })
+      .getByRole("navigation", { name: ci("principal") })
       .first()
       .getByRole("link")
       .count(),
@@ -134,6 +139,19 @@ try {
     if (endpoint === "conversation_invites") data = invites;
     if (endpoint === "conversation_feedback") data = [];
     if (endpoint === "mvp_cards") data = [card];
+    if (endpoint === "mvp_job_status")
+      data = {
+        state: jobState,
+        mode: requests[0]?.mode ?? "basica",
+        has_candidate: true,
+      };
+    if (endpoint === "mvp_admin_access")
+      data = {
+        principal: false,
+        legacy: false,
+        review_profiles: false,
+        handle_reports: false,
+      };
     if (endpoint === "mvp_create_request") {
       requests = [request];
       data = request.id;
@@ -169,72 +187,104 @@ try {
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   await p.goto(base);
-  await p.getByRole("heading", { name: "encontre uma aliada" }).waitFor();
+  await p.getByRole("heading", { name: ci("encontre uma aliada") }).waitFor();
   await p
-    .getByRole("button", { name: "encontrar uma aliada", exact: true })
+    .getByRole("button", { name: ci("encontrar uma aliada"), exact: true })
     .click();
-  await p.getByText("aliada de teste", { exact: true }).waitFor();
+  await p.getByText(ci("aliada de teste"), { exact: true }).waitFor();
   await p
-    .getByText("compatibilidade básica • sem IA generativa", { exact: true })
+    .getByText(ci("compatibilidade básica • sem IA generativa"), {
+      exact: true,
+    })
     .waitFor();
   assert(!calls.some((x) => x.endpoint === "mvp_invite"));
   console.log(
     "PASSOU: solicitação mostra uma sugestão e não convida automaticamente",
   );
   await p
-    .getByRole("textbox", { name: "sua mensagem inicial" })
+    .getByRole("textbox", { name: ci("sua mensagem inicial") })
     .fill("minha mensagem revisada de teste");
-  await p.getByRole("button", { name: "aprovar e enviar convite" }).click();
+  jobState = "executando";
+  await p.getByRole("button", { name: /atualizar resultado/i }).click();
+  await p.getByText("Preparando a conversa com IA", { exact: true }).waitFor();
+  requests = [
+    {
+      ...request,
+      mode: "generativa",
+      questions: ["Pergunta de teste um?", "Pergunta de teste dois?"],
+      draft: "Rascunho gerado apenas no mock local",
+    },
+  ];
+  jobState = "concluida";
+  await p.getByText("Sugestão pronta", { exact: true }).waitFor();
+  await p.getByText("Pergunta de teste um?", { exact: true }).waitFor();
+  assert.equal(
+    await p
+      .getByRole("textbox", { name: /sua mensagem inicial/i })
+      .inputValue(),
+    "minha mensagem revisada de teste",
+  );
+  console.log(
+    "PASSOU: atualização assíncrona mostra resultado e preserva rascunho editado (API simulada)",
+  );
+  await p.getByRole("button", { name: ci("aprovar e enviar convite") }).click();
   await p
-    .getByText("convite enviado. acompanhe o aceite em minhas conversas.")
+    .getByText(ci("convite enviado. acompanhe o aceite em minhas conversas."))
     .waitFor();
   assert.equal(
     calls.find((x) => x.endpoint === "mvp_invite").body.message,
     "minha mensagem revisada de teste",
   );
   await p.goto(base + "/minhas-conversas");
-  await p.getByRole("link", { name: "e-mail", exact: true }).waitFor();
+  await p.getByRole("link", { name: ci("e-mail"), exact: true }).waitFor();
   assert.equal(
-    await p.getByRole("link", { name: "WhatsApp", exact: true }).count(),
+    await p.getByRole("link", { name: ci("WhatsApp"), exact: true }).count(),
     0,
   );
-  await p.getByText("como foi a conversa?", { exact: true }).waitFor();
+  await p.getByText(ci("como foi a conversa?"), { exact: true }).waitFor();
   await p
-    .getByText("a conversa aconteceu?", { exact: false })
+    .getByText(ci("a conversa aconteceu?"), { exact: false })
     .locator("select")
     .selectOption("sim");
   await p
-    .getByText("de 1 a 5, quanto contribuiu para o objetivo profissional?", {
-      exact: false,
-    })
+    .getByText(
+      ci("de 1 a 5, quanto contribuiu para o objetivo profissional?"),
+      {
+        exact: false,
+      },
+    )
     .locator("select")
     .selectOption("5");
-  await p.getByRole("button", { name: "salvar minha avaliação" }).click();
-  await p.getByText("salvo.", { exact: true }).waitFor();
+  await p.getByRole("button", { name: ci("salvar minha avaliação") }).click();
+  await p.getByText(ci("salvo."), { exact: true }).waitFor();
   assert.equal(feedback.utility, 5);
   console.log("PASSOU: contatos autorizados e feedback independente");
   await p.goto(base + "/meu-perfil");
-  await p.getByRole("heading", { name: "meu perfil", exact: true }).waitFor();
+  await p
+    .getByRole("heading", { name: ci("meu perfil"), exact: true })
+    .waitFor();
   assert.equal(
-    await p.getByRole("textbox", { name: "e-mail", exact: true }).count(),
+    await p.getByRole("textbox", { name: ci("e-mail"), exact: true }).count(),
     0,
   ); // contatos ficam no details fechado
-  await p
-    .getByText("contatos privados e disponibilidade", { exact: true })
-    .click();
+  await p.getByText(ci("Contatos privados"), { exact: true }).click();
   assert.equal(
-    await p.getByRole("textbox", { name: "e-mail", exact: true }).inputValue(),
+    await p
+      .getByRole("textbox", { name: ci("e-mail"), exact: true })
+      .inputValue(),
     "",
   );
   await p
     .getByRole("checkbox", {
-      name: "sou mulher cis, trans ou pessoa não binária",
+      name: ci("sou mulher cis, trans ou pessoa não binária"),
       exact: false,
     })
     .check();
-  await p.getByRole("button", { name: "salvar meu perfil" }).click();
+  await p.getByRole("button", { name: ci("salvar meu perfil") }).click();
   await p
-    .getByText("perfil salvo. novos perfis aguardam aprovação da curadoria.")
+    .getByText(
+      ci("perfil salvo. novos perfis aguardam aprovação da curadoria."),
+    )
     .waitFor();
   assert.equal(savedProfile.p.ai_consent, false);
   assert(!savedProfile.c.email);
@@ -257,8 +307,10 @@ try {
   await p
     .getByLabel("confirmar nova senha", { exact: true })
     .fill("senha-apenas-do-teste");
-  await p.getByRole("button", { name: "salvar senha", exact: true }).click();
-  await p.getByText("senha atualizada.", { exact: true }).waitFor();
+  await p
+    .getByRole("button", { name: ci("salvar senha"), exact: true })
+    .click();
+  await p.getByText(ci("senha atualizada."), { exact: true }).waitFor();
   assert.equal(
     await p.evaluate(() => sessionStorage.getItem("aliadas-nova-senha")),
     null,
@@ -266,21 +318,54 @@ try {
   console.log(
     "PASSOU: recuperação de senha preservada e integrada ao novo perfil",
   );
-  for (const width of [390, 1440]) {
-    await p.setViewportSize({ width, height: 1000 });
-    for (const path of ["/", "/minhas-conversas", "/meu-perfil"]) {
-      await p.goto(base + path);
-      await p.getByRole("heading", { level: 1 }).waitFor();
-      await p.waitForTimeout(350);
-      assert.equal(
-        await p.evaluate(() => document.body.scrollWidth > innerWidth),
-        false,
-        `${path}: overflow em ${width}`,
-      );
+  await p.goto(base + "/curadoria");
+  await p.waitForURL(base + "/");
+  assert.equal(await p.locator('a[href="/curadoria"]').count(), 0);
+  console.log(
+    "PASSOU: participante comum não vê administração e URL direta bloqueia",
+  );
+  for (const width of [375, 390, 768, 1440])
+    for (const theme of ["light", "dark"]) {
+      await p.emulateMedia({ colorScheme: theme });
+      await p.setViewportSize({ width, height: 1000 });
+      for (const path of ["/", "/minhas-conversas", "/meu-perfil"]) {
+        await p.goto(base + path);
+        await p.getByRole("heading", { level: 1 }).waitFor();
+        await p.waitForTimeout(350);
+        assert.equal(
+          await p.evaluate(() => document.body.scrollWidth > innerWidth),
+          false,
+          `${path}: overflow em ${width}`,
+        );
+      }
     }
+  jobState = "executando";
+  requests = [{ ...request }];
+  await p.clock.install();
+  const start = calls.length;
+  await p.goto(base);
+  await p.getByText("Preparando a conversa com IA", { exact: true }).waitFor();
+  for (let n = 0; n < 12; n++) {
+    await p.clock.runFor(10000);
+    await new Promise((r) => setTimeout(r, 60));
   }
+  const count = () =>
+    calls.slice(start).filter((c) => c.endpoint === "mvp_job_status").length;
+  assert.equal(count(), 8, "polling deve parar após oito consultas");
+  await p
+    .getByText(
+      "A IA está demorando: você pode continuar com compatibilidade básica",
+      { exact: true },
+    )
+    .waitFor();
+  await p.clock.runFor(120000);
+  await new Promise((r) => setTimeout(r, 100));
+  assert.equal(count(), 8);
+  console.log("PASSOU: polling para após oito consultas, sem laço ilimitado");
   assert.deepEqual(errors, []);
-  console.log("PASSOU: mobile/desktop sem overflow nem erros JavaScript");
+  console.log(
+    "PASSOU: telas internas em 375/390/768/1440, claro e escuro, sem overflow nem erros JavaScript",
+  );
 } finally {
   await browser.close();
 }

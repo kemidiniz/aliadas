@@ -58,7 +58,7 @@ Build TypeScript/Vite; tipos das Edge Functions; testes SQL com RLS e contratos 
 
 Não verificados: Gemini real, limites/termos atuais do Google, entrega real de pg_net, login por e-mail/SMTP em staging, three real executions, consumo e billing reais, avaliadoras reais. Não há evidência de 20 casos reais ou duas rodadas humanas. Essa ausência impede chamar o projeto final de validado ou a IA de operacional.
 
-## registro de ativação autorizada
+## registro histórico da ativação inicial autorizada
 
 - Projeto Supabase `mbiutzyteuvcoahhizmg`: migrations `20261116000012`, `20261116000013` e `20261116000014` aplicadas, registradas no histórico. Sete tabelas novas com RLS ativo; permissões anônimas verificadas.
 - Contagens históricas preservadas na ativação: 3 contas Auth, 2 perfis, 2 consentimentos, 2 contatos e 1 conexão. Nenhum contato histórico foi importado para o perfil novo.
@@ -67,3 +67,17 @@ Não verificados: Gemini real, limites/termos atuais do Google, entrega real de 
 - A branch remota tinha mudanças posteriores de recuperação de senha e e-mails. Elas foram integradas sem force-push; pitch, busca e mural continuam apenas no histórico, fora da navegação nova. Recuperação de senha foi testada na interface com API simulada.
 - Endpoint de contatos e RPC de compartilhamento recusaram acesso anônimo em produção. Worker recusou chamada sem segredo.
 - Link principal da publicação: https://aliadas-indol.vercel.app. Novas participantes e perfis antigos precisam completar o novo perfil profissional para usar a jornada. Não há conta fictícia inserida em produção pelos testes desta entrega.
+
+## Finalização visual, Gemini e administração — alterações locais posteriores
+
+A nova finalização não foi publicada. Landing institucional, Inter auto-hospedada, navegação distinta para visitantes, perfil agrupado, estados claros de conversas e polling limitado estão preparados no código. A aprovação de encontro exibida na conversa depende do feedback salvo, não apenas de escolher “sim” no formulário.
+
+A administradora confirmou o identificador da própria conta, sem mudança de produção. A migration 015 e o bootstrap separado estão preparados; a seção Embaixadoras só aparece para a principal depois desse bootstrap. Embaixadoras recebem atribuições específicas, nunca o privilégio legado amplo.
+
+Secrets Gemini agora existem e a confirmação gratuita está verdadeira; a titular confirmou ausência de faturamento. Isso substitui o diagnóstico histórico de chave ausente. Ainda não há perfis profissionais ou jobs para gerar conteúdo real. O frontend trata modo básico, processamento e falhas separadamente. Não criar contas fictícias ou gerar evidências simuladas em produção.
+
+Ordem de publicação futura, mediante aprovação expressa: revisar migration 015 → aplicar em produção → executar bootstrap confiável → atualizar conversa-ia → publicar frontend → testar com contas reais autorizadas. Não reaplicar migrations históricas nem restaurar fórum, pitch ou catálogo.
+
+## Autorização da finalização e aplicação da migration 015
+
+Após a revisão local, a titular autorizou expressamente o deploy completo, a migration 015 e o registro de sua conta principal. O backend administrativo foi aplicado e auditado, preservando o papel legado. Nenhuma embaixadora foi cadastrada automaticamente. Os avisos anteriores de “não aplicado” descrevem a etapa de preparação e ficam substituídos por este registro para essa versão. A versão está autorizada para publicação no endereço principal; geração real e validações humanas continuam sem evidência.
