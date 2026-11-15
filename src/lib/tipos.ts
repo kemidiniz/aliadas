@@ -57,7 +57,6 @@ export type Feedback = {
   tipo: 'avaliacao' | 'indicacao' | 'problema'
   nota_facilidade: number | null
   encontrou_aliadas: 'sim' | 'em_parte' | 'nao' | null
-  mais_dificil: string | null
   mudaria: string | null
   indicacao_nome: string | null
   indicacao_link: string | null

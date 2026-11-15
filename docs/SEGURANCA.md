@@ -65,3 +65,5 @@ PGHOST=... PGPORT=... PGUSER=postgres npm run test:rls
 ## avaliação sem a pergunta de dificuldade
 
 A migration `20261115000010_feedback_sem_mais_dificil.sql` retira a exigência de `mais_dificil` nas avaliações. Nota e resposta sobre encontrar aliadas continuam obrigatórias. Respostas antigas são preservadas. As políticas de RLS e permissões por coluna permanecem iguais: visitantes enviam feedback, apenas curadoras leem e respondem, e campos de IA continuam reservados à automação.
+
+A migration `20261115000011_remover_coluna_mais_dificil.sql` remove a coluna e suas respostas antigas a pedido da responsável pelo projeto. Não altera RLS nem as permissões dos campos restantes.

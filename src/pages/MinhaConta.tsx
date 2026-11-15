@@ -270,7 +270,7 @@ export default function MinhaConta() {
         <h2 id="pausar" className="font-titulo text-2xl font-bold text-destaque">dar um tempo</h2>
         {perfil.status === 'aprovado' || perfil.status === 'pausado' ? (
           <>
-            <p className="mt-2 text-suave">pausado, seu perfil some das recomendações. suas conexões aceitas continuam.</p>
+            <p className="mt-2 text-suave">pausado, seu perfil deixa de aparecer como aliada para outras pessoas. suas conexões aceitas continuam.</p>
             <div className="mt-4">
               <Botao variante="secundario" onClick={alternarPausa}>{perfil.status === 'pausado' ? 'voltar a aparecer' : 'pausar meu perfil'}</Botao>
             </div>

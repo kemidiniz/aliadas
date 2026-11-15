@@ -60,7 +60,7 @@ export default function FeedbackPagina() {
 
   return (
     <Pagina titulo="feedback" largura="max-w-xl">
-      <Titulo sub="a aliadas está sendo construída agora. sua opinião muda o que vem depois.">feedback e sugestões</Titulo>
+      <Titulo sub="nossa comunidade pode evoluir com a sua opinião">feedback e sugestões</Titulo>
       <form onSubmit={enviar} noValidate className="space-y-8">
         <Escolha nome="caminho" rotulo="o que você quer fazer?" valor={caminho} aoMudar={(v) => { setCaminho(v); setErros({}) }} opcoes={CAMINHOS} />
 

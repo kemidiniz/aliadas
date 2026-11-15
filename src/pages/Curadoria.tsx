@@ -1,21 +1,19 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Aviso, Carregando } from '../components/Aviso'
 import { Avatar } from '../components/Avatar'
 import { Botao } from '../components/Botao'
-import { CampoArea, CampoTexto } from '../components/Campo'
+import { CampoArea } from '../components/Campo'
 import { Pagina, Titulo } from '../components/Pagina'
-import { errosPorCampo, programaSchema } from '../lib/esquemas'
 import { useAuth } from '../lib/auth'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
-import { formasTexto, ROTULO_ONDE_ESTA, type Consentimento, type Contato, type Feedback, type Perfil, type Programa } from '../lib/tipos'
+import { formasTexto, ROTULO_ONDE_ESTA, type Consentimento, type Contato, type Feedback, type Perfil } from '../lib/tipos'
 
-type Aba = 'perfis' | 'feedback' | 'programas' | 'ia' | 'denuncias'
+type Aba = 'perfis' | 'feedback' | 'ia' | 'denuncias'
 const ABAS: { id: Aba; rotulo: string }[] = [
   { id: 'perfis', rotulo: 'perfis' },
   { id: 'feedback', rotulo: 'feedback' },
-  { id: 'programas', rotulo: 'programas' },
   { id: 'ia', rotulo: 'saídas da ia' },
   { id: 'denuncias', rotulo: 'denúncias' },
 ]
@@ -56,7 +54,6 @@ export default function Curadoria() {
         >
           {aba === 'perfis' && <Perfis />}
           {aba === 'feedback' && <FeedbackAba />}
-          {aba === 'programas' && <Programas />}
           {aba === 'ia' && <SaidasIA />}
           {aba === 'denuncias' && <Denuncias />}
         </motion.div>
@@ -208,9 +205,6 @@ function FeedbackAba() {
 
 function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
   const [rascunho, setRascunho] = useState(f.rascunho_ia ?? f.resposta_aprovada ?? '')
-  const [area, setArea] = useState('')
-  const [tipo, setTipo] = useState<Programa['tipo']>('programa')
-  const [descricao, setDescricao] = useState(f.indicacao_motivo?.slice(0, 300) ?? '')
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const aberto = f.status === 'novo' || f.status === 'em_analise'
@@ -219,21 +213,6 @@ function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
     setOcupado(true)
     setErro('')
     const { error } = await supabase.from('feedback').update(campos).eq('id', f.id)
-    setOcupado(false)
-    if (error) setErro(mensagemAmigavel(error))
-    else aoMudar()
-  }
-
-  async function aprovarIndicacao() {
-    setOcupado(true)
-    setErro('')
-    const { error } = await supabase.rpc('aprovar_indicacao', {
-      p_feedback: f.id,
-      p_tipo: tipo,
-      p_area: area,
-      p_descricao: descricao,
-      p_resposta: f.email ? rascunho : '',
-    })
     setOcupado(false)
     if (error) setErro(mensagemAmigavel(error))
     else aoMudar()
@@ -251,7 +230,6 @@ function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
           <>
             <div><dt className="inline text-suave">facilidade: </dt><dd className="inline">{f.nota_facilidade}/5</dd></div>
             <div><dt className="inline text-suave">encontrou aliadas: </dt><dd className="inline">{f.encontrou_aliadas?.replace('_', ' ')}</dd></div>
-            {f.mais_dificil && <div><dt className="text-suave">mais difícil</dt><dd>{f.mais_dificil}</dd></div>}
             {f.mudaria && <div><dt className="text-suave">mudaria</dt><dd>{f.mudaria}</dd></div>}
           </>
         )}
@@ -298,24 +276,7 @@ function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
           )}
 
           {f.tipo === 'indicacao' ? (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <CampoTexto rotulo="área" value={area} maxLength={80} onChange={(e) => setArea(e.target.value)} />
-                <div className="space-y-2">
-                  <label htmlFor={`tipo-${f.id}`} className="block font-titulo text-lg font-semibold">tipo</label>
-                  <select id={`tipo-${f.id}`} className={`${seletor} w-full py-3`} value={tipo} onChange={(e) => setTipo(e.target.value as Programa['tipo'])}>
-                    <option value="curso">curso</option>
-                    <option value="programa">programa</option>
-                    <option value="comunidade">comunidade</option>
-                  </select>
-                </div>
-              </div>
-              <CampoArea rotulo="descrição curta (aparece em recomendações)" value={descricao} rows={2} maxLength={300} onChange={(e) => setDescricao(e.target.value)} />
-              <div className="flex flex-wrap gap-3">
-                <Botao onClick={aprovarIndicacao} carregando={ocupado}>aprovar indicação</Botao>
-                <Botao variante="secundario" disabled={ocupado} onClick={() => atualizar({ status: 'descartado' })}>recusar indicação</Botao>
-              </div>
-            </>
+            <Botao variante="discreto" disabled={ocupado} onClick={() => atualizar({ status: 'descartado' })}>descartar indicação antiga</Botao>
           ) : (
             <div className="flex flex-wrap gap-3">
               {f.email ? (
@@ -340,123 +301,6 @@ function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
         <p className="mt-4 rounded-2xl bg-superficie p-4 text-sm"><span className="text-suave">resposta aprovada: </span>{f.resposta_aprovada}</p>
       )}
     </li>
-  )
-}
-
-// --------------------------------------------------------------- programas
-const novoPrograma = { nome: '', organizacao: '', descricao_curta: '', url: '', tipo: 'curso' as Programa['tipo'], area: '', gratuito: 'nao_sei' as 'sim' | 'nao' | 'nao_sei' }
-
-function Programas() {
-  const [lista, setLista] = useState<Programa[] | null>(null)
-  const [form, setForm] = useState(novoPrograma)
-  const [editando, setEditando] = useState<string | null>(null)
-  const [erros, setErros] = useState<Record<string, string>>({})
-  const [erro, setErro] = useState('')
-
-  const carregar = useCallback(async () => {
-    const { data } = await supabase.from('programs').select('*').order('created_at', { ascending: false })
-    setLista((data as Programa[]) ?? [])
-  }, [])
-  useEffect(() => {
-    carregar()
-  }, [carregar])
-
-  function editar(p: Programa) {
-    setEditando(p.id)
-    setForm({
-      nome: p.nome === 'PREENCHER' ? '' : p.nome,
-      organizacao: p.organizacao === 'PREENCHER' ? '' : p.organizacao ?? '',
-      descricao_curta: p.descricao_curta === 'PREENCHER' ? '' : p.descricao_curta ?? '',
-      url: p.url ?? '',
-      tipo: p.tipo,
-      area: p.area ?? '',
-      gratuito: p.gratuito === true ? 'sim' : p.gratuito === false ? 'nao' : 'nao_sei',
-    })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  async function salvar(e: FormEvent) {
-    e.preventDefault()
-    setErro('')
-    const r = programaSchema.safeParse(form)
-    if (!r.success) return setErros(errosPorCampo(r.error))
-    setErros({})
-    const v = r.data
-    const linha = {
-      nome: v.nome,
-      organizacao: v.organizacao || null,
-      descricao_curta: v.descricao_curta || null,
-      url: v.url,
-      tipo: v.tipo,
-      area: v.area || null,
-      gratuito: v.gratuito === 'sim' ? true : v.gratuito === 'nao' ? false : null,
-    }
-    const { error } = editando
-      ? await supabase.from('programs').update(linha).eq('id', editando)
-      : await supabase.from('programs').insert({ ...linha, origem: 'curadoria', ativo: false })
-    if (error) return setErro(mensagemAmigavel(error))
-    setForm(novoPrograma)
-    setEditando(null)
-    carregar()
-  }
-
-  async function alternar(p: Programa) {
-    setErro('')
-    const { error } = await supabase.from('programs').update({ ativo: !p.ativo }).eq('id', p.id)
-    if (error) setErro(p.url ? mensagemAmigavel(error) : 'para ativar, o programa precisa de um link.')
-    carregar()
-  }
-
-  const m = <K extends keyof typeof novoPrograma>(k: K, v: (typeof novoPrograma)[K]) => setForm((f) => ({ ...f, [k]: v }))
-
-  return (
-    <div className="space-y-10">
-      <form onSubmit={salvar} noValidate className="space-y-5 rounded-3xl border border-linha p-6">
-        <h2 className="font-titulo text-2xl font-bold text-destaque">{editando ? 'editar programa' : 'cadastrar programa'}</h2>
-        <p className="text-sm text-suave">cadastre só programas reais, com link conferido. novos entram desativados: ative quando estiver tudo certo.</p>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <CampoTexto rotulo="nome" value={form.nome} onChange={(e) => m('nome', e.target.value)} erro={erros.nome} />
-          <CampoTexto rotulo="organização" value={form.organizacao} onChange={(e) => m('organizacao', e.target.value)} erro={erros.organizacao} />
-          <CampoTexto rotulo="link (https://)" type="url" value={form.url} onChange={(e) => m('url', e.target.value)} erro={erros.url} />
-          <CampoTexto rotulo="área" value={form.area} onChange={(e) => m('area', e.target.value)} erro={erros.area} />
-          <label className="space-y-2">
-            <span className="block font-titulo text-lg font-semibold">tipo</span>
-            <select className={`${seletor} w-full py-3`} value={form.tipo} onChange={(e) => m('tipo', e.target.value as Programa['tipo'])}>
-              <option value="curso">curso</option><option value="programa">programa</option><option value="comunidade">comunidade</option>
-            </select>
-          </label>
-          <label className="space-y-2">
-            <span className="block font-titulo text-lg font-semibold">gratuito?</span>
-            <select className={`${seletor} w-full py-3`} value={form.gratuito} onChange={(e) => m('gratuito', e.target.value as typeof form.gratuito)}>
-              <option value="sim">sim</option><option value="nao">não</option><option value="nao_sei">não sei</option>
-            </select>
-          </label>
-        </div>
-        <CampoArea rotulo="descrição curta" rows={2} maxLength={300} value={form.descricao_curta} onChange={(e) => m('descricao_curta', e.target.value)} erro={erros.descricao_curta} />
-        {erro && <Aviso tipo="erro">{erro}</Aviso>}
-        <div className="flex gap-3">
-          <Botao type="submit">{editando ? 'salvar alterações' : 'cadastrar'}</Botao>
-          {editando && <Botao type="button" variante="discreto" onClick={() => { setEditando(null); setForm(novoPrograma) }}>cancelar</Botao>}
-        </div>
-      </form>
-
-      {!lista ? <Carregando /> : (
-        <ul className="space-y-3">
-          {lista.map((p) => (
-            <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-linha p-4">
-              <div className="min-w-0">
-                <p className="font-semibold">{p.nome} {p.origem === 'sugestao' && <span className="text-sm font-normal text-suave">· indicação</span>}</p>
-                <p className="text-sm text-suave">{p.tipo}{p.area ? ` · ${p.area}` : ''} · {p.ativo ? 'ativo' : 'inativo'}</p>
-              </div>
-              <div className="flex gap-2">
-                <Botao variante="discreto" onClick={() => editar(p)}>editar</Botao>
-                <Botao variante={p.ativo ? 'secundario' : 'principal'} onClick={() => alternar(p)}>{p.ativo ? 'desativar' : 'ativar'}</Botao>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
   )
 }
 

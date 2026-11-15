@@ -26,6 +26,8 @@ end $$;
 grant usage on schema tst to anon, authenticated, service_role;
 grant execute on all functions in schema tst to anon, authenticated, service_role;
 
+select tst.ok(not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'feedback' and column_name = 'mais_dificil'), 'feedback não tem mais a coluna mais_dificil');
+
 -- pessoas de teste
 \set ana   '''aaaaaaaa-0000-0000-0000-000000000001'''
 \set bia   '''bbbbbbbb-0000-0000-0000-000000000002'''
@@ -55,8 +57,8 @@ select tst.bloqueia('select * from public.feedback', 'anon não lê feedback');
 select tst.ok((select count(*) from public.programs) = 0, 'anon só vê programas ativos (os PREENCHER estão inativos)');
 insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas) values ('avaliacao', 4, 'sim');
 select tst.ok(true, 'anon envia feedback de avaliação');
-select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, mais_dificil, status) values ('avaliacao', 4, 'sim', 'x', 'aprovado')$$, 'anon não escolhe o status do feedback');
-select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, mais_dificil, categoria_ia) values ('avaliacao', 4, 'sim', 'x', 'falso')$$, 'anon não preenche campos _ia');
+select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, status) values ('avaliacao', 4, 'sim', 'aprovado')$$, 'anon não escolhe o status do feedback');
+select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, categoria_ia) values ('avaliacao', 4, 'sim', 'falso')$$, 'anon não preenche campos _ia');
 select tst.bloqueia($$insert into public.feedback (tipo, indicacao_nome, indicacao_link, indicacao_motivo, indicacao_gratuito) values ('indicacao', 'x', 'http://inseguro.com', 'y', 'sim')$$, 'indicação só aceita https://');
 select tst.bloqueia($$insert into public.feedback (tipo) values ('avaliacao')$$, 'feedback exige os campos do caminho');
 select tst.bloqueia($$select public.salvar_cadastro('{}', '{}', '{}')$$, 'anon não cria cadastro');
