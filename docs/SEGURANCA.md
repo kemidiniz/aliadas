@@ -67,3 +67,13 @@ PGHOST=... PGPORT=... PGUSER=postgres npm run test:rls
 A migration `20261115000010_feedback_sem_mais_dificil.sql` retira a exigência de `mais_dificil` nas avaliações. Nota e resposta sobre encontrar aliadas continuam obrigatórias. Respostas antigas são preservadas. As políticas de RLS e permissões por coluna permanecem iguais: visitantes enviam feedback, apenas curadoras leem e respondem, e campos de IA continuam reservados à automação.
 
 A migration `20261115000011_remover_coluna_mais_dificil.sql` remove a coluna e suas respostas antigas a pedido da responsável pelo projeto. Não altera RLS nem as permissões dos campos restantes.
+
+## novidades (busca, entrada com LinkedIn, mensagens, pitch)
+
+| regra | como funciona |
+|---|---|
+| **busca de mulheres** (`buscar_aliadas`) | só para perfis aprovados; mostra apenas quem está aprovada **e** marcou "aceito aparecer na busca e ser recomendada". Devolve apelido, foto, trajetória, áreas e preferências, **nunca contato** |
+| **pedido de conexão** (`pedir_conexao`) | para quem foi recomendada **ou** aparece na busca; até **10 pedidos por dia**; pode levar uma mensagem de até 600 caracteres, que só as duas veem |
+| **entrada com LinkedIn** | perfil pendente que informa o LinkedIn é aprovado na hora (gatilho em `contacts`). Risco aceito no MVP: o link não é verificado automaticamente; a curadoria pode reprovar ou pausar e as denúncias continuam valendo |
+| **meu pitch** | os textos são montados no próprio navegador e o rascunho fica só no aparelho (localStorage). Nada é enviado para servidor ou IA |
+| **mural de conquistas** | campo `conquista` nos posts; mesmas regras do fórum (só aprovadas, denúncia, curadoria oculta) |

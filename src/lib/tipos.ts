@@ -36,6 +36,7 @@ export type Conexao = {
   status: 'pendente' | 'aceita' | 'recusada'
   created_at: string
   respondido_em: string | null
+  mensagem: string | null
 }
 
 export type Programa = {

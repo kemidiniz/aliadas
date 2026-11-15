@@ -242,8 +242,8 @@ select tst.ok(not exists (select 1 from public.buscar_aliadas('', '', '', 40) wh
 select tst.ok((select count(*) from public.buscar_aliadas('professora', '', '', 40)) = 1, 'busca por texto na trajetória');
 select tst.ok(exists (select 1 from public.profiles where id = :bia), 'perfil encontrado na busca pode ser visto');
 select tst.ok(not exists (select 1 from public.contacts where profile_id = :bia), 'busca não libera contato');
-select public.pedir_conexao(:bia);
-select tst.ok(exists (select 1 from public.connections where de_profile_id = auth.uid()), 'pede conexão para quem achou na busca');
+select public.pedir_conexao(:bia, 'oi, bia! também gosto de dados. topa uma chamada?');
+select tst.ok(exists (select 1 from public.connections where de_profile_id = auth.uid() and mensagem like 'oi, bia%'), 'pede conexão com mensagem para quem achou na busca');
 select tst.bloqueia($$select public.pedir_conexao('cccccccc-0000-0000-0000-000000000003')$$, 'não pede conexão a quem não aparece nem foi recomendada');
 reset role;
 
@@ -260,6 +260,9 @@ reset role;
 
 set role authenticated; select set_config('request.jwt.claim.sub', :ana, false);
 insert into public.forum_posts (autora_id, texto, area) values (auth.uid(), 'alguém indica curso de sql?', 'dados');
+insert into public.forum_posts (autora_id, texto, conquista) values (auth.uid(), 'consegui meu primeiro estágio!', true);
+select tst.ok((select count(*) from public.forum_feed('conquistas')) = 1, 'aba conquistas mostra só conquistas');
+delete from public.forum_posts where conquista;
 select tst.ok(true, 'aprovada publica no fórum');
 select tst.bloqueia($$insert into public.forum_posts (autora_id, texto) values ('cccccccc-0000-0000-0000-000000000003', 'em nome da cris')$$, 'não publica em nome de outra');
 select tst.bloqueia($$insert into public.forum_posts (autora_id, texto, oculto) values (auth.uid(), 'x', true)$$, 'autora não escolhe o campo oculto ao publicar');

@@ -7,6 +7,7 @@ import { Aviso, Carregando } from './Aviso'
 import { Avatar } from './Avatar'
 import { Botao, BotaoLink } from './Botao'
 import { Denunciar } from './Denunciar'
+import { PedidoConexao } from './PedidoConexao'
 import { Cartao, Chips, Selo, Vazio } from './ui'
 
 type Resultado = {
@@ -30,7 +31,6 @@ export function BuscarMulheres() {
   const [onde, setOnde] = useState('')
   const [lista, setLista] = useState<Resultado[] | null>(null)
   const [conexoes, setConexoes] = useState<Conexao[]>([])
-  const [pedindo, setPedindo] = useState<string | null>(null)
   const [erro, setErro] = useState('')
 
   const buscar = useCallback(async (t: string, a: string, o: string) => {
@@ -54,14 +54,6 @@ export function BuscarMulheres() {
     buscar(texto, area, onde)
   }
 
-  async function conectar(id: string) {
-    setPedindo(id)
-    setErro('')
-    const { error } = await supabase.rpc('pedir_conexao', { p_aliada: id })
-    setPedindo(null)
-    if (error) setErro(mensagemAmigavel(error))
-    buscar(texto, area, onde)
-  }
 
   const estado = (id: string) => conexoes.find((c) => c.de_profile_id === id || c.para_profile_id === id)
 
@@ -123,7 +115,7 @@ export function BuscarMulheres() {
                     <Chips itens={p.areas} rotulo="áreas de interesse" />
                     <p className="text-sm text-suave">prefere: {p.formas_conexao.map((f) => ROTULO_FORMA[f]).join(', ')}</p>
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-1">
-                      {!c && <Botao onClick={() => conectar(p.id)} carregando={pedindo === p.id}>quero me conectar</Botao>}
+                      {!c && <PedidoConexao ela={p} aoEnviar={() => buscar(texto, area, onde)} />}
                       {c?.status === 'pendente' && c.de_profile_id === eu && <Selo tom="suave">pedido enviado</Selo>}
                       {c?.status === 'pendente' && c.para_profile_id === eu && <BotaoLink to="/conexoes">ela quer se conectar com você</BotaoLink>}
                       {c?.status === 'aceita' && <BotaoLink to="/conexoes" variante="secundario">ver contato</BotaoLink>}

@@ -43,6 +43,7 @@ export function Cabecalho() {
         ...(perfil ? [] : [{ to: '/cadastro', rotulo: 'meu cadastro' }]),
         { to: '/minhas-aliadas', rotulo: 'minhas aliadas' },
         { to: '/forum', rotulo: 'fórum' },
+        { to: '/meu-pitch', rotulo: 'meu pitch' },
         { to: '/conexoes', rotulo: 'conexões' },
         { to: '/minha-conta', rotulo: 'minha conta' },
         ...(curadora ? [{ to: '/curadoria', rotulo: 'curadoria' }] : []),

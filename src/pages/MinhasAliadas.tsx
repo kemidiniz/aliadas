@@ -4,12 +4,12 @@ import { Aviso, Carregando } from '../components/Aviso'
 import { Avatar } from '../components/Avatar'
 import { Botao, BotaoLink } from '../components/Botao'
 import { Denunciar } from '../components/Denunciar'
+import { PedidoConexao } from '../components/PedidoConexao'
 import { Pagina, Titulo } from '../components/Pagina'
 import { Revelar } from '../components/Revelar'
 import { Abas, Cartao, Chips, Selo, Vazio } from '../components/ui'
 import { BuscarMulheres } from '../components/BuscarMulheres'
 import { useAuth } from '../lib/auth'
-import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
 import { ROTULO_ONDE_ESTA, type Conexao, type Perfil } from '../lib/tipos'
 
@@ -29,7 +29,6 @@ export default function MinhasAliadas() {
   const [usadas, setUsadas] = useState(0)
   const [buscando, setBuscando] = useState(false)
   const [msg, setMsg] = useState<{ tipo: 'erro' | 'ok' | 'info'; texto: string } | null>(null)
-  const [pedindo, setPedindo] = useState<string | null>(null)
   const [aba, setAba] = useState<'recomendadas' | 'buscar'>('recomendadas')
 
   const carregar = useCallback(async () => {
@@ -76,13 +75,6 @@ export default function MinhasAliadas() {
     carregar()
   }
 
-  async function conectar(aliadaId: string) {
-    setPedindo(aliadaId)
-    const { error } = await supabase.rpc('pedir_conexao', { p_aliada: aliadaId })
-    setPedindo(null)
-    if (error) setMsg({ tipo: 'erro', texto: mensagemAmigavel(error) })
-    carregar()
-  }
 
   if (!perfil) return null
   if (perfil.status === 'pendente')
@@ -162,9 +154,7 @@ export default function MinhasAliadas() {
                       <p className="mt-1.5">{r.motivo}</p>
                     </div>
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
-                      {!c && (
-                        <Botao onClick={() => conectar(r.aliada.id)} carregando={pedindo === r.aliada.id}>quero me conectar</Botao>
-                      )}
+                      {!c && <PedidoConexao ela={r.aliada} aoEnviar={carregar} />}
                       {c?.status === 'pendente' && c.de_profile_id === session!.user.id && <Selo tom="suave">pedido enviado</Selo>}
                       {c?.status === 'pendente' && c.para_profile_id === session!.user.id && <BotaoLink to="/conexoes">ela quer se conectar com você</BotaoLink>}
                       {c?.status === 'aceita' && <BotaoLink to="/conexoes" variante="secundario">ver contato</BotaoLink>}

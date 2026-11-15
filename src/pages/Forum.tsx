@@ -16,6 +16,7 @@ type Post = {
   area: string | null
   created_at: string
   oculto: boolean
+  conquista: boolean
   autora_id: string
   autora_apelido: string
   autora_foto_path: string | null
@@ -36,7 +37,7 @@ type Comentario = {
   minha: boolean
 }
 
-type Ordem = 'evidencia' | 'recentes'
+type Ordem = 'evidencia' | 'recentes' | 'conquistas'
 const MAX_POST = 2000
 const MAX_COMENTARIO = 1000
 
@@ -225,7 +226,7 @@ function CartaoPost({ post, aoMudar }: { post: Post; aoMudar: () => void }) {
   }
 
   return (
-    <Cartao className={post.oculto ? 'opacity-70' : ''}>
+    <Cartao className={`${post.oculto ? 'opacity-70' : ''} ${post.conquista ? 'border-l-4 border-l-coral' : ''}`}>
       <div className="flex items-start gap-3">
         <Avatar apelido={post.autora_apelido} fotoPath={post.autora_foto_path} tamanho={44} />
         <div className="min-w-0 flex-1">
@@ -233,6 +234,7 @@ function CartaoPost({ post, aoMudar }: { post: Post; aoMudar: () => void }) {
           <p className="text-xs text-suave">{tempoRelativo(post.created_at)}</p>
         </div>
         <div className="flex flex-wrap justify-end gap-1.5">
+          {post.conquista && <Selo tom="destaque">conquista</Selo>}
           {post.area && <Selo tom="suave">{post.area}</Selo>}
           {post.oculto && <Selo tom="alerta">oculto pela curadoria</Selo>}
         </div>
@@ -298,6 +300,7 @@ export default function Forum() {
   const [posts, setPosts] = useState<Post[] | null>(null)
   const [texto, setTexto] = useState('')
   const [area, setArea] = useState('')
+  const [conquista, setConquista] = useState(false)
   const [publicando, setPublicando] = useState(false)
   const [erro, setErro] = useState('')
   const pode = perfil?.status === 'aprovado' || curadora
@@ -319,12 +322,14 @@ export default function Forum() {
     if (!t) return setErro('escreva alguma coisa antes de publicar')
     setPublicando(true)
     setErro('')
-    const { error } = await supabase.from('forum_posts').insert({ autora_id: session!.user.id, texto: t, area: area || null })
+    const { error } = await supabase.from('forum_posts').insert({ autora_id: session!.user.id, texto: t, area: area || null, conquista })
     setPublicando(false)
     if (error) return setErro(mensagemAmigavel(error, 'não conseguimos publicar agora. tente de novo.'))
     setTexto('')
     setArea('')
-    if (ordem !== 'recentes') setOrdem('recentes')
+    setConquista(false)
+    const destino: Ordem = conquista ? 'conquistas' : 'recentes'
+    if (ordem !== destino) setOrdem(destino)
     else carregar()
   }
 
@@ -370,6 +375,10 @@ export default function Forum() {
                     <option value="">assunto (opcional)</option>
                     {opcoesArea.map((a) => <option key={a} value={a}>{a}</option>)}
                   </select>
+                  <label className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border-2 px-4 text-sm font-semibold focus-within:outline focus-within:outline-3 focus-within:outline-offset-3 ${conquista ? 'border-destaque bg-destaque text-sobre-destaque' : 'border-campo text-texto hover:border-destaque'}`}>
+                    <input type="checkbox" className="sr-only" checked={conquista} onChange={(e) => setConquista(e.target.checked)} />
+                    <span aria-hidden>{conquista ? '✓' : '+'}</span> é uma conquista
+                  </label>
                   <span className="text-sm text-suave" aria-hidden>{texto.length}/{MAX_POST}</span>
                   <Botao type="submit" className="ml-auto" carregando={publicando} disabled={!texto.trim()}>publicar</Botao>
                 </div>
@@ -387,6 +396,7 @@ export default function Forum() {
         abas={[
           { id: 'evidencia', rotulo: 'em evidência' },
           { id: 'recentes', rotulo: 'mais recentes' },
+          { id: 'conquistas', rotulo: 'conquistas' },
         ]}
       />
 

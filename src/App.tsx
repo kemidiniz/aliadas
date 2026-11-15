@@ -15,6 +15,7 @@ const MinhaConta = lazy(() => import('./pages/MinhaConta'))
 const Curadoria = lazy(() => import('./pages/Curadoria'))
 const FeedbackPagina = lazy(() => import('./pages/Feedback'))
 const Forum = lazy(() => import('./pages/Forum'))
+const MeuPitch = lazy(() => import('./pages/MeuPitch'))
 const TermoDeConduta = lazy(() => import('./pages/Textos').then((m) => ({ default: m.TermoDeConduta })))
 const Privacidade = lazy(() => import('./pages/Textos').then((m) => ({ default: m.Privacidade })))
 import NaoEncontrada from './pages/NaoEncontrada'
@@ -43,6 +44,7 @@ export function App() {
             <Route path="/entrar" element={<Entrar />} />
             <Route path="/cadastro" element={<Protegida precisaPerfil={false}><Cadastro /></Protegida>} />
             <Route path="/minhas-aliadas" element={<Protegida><MinhasAliadas /></Protegida>} />
+            <Route path="/meu-pitch" element={<Protegida><MeuPitch /></Protegida>} />
             <Route path="/forum" element={<Protegida><Forum /></Protegida>} />
             <Route path="/conexoes" element={<Protegida><Conexoes /></Protegida>} />
             <Route path="/minha-conta" element={<Protegida precisaPerfil={false}><MinhaConta /></Protegida>} />
