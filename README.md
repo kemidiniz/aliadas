@@ -1,6 +1,6 @@
 # aliadas
 
-Comunidade online onde mulheres que estão começando em tecnologia contam a própria trajetória, e a IA apresenta **aliadas**: referências próximas, com caminho parecido, alguns passos à frente.
+Comunidade online onde mulheres que estão começando em tecnologia contam a própria trajetória, e a IA apresenta **aliadas**: referências próximas, com caminho ou interesses parecidos, que podem estar no mesmo momento ou já ter vivido o que ela está vivendo.
 
 > o linkedin mostra mulheres famosas; a aliadas apresenta a mulher que estava onde você está há um ano.
 

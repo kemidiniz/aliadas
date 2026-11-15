@@ -5,7 +5,7 @@
 
 ## 1. contexto do projeto (para o assistente ler primeiro)
 
-**aliadas** é uma comunidade online em que mulheres (cis e trans) e pessoas não binárias que estão começando em tecnologia contam a própria trajetória, e uma IA apresenta **aliadas**: referências próximas, com caminho parecido, alguns passos à frente. Também tem um **fórum** só para perfis aprovados e uma página de **recomendações** de cursos e programas.
+**aliadas** é uma comunidade online em que mulheres (cis e trans) e pessoas não binárias que estão começando em tecnologia contam a própria trajetória, e uma IA apresenta **aliadas**: referências próximas, com caminho ou interesses parecidos, que podem estar no mesmo momento ou já ter vivido o que ela está vivendo. Também tem um **fórum** só para perfis aprovados e uma página de **recomendações** de cursos e programas.
 
 Fluxo principal: entrar (código por e-mail ou senha) → cadastro em 8 telas → curadoria aprova → a IA (Claude, via Edge Function `recomendar`) sugere até 2 aliadas e 2 programas → "quero me conectar" → as duas aceitam → o contato aparece.
 
@@ -32,12 +32,10 @@ Marque conforme for fazendo.
 O cenário **aliadas · automações** está ligado e testado: feedback novo → e-mail HTML para a curadora + resposta automática para quem deixou e-mail. Resposta pessoal da curadora e aviso de perfil novo também passam por ele.
 - [ ] Em `/curadoria` → aba feedback, **descartar** os feedbacks de teste.
 
-### 2.2 Supabase: segredos das Edge Functions (bloqueia a busca de aliadas)
-Link: https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/functions/secrets
-- [ ] `ANTHROPIC_API_KEY` = chave criada em https://console.anthropic.com/settings/keys
-- [ ] `SITE_URL` = `https://aliadas-indol.vercel.app`
-- [ ] (opcional) `ANTHROPIC_MODEL` = `claude-haiku-5-5`. Esse já é o padrão se ficar vazio.
-- [ ] No Anthropic Console → Billing → **Limits**: colocar um limite de gasto mensal baixo.
+### 2.2 IA das recomendações: funciona de graça ✅
+A busca de aliadas usa um **algoritmo gratuito** (áreas em comum, origem parecida, momento parecido ou próximo). Não precisa de chave.
+- [ ] (opcional, no futuro) Para usar o Claude, que escreve motivos mais ricos e um resumo da trajetória, cadastrar `ANTHROPIC_API_KEY` em https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/functions/secrets. O algoritmo continua de reserva se a API falhar.
+- [ ] `SITE_URL` = `https://aliadas-indol.vercel.app` no mesmo lugar (restringe quem chama as funções pelo navegador).
 
 ### 2.3 Supabase: endereços do login (sem isso o link do e-mail leva para o lugar errado)
 Link: https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/url-configuration
@@ -56,10 +54,16 @@ Link: https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/providers
 - [ ] Ligar **proteção contra senhas vazadas** (Leaked password protection).
 - [ ] Tamanho mínimo da senha: **8**.
 
-### 2.6 Supabase: e-mail próprio (recomendado antes do pitch)
-O e-mail padrão do Supabase manda **poucos e-mails por hora**, e o login pode travar no meio da apresentação.
-- [ ] Criar conta num serviço de e-mail (ex.: Resend ou Brevo) e preencher em https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/smtp
-- [ ] Alternativa: deixar as contas da demo já logadas antes do pitch.
+### 2.6 Supabase: SMTP gratuito pelo Gmail (necessário para o código aparecer no e-mail)
+Sem SMTP próprio, o Supabase manda poucos e-mails por hora e não deixa personalizar o modelo; o e-mail padrão traz só o link, sem o código.
+1. [ ] Ligar a **verificação em duas etapas** na conta Google: https://myaccount.google.com/security
+2. [ ] Criar uma **senha de app** (nome: "aliadas supabase"): https://myaccount.google.com/apppasswords. Copie os 16 caracteres; não cole em lugar nenhum além do passo 3.
+3. [ ] Em https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/smtp ligar *Custom SMTP*:
+   - Sender email: `kemilydiniz@gmail.com` · Sender name: `aliadas`
+   - Host: `smtp.gmail.com` · Port: `587` · Username: `kemilydiniz@gmail.com` · Password: a senha de app
+4. [ ] Em *Rate Limits* do Auth, ajustar o limite de e-mails por hora (ex.: 30).
+5. [ ] Depois, fazer o item 2.4 (colar os modelos bonitos).
+Limite do Gmail gratuito: cerca de 500 e-mails por dia, mais que suficiente para o MVP.
 
 ### 2.7 Vercel: deploy automático e acesso público
 - [ ] **Publicar sozinho a cada push:** https://vercel.com/kemidinizs-projects/aliadas/settings/git → *Connect Git Repository* → `kemidiniz/aliadas`. Em *Production Branch*, use `claude/new-session-39k0a4` ou renomeie a branch para `main` no GitHub antes (Settings → Branches).
