@@ -88,7 +88,7 @@ O cartão profissional é uma projeção mínima via RPC: nome de apresentação
 
 O consentimento externo é opcional, desmarcado por padrão e informado sobre possível uso dos dados no plano gratuito para melhorar modelos. A versão `mvp-profissional-v1` e timestamp ficam no perfil. Ambas devem consentir; retirar consentimento entre claim e finalização impede publicar o resultado. Sem consentimento, nenhum job novo é criado. A revogação não recupera dados já enviados ao provedor. Antes da ativação, confirmar termos atuais, LGPD, país e condições de retenção.
 
-Tabelas e endpoints legados não são apagados. Os gatilhos pagos/de Make são desativados pela nova migration, e o código de `recomendar` passa a retornar 410. Isso não foi implantado em produção nesta entrega: enquanto migrations e função não forem ativadas após autorização, o remoto continua com o comportamento anterior. Considere bloquear o endpoint legado no procedimento de lançamento, sem alegar que já foi bloqueado.
+Tabelas e endpoints legados não são apagados. Os gatilhos pagos/de Make são desativados pela nova migration, e o código de `recomendar` passa a retornar 410. Na entrega local isso ainda não estava implantado; posteriormente a usuária autorizou a ativação, registrada em MVP.md. O endpoint remoto retorna 410 e os gatilhos legados foram desativados. Considere bloquear o endpoint legado no procedimento de lançamento, sem alegar que já foi bloqueado.
 
 A exclusão de conta existente apaga Auth/fotos e as novas tabelas em cascata. Jobs são apagados com solicitações, não preservam vínculo pessoal após exclusão. Relatórios do projeto final devem ser agregados e higienizados antes de guardar evidência. Contatos legados históricos permanecem sob suas políticas antigas, sem importação ou liberação automática na nova interface.
 
@@ -102,3 +102,17 @@ A exclusão de conta existente apaga Auth/fotos e as novas tabelas em cascata. J
 - Não são coletadas senhas de aplicativos externos. Links são validados pelo banco (HTTPS/host para LinkedIn e Meet, telefone E.164 e e-mail limitado). Consentir um canal sem preenchê-lo não o libera.
 
 Compartilhamento prematuro por texto: nomes/ocupações novos e mensagens de convite rejeitam padrões de e-mail, links e telefone. Cartões higienizam nomes legados que contenham esses padrões. O filtro não detecta toda forma deliberadamente ofuscada de contato; os termos proíbem essa tentativa e a curadoria trata denúncias.
+
+## histórico incorporado da branch remota
+
+A seção abaixo descreve a versão anterior. Busca/pitch/mural não fazem parte da interface nova; a aprovação automática por LinkedIn será desativada pela migration 014 do MVP. Os registros históricos permanecem.
+
+## novidades (busca, entrada com LinkedIn, mensagens, pitch)
+
+| regra | como funciona |
+|---|---|
+| **busca de mulheres** (`buscar_aliadas`) | só para perfis aprovados; mostra apenas quem está aprovada **e** marcou "aceito aparecer na busca e ser recomendada". Devolve apelido, foto, trajetória, áreas e preferências, **nunca contato** |
+| **pedido de conexão** (`pedir_conexao`) | para quem foi recomendada **ou** aparece na busca; até **10 pedidos por dia**; pode levar uma mensagem de até 600 caracteres, que só as duas veem |
+| **entrada com LinkedIn** | perfil pendente que informa o LinkedIn é aprovado na hora (gatilho em `contacts`). Risco aceito no MVP: o link não é verificado automaticamente; a curadoria pode reprovar ou pausar e as denúncias continuam valendo |
+| **meu pitch** | os textos são montados no próprio navegador e o rascunho fica só no aparelho (localStorage). Nada é enviado para servidor ou IA |
+| **mural de conquistas** | campo `conquista` nos posts; mesmas regras do fórum (só aprovadas, denúncia, curadoria oculta) |

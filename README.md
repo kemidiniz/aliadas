@@ -30,7 +30,7 @@ node tests/mvp-browser.mjs
 
 ## situação da entrega
 
-**Implementação local preparada; não publicada, não aplicada ao banco de produção.** IA externa **não validada**: não há chave Gemini, nem comprovação atual de modelo/limites/termos gratuitos. Nenhuma cobrança foi habilitada. O produto mostra claramente “compatibilidade básica • sem IA generativa” enquanto não há resultado real e validado do provedor.
+**Versão autorizada para produção, com migrations MVP e funções aplicadas. Link principal: https://aliadas-indol.vercel.app. Consulte o registro de ativação em docs/MVP.md.** IA externa **não validada**: não há chave Gemini, nem comprovação atual de modelo/limites/termos gratuitos. Nenhuma cobrança foi habilitada. O produto mostra claramente “compatibilidade básica • sem IA generativa” enquanto não há resultado real e validado do provedor.
 
 - [Entrega e ativação](docs/MVP.md): arquivos, migrations, limites, comandos e pendências.
 - [Segurança e RLS](docs/SEGURANCA.md): regras atuais e histórico.

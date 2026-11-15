@@ -5,6 +5,7 @@ import { Botao } from '../components/Botao'
 import { CampoArea, CampoTexto, Escolha } from '../components/Campo'
 import { Pagina, Titulo } from '../components/Pagina'
 import { errosPorCampo, feedbackAvaliacao, feedbackProblema, LIMITES } from '../lib/esquemas'
+import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
 import { PAGINAS_DO_SITE } from '../lib/tipos'
 
@@ -29,6 +30,7 @@ export default function FeedbackPagina() {
   const [f, setF] = useState(vazio)
   const [erros, setErros] = useState<Record<string, string>>({})
   const [estado, setEstado] = useState<'idle' | 'enviando' | 'ok' | 'erro'>('idle')
+  const [msgErro, setMsgErro] = useState('')
   const muda = <K extends keyof typeof vazio>(k: K, v: (typeof vazio)[K]) => setF((x) => ({ ...x, [k]: v }))
 
   async function enviar(e: FormEvent) {
@@ -43,6 +45,7 @@ export default function FeedbackPagina() {
     for (const k of Object.keys(dados)) if (dados[k] === '') dados[k] = null
     // sem .select(): quem envia não tem (nem precisa ter) permissão de leitura
     const { error } = await supabase.from('feedback').insert(dados)
+    setMsgErro(error ? mensagemAmigavel(error, 'não conseguimos enviar agora. tente de novo em instantes.') : '')
     setEstado(error ? 'erro' : 'ok')
   }
 
@@ -130,7 +133,7 @@ export default function FeedbackPagina() {
                 onChange={(e) => muda('email', e.target.value)}
                 erro={erros.email}
               />
-              {estado === 'erro' && <Aviso tipo="erro">não conseguimos enviar agora. tente de novo em instantes.</Aviso>}
+              {estado === 'erro' && <Aviso tipo="erro">{msgErro}</Aviso>}
               <Botao type="submit" carregando={estado === 'enviando'}>enviar</Botao>
             </motion.div>
           )}

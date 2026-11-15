@@ -241,6 +241,31 @@ try {
   console.log(
     "PASSOU: cadastro em página única, sem copiar autenticação e sem consentimento automático de IA",
   );
+  await context.route("**/auth/v1/user", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(session.user),
+    }),
+  );
+  await p.evaluate(() => sessionStorage.setItem("aliadas-nova-senha", "1"));
+  await p.goto(base + "/entrar");
+  await p.waitForURL(base + "/meu-perfil");
+  await p
+    .getByLabel("nova senha", { exact: true })
+    .fill("senha-apenas-do-teste");
+  await p
+    .getByLabel("confirmar nova senha", { exact: true })
+    .fill("senha-apenas-do-teste");
+  await p.getByRole("button", { name: "salvar senha", exact: true }).click();
+  await p.getByText("senha atualizada.", { exact: true }).waitFor();
+  assert.equal(
+    await p.evaluate(() => sessionStorage.getItem("aliadas-nova-senha")),
+    null,
+  );
+  console.log(
+    "PASSOU: recuperação de senha preservada e integrada ao novo perfil",
+  );
   for (const width of [390, 1440]) {
     await p.setViewportSize({ width, height: 1000 });
     for (const path of ["/", "/minhas-conversas", "/meu-perfil"]) {

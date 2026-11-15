@@ -77,11 +77,13 @@ export default function Cadastro() {
   if (perfil) {
     return (
       <Pagina titulo="cadastro">
-        <h1 className="font-titulo text-3xl font-bold text-destaque">recebemos seu cadastro</h1>
+        <h1 className="font-titulo text-3xl font-bold text-destaque">
+          {perfil.status === 'pendente' ? 'recebemos seu cadastro' : 'você já faz parte!'}
+        </h1>
         <p className="mt-4 text-lg">
           {perfil.status === 'pendente'
-            ? 'a curadoria vai olhar seu perfil com carinho. quando ele for aprovado, a gente já procura suas aliadas.'
-            : 'seu perfil já passou pela curadoria.'}
+            ? 'a curadoria vai olhar seu perfil com carinho. quando ele for aprovado, a gente já procura suas aliadas. se quiser entrar na hora, adicione seu linkedin em "minha conta".'
+            : 'estamos procurando suas aliadas agora. enquanto isso, você já pode buscar mulheres da comunidade e participar do fórum.'}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <BotaoLink to="/minhas-aliadas">minhas aliadas</BotaoLink>
@@ -227,17 +229,18 @@ export default function Cadastro() {
       chave: 'contato',
       validar: () => {
         if (!emailSchema.safeParse(d.email).success) return 'confira o e-mail'
+        if (!d.linkedin_url.trim()) return null
         const l = linkedinSchema.safeParse(d.linkedin_url)
         return l.success ? null : l.error.issues[0].message
       },
       render: () => (
         <div className="space-y-6">
           <Aviso>
-            seu contato <strong>só aparece</strong> para outra pessoa depois que vocês duas aceitarem a conexão. a curadoria confere o linkedin para manter a comunidade segura.
+            seu contato <strong>só aparece</strong> para outra pessoa depois que vocês duas aceitarem a conexão. <strong>com linkedin, seu perfil entra na hora.</strong> sem ele, a curadoria revisa antes.
           </Aviso>
           <CampoTexto rotulo="e-mail para contato" type="email" autoComplete="email" value={d.email} onChange={(e) => muda('email', e.target.value)} />
           <CampoTexto
-            rotulo="link do seu linkedin"
+            rotulo="link do seu linkedin (opcional)"
             type="url"
             inputMode="url"
             placeholder="https://www.linkedin.com/in/…"
@@ -263,10 +266,10 @@ export default function Cadastro() {
             <Link to="/termo-de-conduta" target="_blank" className="text-destaque underline underline-offset-4">termo de conduta</Link>.
           </Caixinha>
           <Caixinha marcado={d.aceita_ser_recomendada} aoMudar={(v) => muda('aceita_ser_recomendada', v)}>
-            aceito ser recomendada como aliada para outras mulheres (dá para mudar depois em "minha conta").
+            aceito aparecer na busca e ser recomendada como aliada para outras mulheres da comunidade (dá para mudar depois em "minha conta").
           </Caixinha>
           <Caixinha obrigatoria marcado={d.entende_contato_pos_aceite} aoMudar={(v) => muda('entende_contato_pos_aceite', v)}>
-            entendo que meu e-mail e linkedin só aparecem para outra pessoa depois que nós duas aceitarmos a conexão.
+            entendo que meus contatos só aparecem para outra pessoa depois que nós duas aceitarmos a conexão.
           </Caixinha>
           <Caixinha obrigatoria marcado={d.sabe_que_pode_apagar} aoMudar={(v) => muda('sabe_que_pode_apagar', v)}>
             sei que posso apagar minha conta e todos os meus dados quando quiser.

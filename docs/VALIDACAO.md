@@ -2,7 +2,7 @@
 
 ## situação honesta da entrega
 
-Desenvolvimento e testes locais, sem publicação ou alteração no Supabase de produção. A compatibilidade básica funciona nos testes. A integração Gemini está implementada, mas não há chave, acesso gratuito confirmado, geração real ou dados de consumo real. A entrega **não comprova ainda** os requisitos humanos/IA do projeto final.
+Desenvolvimento e testes locais concluídos; posteriormente, a usuária autorizou migrations, funções e publicação em produção. O registro da ativação está em MVP.md. Os testes completos descritos abaixo continuam sendo locais; as verificações remotas foram de esquema, permissões e endpoints sem criar dados fictícios. A compatibilidade básica funciona nos testes. A integração Gemini está implementada, mas não há chave, acesso gratuito confirmado, geração real ou dados de consumo real. A entrega **não comprova ainda** os requisitos humanos/IA do projeto final.
 
 ### evidências locais
 
@@ -12,7 +12,7 @@ Desenvolvimento e testes locais, sem publicação ou alteração no Supabase de 
 - `deno check --no-lock supabase/functions/conversa-ia/index.ts supabase/functions/recomendar/index.ts`: tipos das funções. Não valida disponibilidade do Gemini.
 - `node tests/mvp-browser.mjs`: Auth/API simulados localmente; três itens de menu, fórum redirecionado, solicitação, não envio automático, mensagem revisada, contatos por canal, feedback e cadastro sem copiar e-mail/consentimento, 390 e 1440px sem overflow ou erros JS. Não é teste real de SMTP/Supabase/IA.
 
-Resultado local: **159 verificações SQL passaram** (107 históricas e 52 novas), três testes Node passaram, build e typecheck das funções passaram. `node tests/worker-local.mjs` também passou: executa a função Deno real com banco HTTP local simulado, autenticação interna, replay e configuração ausente; runtime sem permissão de rede externa, zero tokens. Não usar registros sintéticos dessas suítes como “execuções reais”.
+Resultado local: **173 verificações SQL passaram** (121 históricas e 52 novas), três testes Node passaram, build e typecheck das funções passaram. `node tests/worker-local.mjs` também passou: executa a função Deno real com banco HTTP local simulado, autenticação interna, replay e configuração ausente; runtime sem permissão de rede externa, zero tokens. Não usar registros sintéticos dessas suítes como “execuções reais”.
 
 ## problema, público e linha de base
 

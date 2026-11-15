@@ -40,6 +40,7 @@ export function App() {
             <Route path="/entrar" element={<Entrar />} />
             <Route path="/cadastro" element={<Protegida precisaPerfil={false}><Cadastro /></Protegida>} />
             <Route path="/minhas-aliadas" element={<Navigate to="/" replace />} />
+            <Route path="/meu-pitch" element={<Navigate to="/" replace />} />
             <Route path="/forum" element={<Navigate to="/" replace />} />
             <Route path="/conexoes" element={<Navigate to="/minhas-conversas" replace />} />
             <Route path="/minhas-conversas" element={<Protegida><Conversas /></Protegida>} />

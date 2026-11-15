@@ -34,15 +34,16 @@ select tst.ok(not exists (select 1 from information_schema.columns where table_s
 \set cris  '''cccccccc-0000-0000-0000-000000000003'''
 \set cur   '''dddddddd-0000-0000-0000-000000000004'''
 \set eve   '''eeeeeeee-0000-0000-0000-000000000005'''
+\set fia   '''ffffffff-0000-0000-0000-000000000006'''
 
 insert into auth.users (id, email) values
   (:ana, 'ana@exemplo.invalid'), (:bia, 'bia@exemplo.invalid'), (:cris, 'cris@exemplo.invalid'),
-  (:cur, 'cur@exemplo.invalid'), (:eve, 'eve@exemplo.invalid');
+  (:cur, 'cur@exemplo.invalid'), (:eve, 'eve@exemplo.invalid'), (:fia, 'fia@exemplo.invalid');
 insert into public.roles values (:cur, 'curadora');
 insert into public.profiles (id, apelido, de_onde_vem, onde_esta, areas, formas_conexao, status, aprovado_em)
 values (:bia,  'bia',  'professora que migrou', 'ate_2_anos', '{dados}', '{chamada}', 'aprovado', now()),
        (:cris, 'cris', 'veio do comércio',      'ate_2_anos', '{front-end}', '{mensagem,chamada}', 'aprovado', now());
-insert into public.consents values (:bia, true, true, true, true, true), (:cris, true, true, true, true, true);
+insert into public.consents values (:bia, true, true, true, true, true), (:cris, true, false, true, true, true);
 insert into public.contacts (profile_id, email, linkedin_url) values
   (:bia, 'bia@exemplo.invalid', 'https://www.linkedin.com/in/bia'),
   (:cris, 'cris@exemplo.invalid', null);
@@ -62,6 +63,8 @@ select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encont
 select tst.bloqueia($$insert into public.feedback (tipo, indicacao_nome, indicacao_link, indicacao_motivo, indicacao_gratuito) values ('indicacao', 'x', 'http://inseguro.com', 'y', 'sim')$$, 'indicação só aceita https://');
 select tst.bloqueia($$insert into public.feedback (tipo) values ('avaliacao')$$, 'feedback exige os campos do caminho');
 select tst.bloqueia($$select public.salvar_cadastro('{}', '{}', '{}')$$, 'anon não cria cadastro');
+insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, email) select 'avaliacao', 5, 'sim', 'Repetida@exemplo.invalid' from generate_series(1, 3);
+select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, email) values ('avaliacao', 5, 'sim', 'repetida@exemplo.invalid')$$, 'no máximo 3 feedbacks por e-mail por dia');
 reset role;
 
 -- ------------------------------------------------------------- cadastro
@@ -75,8 +78,8 @@ select tst.ok(not exists (select 1 from public.profiles where id = auth.uid()), 
 select tst.ok(public.salvar_cadastro(
   '{"apelido":"ana","de_onde_vem":"vim do jornalismo","onde_esta":"estudando","areas":["dados","inteligência artificial"],"formas_conexao":["chamada","mensagem"]}',
   '{"autodeclaracao":true,"aceita_ser_recomendada":true,"entende_contato_pos_aceite":true,"sabe_que_pode_apagar":true,"aceita_termo_conduta":true}',
-  '{"email":"ana@exemplo.invalid","linkedin_url":"https://www.linkedin.com/in/ana"}') like 'P%', 'cadastro completo gera código P…');
-select tst.ok((select status from public.profiles where id = auth.uid()) = 'pendente', 'perfil nasce pendente');
+  '{"email":"ana@exemplo.invalid"}') like 'P%', 'cadastro completo (sem linkedin) gera código P…');
+select tst.ok((select status from public.profiles where id = auth.uid()) = 'pendente', 'sem linkedin, perfil nasce pendente');
 select tst.ok((select cardinality(areas) = 2 and cardinality(formas_conexao) = 2 from public.profiles where id = auth.uid()), 'cadastro guarda várias áreas e formas de conexão');
 select tst.bloqueia($$update public.profiles set formas_conexao = '{chamada,fax}' where id = auth.uid()$$, 'forma de conexão fora da lista é recusada');
 select tst.bloqueia($$update public.profiles set areas = '{}' where id = auth.uid()$$, 'precisa de pelo menos uma área');
@@ -103,11 +106,11 @@ reset role;
 set role authenticated; select set_config('request.jwt.claim.sub', :cur, false);
 select tst.ok(public.is_curadora(), 'curadora é reconhecida');
 select tst.ok((select count(*) from public.profiles) = 3, 'curadora vê todos os perfis');
-select tst.ok((select linkedin_url from public.contacts where profile_id = :ana) is not null, 'curadora confere o LinkedIn');
+select tst.ok((select email from public.contacts where profile_id = :ana) is not null, 'curadora vê o contato para conferir');
 select tst.bloqueia($$update public.profiles set apelido = 'hackeado' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$$, 'curadora não edita o conteúdo do perfil de outra');
 update public.profiles set status = 'aprovado' where id = :ana;
 select tst.ok((select aprovado_em is not null from public.profiles where id = :ana), 'aprovação marca aprovado_em');
-select tst.ok((select count(*) from public.feedback) = 1, 'curadora lê feedback');
+select tst.ok((select count(*) from public.feedback) >= 1, 'curadora lê feedback');
 update public.feedback set status = 'em_analise';
 select tst.ok((select status from public.feedback limit 1) = 'em_analise', 'curadora muda status do feedback');
 select tst.bloqueia($$update public.feedback set categoria_ia = 'x'$$, 'curadora não sobrescreve campos _ia da automação (exceto rascunho)');
@@ -148,7 +151,7 @@ reset role;
 set role authenticated; select set_config('request.jwt.claim.sub', :cris, false);
 select tst.ok(not exists (select 1 from public.contacts where profile_id in (:ana, :bia)), 'cris (de fora) não vê contato de ninguém');
 select tst.ok((select count(*) from public.connections) = 0, 'cris não vê conexões alheias');
-select tst.ok((select count(*) from public.profiles) = 1, 'cris só vê o próprio perfil');
+select tst.ok((select count(*) from public.profiles) = 1 + (select count(*) from public.buscar_aliadas()), 'cris vê o próprio perfil e só quem aceitou aparecer na busca');
 reset role;
 
 -- ------------------------------------------------------------- fotos
@@ -219,6 +222,37 @@ select tst.ok((select count(*) from public.programs where origem = 'sugestao' an
 reset role;
 
 
+
+-- ------------------------------------------------- linkedin e busca
+\echo '--- entrada com linkedin e busca'
+set role authenticated; select set_config('request.jwt.claim.sub', :fia, false);
+select public.salvar_cadastro(
+  '{"apelido":"fia","de_onde_vem":"vim do jornalismo","onde_esta":"ate_2_anos","areas":["dados"],"formas_conexao":["mensagem"]}',
+  '{"autodeclaracao":true,"aceita_ser_recomendada":true,"entende_contato_pos_aceite":true,"sabe_que_pode_apagar":true,"aceita_termo_conduta":true}',
+  '{"email":"fia@exemplo.invalid","linkedin_url":"https://www.linkedin.com/in/fia"}');
+select tst.ok((select status from public.profiles where id = auth.uid()) = 'pendente', 'LinkedIn não contorna aprovação da curadoria no MVP');
+select tst.ok((select aprovado_em is null from public.profiles where id = auth.uid()), 'sem aprovação automática por LinkedIn');
+reset role;
+select tst.ok((select count(*) from net.chamadas where body->>'profile_id' = :fia) = 0, 'LinkedIn não dispara geração automática legada');
+
+-- Fixture aprovada explicitamente pelo administrador do banco LOCAL.
+update public.profiles set status='aprovado' where id=:fia;
+set role authenticated; select set_config('request.jwt.claim.sub', :fia, false);
+select tst.ok(exists (select 1 from public.buscar_aliadas('', 'dados', '', 40) where apelido = 'bia'), 'busca encontra quem aceitou aparecer');
+select tst.ok(not exists (select 1 from public.buscar_aliadas('', '', '', 40) where apelido = 'cris'), 'busca não mostra quem não aceitou aparecer');
+select tst.ok(not exists (select 1 from public.buscar_aliadas('', '', '', 40) where id = auth.uid()), 'busca não mostra a própria pessoa');
+select tst.ok((select count(*) from public.buscar_aliadas('professora', '', '', 40)) = 1, 'busca por texto na trajetória');
+select tst.ok(exists (select 1 from public.profiles where id = :bia), 'perfil encontrado na busca pode ser visto');
+select tst.ok(not exists (select 1 from public.contacts where profile_id = :bia), 'busca não libera contato');
+select public.pedir_conexao(:bia, 'oi, bia! também gosto de dados. topa uma chamada?');
+select tst.ok(exists (select 1 from public.connections where de_profile_id = auth.uid() and mensagem like 'oi, bia%'), 'pede conexão com mensagem para quem achou na busca');
+select tst.bloqueia($$select public.pedir_conexao('cccccccc-0000-0000-0000-000000000003')$$, 'não pede conexão a quem não aparece nem foi recomendada');
+reset role;
+
+set role authenticated; select set_config('request.jwt.claim.sub', :eve, false);
+select tst.bloqueia($$select * from public.buscar_aliadas()$$, 'quem não está aprovada não usa a busca');
+reset role;
+
 -- ------------------------------------------------------------- fórum
 \echo '--- fórum'
 set role authenticated; select set_config('request.jwt.claim.sub', :eve, false);
@@ -228,6 +262,9 @@ reset role;
 
 set role authenticated; select set_config('request.jwt.claim.sub', :ana, false);
 insert into public.forum_posts (autora_id, texto, area) values (auth.uid(), 'alguém indica curso de sql?', 'dados');
+insert into public.forum_posts (autora_id, texto, conquista) values (auth.uid(), 'consegui meu primeiro estágio!', true);
+select tst.ok((select count(*) from public.forum_feed('conquistas')) = 1, 'aba conquistas mostra só conquistas');
+delete from public.forum_posts where conquista;
 select tst.ok(true, 'aprovada publica no fórum');
 select tst.bloqueia($$insert into public.forum_posts (autora_id, texto) values ('cccccccc-0000-0000-0000-000000000003', 'em nome da cris')$$, 'não publica em nome de outra');
 select tst.bloqueia($$insert into public.forum_posts (autora_id, texto, oculto) values (auth.uid(), 'x', true)$$, 'autora não escolhe o campo oculto ao publicar');

@@ -1,3 +1,4 @@
+import { SenhaPerfil } from '../components/SenhaPerfil';
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Pagina, Titulo } from "../components/Pagina";
@@ -177,6 +178,7 @@ export default function PerfilProfissional() {
           <Aviso>{msg}</Aviso>
         </div>
       )}
+      <SenhaPerfil />
       <form onSubmit={save} className="space-y-8">
         <div className="grid gap-6 sm:grid-cols-2">
           <CampoTexto

@@ -1,6 +1,6 @@
 # MVP profissional — entrega local
 
-Revisão: 15/11/2026. Este documento substitui o escopo histórico do `PENDENCIAS.md`. Não representa autorização de publicação.
+Revisão: 15/11/2026. Este documento substitui o escopo histórico do `PENDENCIAS.md`. A publicação foi autorizada posteriormente pela usuária nesta conversa.
 
 ## o que muda para quem usa
 
@@ -16,7 +16,7 @@ As participantes escolhem um aplicativo externo. Para chamada, veem os períodos
 
 - `src/pages/InicioProfissional.tsx`, `PerfilProfissional.tsx`, `ConversasProfissionais.tsx`, `IndicadoresMvp.tsx`: jornada e indicadores.
 - `src/lib/professional.ts`: categorias, tipos e rótulos.
-- Migrations `20261116000012_mvp_conversas.sql` e `20261116000013_mvp_worker.sql`: tabelas, seleção, contatos, consentimentos, feedback, bloqueios, métricas e fila. Datas são identificadores de ordenação, não evidência de aplicação.
+- Migrations `20261116000012_mvp_conversas.sql`, `20261116000013_mvp_worker.sql` e `20261116000014_mvp_compatibilidade.sql`: tabelas, seleção, contatos, consentimentos, feedback, bloqueios, métricas e fila. Datas são identificadores de ordenação, não evidência de aplicação.
 - `supabase/functions/conversa-ia/core.ts` e `index.ts`: minimização, chamada Gemini, validação e registro.
 - `supabase/tests/mvp_test.sql`, `tests/conversa-ia.test.mjs`, `tests/mvp-browser.mjs`: autorização, contratos e interface.
 
@@ -31,14 +31,14 @@ A função antiga `recomendar` foi substituída no código por uma resposta 410,
 ## ativação — exige autorização posterior
 
 1. Revisar backup/exportação e o histórico real de migrations do projeto. Não rodar `db push` cegamente: algumas alterações anteriores foram aplicadas pelo SQL Editor e podem não estar registradas. Não reaplicar migrations 001–011 em banco existente.
-2. Aplicar somente 012 e 013, em ordem, após revisão. No ambiente desta entrega foram aplicadas apenas em Postgres descartável. Novas tabelas não importam automaticamente contatos privados nem convertem perfis reais: as participantes completam o cadastro profissional e consentimentos.
+2. Aplicar somente as migrations MVP de 16/11 (012, 013 e 014), em ordem, após revisão. Foram testadas em Postgres descartável e depois aplicadas em produção sob autorização, com registro no histórico de migrations. Novas tabelas não importam automaticamente contatos privados nem convertem perfis reais: as participantes completam o cadastro profissional e consentimentos.
 3. Verificar Security Advisor e RLS. Testar com contas autorizadas em staging, sem publicar nem usar dados reais em provedor de IA.
 4. Antes de ativar Gemini, confirmar no AI Studio projeto **sem faturamento**, disponibilidade no Brasil, modelo com cota gratuita efetiva, termos de dados, limites por minuto/dia e formatos estruturados. Sem essa confirmação, não definir `GEMINI_FREE_TIER_CONFIRMED=true`.
 5. Guardar `GEMINI_API_KEY`, `GEMINI_MODEL` e a confirmação acima apenas em secrets das Edge Functions. Não usar a chave pública do Supabase nem a Anthropic. Não comprar créditos nem adicionar cartão. Se houver dúvida de faturamento, não fazer o teste.
 6. Publicar `conversa-ia` e a aposentadoria de `recomendar` somente com autorização. A função nova autentica via cabeçalho `x-mvp-secret`, não pelo frontend. O navegador não recebe nem usa esse segredo.
 7. Criar no Vault `mvp_worker_url` (URL HTTPS da função) e `mvp_worker_secret` (segredo hexadecimal de 64 caracteres, gerado com `openssl rand -hex 32`) pelo painel seguro. O worker lê o segredo via RPC exclusiva de service_role. Não gravar valores no Git ou neste documento.
 8. Criar solicitação com duas participantes aprovadas, disponíveis e consentindo. Conferir job, entrega HTTP do pg_net, estado final, tokens e revisão humana. Só depois realizar os três testes reais previstos em `VALIDACAO.md`.
-9. Aprovar publicação do frontend separadamente. A produção atual não foi alterada nesta tarefa.
+9. Aprovar publicação do frontend separadamente. A publicação do frontend e as mudanças de produção foram autorizadas após a entrega local.
 
 Para testar localmente o worker com Supabase CLI, monte secrets em arquivo ignorado; não passe dados reais. `deno check --no-lock supabase/functions/conversa-ia/index.ts` verifica tipos, não comprova o provedor. A suíte SQL usa um stub de pg_net; confirma o gatilho e payload, mas não sua entrega HTTP real.
 
@@ -57,3 +57,13 @@ Para testar localmente o worker com Supabase CLI, monte secrets em arquivo ignor
 Build TypeScript/Vite; tipos das Edge Functions; testes SQL com RLS e contratos de job; testes Node de minimização/injeção/saída; navegador desktop e mobile com Auth/API simulados. Contagem e comandos finais em `VALIDACAO.md`.
 
 Não verificados: Gemini real, limites/termos atuais do Google, entrega real de pg_net, login por e-mail/SMTP em staging, three real executions, consumo e billing reais, avaliadoras reais. Não há evidência de 20 casos reais ou duas rodadas humanas. Essa ausência impede chamar o projeto final de validado ou a IA de operacional.
+
+## registro de ativação autorizada
+
+- Projeto Supabase `mbiutzyteuvcoahhizmg`: migrations `20261116000012`, `20261116000013` e `20261116000014` aplicadas, registradas no histórico. Sete tabelas novas com RLS ativo; permissões anônimas verificadas.
+- Contagens históricas preservadas na ativação: 3 contas Auth, 2 perfis, 2 consentimentos, 2 contatos e 1 conexão. Nenhum contato histórico foi importado para o perfil novo.
+- `conversa-ia` publicada; URL e segredo interno no Vault. `GEMINI_FREE_TIER_CONFIRMED=false` explicitamente configurado. A compatibilidade básica funciona sem consumo de IA externa; não há chave Gemini nem teste real de geração.
+- `recomendar` aposentada com HTTP 410; gatilhos antigos e aprovação automática por informar LinkedIn desativados. A função de exclusão de conta foi preservada.
+- A branch remota tinha mudanças posteriores de recuperação de senha e e-mails. Elas foram integradas sem force-push; pitch, busca e mural continuam apenas no histórico, fora da navegação nova. Recuperação de senha foi testada na interface com API simulada.
+- Endpoint de contatos e RPC de compartilhamento recusaram acesso anônimo em produção. Worker recusou chamada sem segredo.
+- Link principal da publicação: https://aliadas-indol.vercel.app. Novas participantes e perfis antigos precisam completar o novo perfil profissional para usar a jornada. Não há conta fictícia inserida em produção pelos testes desta entrega.

@@ -107,7 +107,13 @@ export default function Conexoes() {
                   <li key={c.id}>
                     <Cartao className="flex h-full flex-col gap-4">
                       <Cabeca p={c.outra} selo={<Selo tom="destaque">quer se conectar</Selo>} />
-                      <p className="line-clamp-4 text-texto">{c.outra.resumo ?? c.outra.de_onde_vem}</p>
+                      {c.mensagem && (
+                        <blockquote className="rounded-2xl bg-fundo p-4 ring-1 ring-linha">
+                          <p className="mb-1 font-titulo text-xs font-semibold lowercase text-destaque">mensagem dela</p>
+                          <p className="whitespace-pre-line break-words">{c.mensagem}</p>
+                        </blockquote>
+                      )}
+                      <p className="line-clamp-3 text-sm text-suave">{c.outra.resumo ?? c.outra.de_onde_vem}</p>
                       <Chips itens={c.outra.areas} rotulo="áreas de interesse" />
                       <p className="text-xs text-suave">pedido {tempoRelativo(c.created_at)}</p>
                       <div className="mt-auto flex flex-wrap gap-2">
@@ -180,6 +186,7 @@ export default function Conexoes() {
                       <div className="min-w-0 flex-1">
                         <p className="font-titulo font-semibold">{c.outra.apelido}</p>
                         <p className="text-xs text-suave">enviado {tempoRelativo(c.created_at)}</p>
+                        {c.mensagem && <p className="mt-1 line-clamp-2 text-sm text-suave">“{c.mensagem}”</p>}
                       </div>
                       <Selo tom="suave">aguardando</Selo>
                     </Cartao>

@@ -42,7 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await carregarDados(data.session)
       if (ativo) setCarregando(false)
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_evento, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((evento, s) => {
+      // link de "esqueci a senha" aberto: leva para criar a senha nova
+      if (evento === 'PASSWORD_RECOVERY') sessionStorage.setItem(CHAVE_NOVA_SENHA, '1')
       setSession(s)
       // fora do callback para não travar o cliente do Supabase
       setTimeout(() => carregarDados(s), 0)
@@ -68,3 +70,6 @@ export function useAuth() {
   if (!c) throw new Error('useAuth fora do AuthProvider')
   return c
 }
+
+// marca que a pessoa veio do "esqueci a senha" (some depois que ela cria a nova)
+export const CHAVE_NOVA_SENHA = 'aliadas-nova-senha'
