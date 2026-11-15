@@ -5,11 +5,12 @@ import { Aviso, Carregando } from '../components/Aviso'
 import { Botao } from '../components/Botao'
 import { CampoTexto } from '../components/Campo'
 import { Pagina, Titulo } from '../components/Pagina'
-import { useAuth } from '../lib/auth'
+import { CHAVE_NOVA_SENHA, useAuth } from '../lib/auth'
 import { emailSchema } from '../lib/esquemas'
 import { supabase } from '../lib/supabase'
 
-type Modo = 'codigo' | 'senha'
+type Modo = 'codigo' | 'senha' | 'recuperar'
+
 
 export default function Entrar() {
   const { session, perfil, curadora, carregando } = useAuth()
@@ -22,7 +23,11 @@ export default function Entrar() {
   const [ocupado, setOcupado] = useState(false)
 
   if (carregando) return <Carregando />
-  if (session) return <Navigate to={perfil ? '/minhas-aliadas' : curadora ? '/curadoria' : '/cadastro'} replace />
+  if (session) {
+    // veio do "esqueci a senha": vai direto criar a senha nova
+    if (sessionStorage.getItem(CHAVE_NOVA_SENHA)) return <Navigate to="/minha-conta" replace />
+    return <Navigate to={perfil ? '/minhas-aliadas' : curadora ? '/curadoria' : '/cadastro'} replace />
+  }
 
   function trocarModo(m: Modo) {
     setModo(m)
@@ -46,11 +51,13 @@ export default function Entrar() {
     if (!em) return
     setErro('')
     setOcupado(true)
-    // cria a conta no primeiro acesso; o e-mail traz o código e também um link
-    const { error } = await supabase.auth.signInWithOtp({
-      email: em,
-      options: { emailRedirectTo: `${window.location.origin}/entrar` },
-    })
+    // recuperar: usa o modelo "Reset Password"; entrar: cria a conta no primeiro acesso
+    const { error } = modo === 'recuperar'
+      ? await supabase.auth.resetPasswordForEmail(em, { redirectTo: `${window.location.origin}/entrar` })
+      : await supabase.auth.signInWithOtp({
+          email: em,
+          options: { emailRedirectTo: `${window.location.origin}/entrar` },
+        })
     setOcupado(false)
     if (error) {
       setErro(
@@ -69,9 +76,13 @@ export default function Entrar() {
     if (token.length < 6) return setErro('digite o código que chegou no seu e-mail')
     setErro('')
     setOcupado(true)
-    const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: 'email' })
+    if (modo === 'recuperar') sessionStorage.setItem(CHAVE_NOVA_SENHA, '1')
+    const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: modo === 'recuperar' ? 'recovery' : 'email' })
     setOcupado(false)
-    if (error) setErro('esse código não confere ou já expirou. confira ou peça um novo.')
+    if (error) {
+      sessionStorage.removeItem(CHAVE_NOVA_SENHA)
+      setErro('esse código não confere ou já expirou. confira ou peça um novo.')
+    }
   }
 
   async function entrarComSenha(e: FormEvent) {
@@ -108,12 +119,14 @@ export default function Entrar() {
 
   return (
     <Pagina titulo="entrar">
-      <Titulo sub="primeira vez aqui? entre com código: sua conta é criada na hora.">entrar</Titulo>
+      <Titulo sub={modo === 'recuperar' ? 'vamos te mandar um código para criar uma senha nova.' : 'primeira vez aqui? entre com código: sua conta é criada na hora.'}>
+        {modo === 'recuperar' ? 'esqueci a senha' : 'entrar'}
+      </Titulo>
 
-      <div role="tablist" aria-label="como entrar" className="mb-8 flex gap-1 rounded-full border-2 border-campo p-1">
+      {modo !== 'recuperar' && <div role="tablist" aria-label="como entrar" className="mb-8 flex gap-1 rounded-full border-2 border-campo p-1">
         {aba('codigo', 'com código')}
         {aba('senha', 'com senha')}
-      </div>
+      </div>}
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -123,7 +136,7 @@ export default function Entrar() {
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2 }}
         >
-          {modo === 'codigo' && !codigoEnviado && (
+          {(modo === 'codigo' || modo === 'recuperar') && !codigoEnviado && (
             <form onSubmit={enviarCodigo} noValidate className="space-y-6">
               <CampoTexto
                 rotulo="seu e-mail"
@@ -134,14 +147,19 @@ export default function Entrar() {
                 onChange={(e) => setEmail(e.target.value)}
                 erro={erro}
               />
-              <Botao type="submit" carregando={ocupado}>receber código</Botao>
+              <div className="flex flex-wrap items-center gap-3">
+                <Botao type="submit" carregando={ocupado}>receber código</Botao>
+                {modo === 'recuperar' && (
+                  <Botao type="button" variante="discreto" onClick={() => trocarModo('senha')}>voltar</Botao>
+                )}
+              </div>
             </form>
           )}
 
-          {modo === 'codigo' && codigoEnviado && (
+          {(modo === 'codigo' || modo === 'recuperar') && codigoEnviado && (
             <form onSubmit={confirmarCodigo} noValidate className="space-y-6">
               <Aviso tipo="ok">
-                enviamos um código para <strong>{email}</strong>. se não chegar em alguns minutos, olhe o spam.
+                enviamos um código {modo === 'recuperar' ? 'para criar uma senha nova ' : ''}para <strong>{email}</strong>. se não chegar em alguns minutos, olhe o spam.
               </Aviso>
               <CampoTexto
                 rotulo="código"
@@ -155,7 +173,7 @@ export default function Entrar() {
                 className="w-full rounded-xl border-2 border-campo bg-fundo px-4 py-3 text-center font-titulo text-2xl tracking-[0.4em] text-texto focus:border-destaque focus:outline-none"
               />
               <div className="flex flex-wrap items-center gap-3">
-                <Botao type="submit" carregando={ocupado}>entrar</Botao>
+                <Botao type="submit" carregando={ocupado}>{modo === 'recuperar' ? 'continuar' : 'entrar'}</Botao>
                 <Botao type="button" variante="discreto" disabled={ocupado} onClick={() => enviarCodigo()}>
                   enviar outro código
                 </Botao>
@@ -169,8 +187,11 @@ export default function Entrar() {
               <CampoTexto rotulo="senha" type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} erro={erro} />
               <div className="flex flex-wrap items-center gap-3">
                 <Botao type="submit" carregando={ocupado}>entrar</Botao>
+                <Botao type="button" variante="discreto" onClick={() => trocarModo('recuperar')}>
+                  esqueci a senha
+                </Botao>
                 <Botao type="button" variante="discreto" onClick={() => trocarModo('codigo')}>
-                  esqueci a senha / não tenho senha
+                  não tenho senha
                 </Botao>
               </div>
               <p className="text-sm text-suave">a senha é opcional: você pode criar uma em "minha conta" depois de entrar com código.</p>

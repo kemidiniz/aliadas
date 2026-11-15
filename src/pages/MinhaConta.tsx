@@ -8,6 +8,7 @@ import { Pagina, Titulo } from '../components/Pagina'
 import { useAuth } from '../lib/auth'
 import { emailSchema, errosPorCampo, LIMITES, linkedinSchema, perfilSchema, senhaSchema } from '../lib/esquemas'
 import { mensagemAmigavel } from '../lib/erros'
+import { CHAVE_NOVA_SENHA } from '../lib/auth'
 import { apagarFoto, enviarFoto, validarFoto } from '../lib/fotos'
 import { supabase } from '../lib/supabase'
 import { AREAS, ROTULO_FORMA, ROTULO_ONDE_ESTA, type FormaConexao, type OndeEsta, type Perfil } from '../lib/tipos'
@@ -28,6 +29,13 @@ export default function MinhaConta() {
   const [recomendavel, setRecomendavel] = useState(false)
   const [erros, setErros] = useState<Record<string, string>>({})
   const [msg, setMsg] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
+  // chegou pelo "esqueci a senha": mostra o campo de senha nova
+  const [criandoSenhaNova] = useState(() => Boolean(sessionStorage.getItem(CHAVE_NOVA_SENHA)))
+  useEffect(() => {
+    if (!criandoSenhaNova) return
+    const t = setTimeout(() => document.getElementById('senha')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400)
+    return () => clearTimeout(t)
+  }, [criandoSenhaNova])
   const [salvando, setSalvando] = useState(false)
   const [confirmacao, setConfirmacao] = useState('')
   const [excluindo, setExcluindo] = useState(false)
@@ -58,13 +66,16 @@ export default function MinhaConta() {
     }
     setSenha('')
     setSenha2('')
+    sessionStorage.removeItem(CHAVE_NOVA_SENHA)
     setMsg({ tipo: 'ok', texto: 'senha salva. agora você pode entrar com e-mail e senha, ou com código.' })
   }
 
   const blocoSenha = (
     <section aria-labelledby="senha" className="mt-14 border-t border-linha pt-8">
       <h2 id="senha" className="font-titulo text-2xl font-bold text-destaque">senha</h2>
-      <p className="mt-2 text-suave">opcional. com senha você entra direto; sem senha, entra com um código enviado ao seu e-mail.</p>
+      {criandoSenhaNova
+        ? <div className="mt-3"><Aviso tipo="ok">pronto, você entrou. agora é só criar sua senha nova aqui embaixo.</Aviso></div>
+        : <p className="mt-2 text-suave">opcional. com senha você entra direto; sem senha, entra com um código enviado ao seu e-mail.</p>}
       <form onSubmit={salvarSenha} noValidate className="mt-4 w-full space-y-4">
         <CampoTexto rotulo="nova senha" type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} ajuda="pelo menos 8 caracteres." />
         <CampoTexto rotulo="repita a senha" type="password" autoComplete="new-password" value={senha2} onChange={(e) => setSenha2(e.target.value)} erro={erroSenha} />

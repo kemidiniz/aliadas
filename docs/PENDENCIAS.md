@@ -47,6 +47,7 @@ No plano gratuito, o Supabase só deixa trocar o modelo depois de configurar SMT
 Link: https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/templates
 - [ ] **Confirm signup** → assunto `bem-vinda à aliadas · seu código` → colar todo o conteúdo de `supabase/templates/confirmar-cadastro.html`
 - [ ] **Magic Link** → assunto `seu código para entrar na aliadas` → colar todo o conteúdo de `supabase/templates/entrar.html`
+- [ ] **Reset Password** → assunto `crie uma senha nova na aliadas` → colar todo o conteúdo de `supabase/templates/recuperar-senha.html`
 - [ ] Salvar e testar entrando no site com um e-mail seu.
 
 ### 2.5 Supabase: segurança de senha

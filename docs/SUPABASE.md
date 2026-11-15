@@ -58,6 +58,7 @@ Sem a CLI: **SQL Editor → New query**, cole cada arquivo de `supabase/migratio
 3. **Authentication → Emails:** o login usa código por e-mail e link alternativo. Os modelos HTML com a identidade visual estão em `supabase/templates/`:
    - **Confirm signup** (primeiro acesso) → `confirmar-cadastro.html`, assunto `bem-vinda à aliadas · seu código`
    - **Magic Link** (entrar de novo) → `entrar.html`, assunto `seu código para entrar na aliadas`
+   - **Reset Password** (esqueci a senha) → `recuperar-senha.html`, assunto `crie uma senha nova na aliadas`
    Preserve `{{ .Token }}` e `{{ .ConfirmationURL }}`.
 4. **Limitação verificada:** a API recusou a personalização com `entitlement_required`: projetos gratuitos com o provedor padrão precisam configurar SMTP próprio ou mudar de plano para alterar os modelos. O HTML está preparado no repositório, mas ainda não foi aplicado no Supabase.
 5. Em **Authentication → Emails → SMTP Settings**, configure um provedor com domínio verificado (por exemplo, Resend ou Brevo) usando os campos seguros do painel. Depois aplique os dois modelos e teste o recebimento em uma conta autorizada. Não coloque credenciais SMTP no repositório.
