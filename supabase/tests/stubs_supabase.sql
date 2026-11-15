@@ -35,3 +35,10 @@ create schema net;
 create table net.chamadas (url text, body jsonb);
 create function net.http_post(url text, headers jsonb, body jsonb, timeout_milliseconds int)
 returns bigint language sql as $$ insert into net.chamadas values (url, body) returning 1::bigint $$;
+create schema extensions;
+create extension pgcrypto schema extensions;
+create table vault.secrets (name text, secret text);
+create function vault.create_secret(valor text, nome text) returns uuid language sql as $$
+  insert into vault.secrets values (nome, valor);
+  insert into vault.decrypted_secrets values (nome, valor);
+  select gen_random_uuid() $$;

@@ -77,7 +77,26 @@ const admin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   { auth: { persistSession: false } },
 );
-const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY") });
+// criado só na hora: sem a chave configurada, a função responde com
+// mensagem amigável em vez de quebrar na inicialização
+let anthropic: Anthropic | null = null;
+function clienteIA(): Anthropic {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY não configurada");
+  return (anthropic ??= new Anthropic({ apiKey }));
+}
+
+// O segredo do gatilho fica no Vault do banco (migration 005).
+// RECOMENDAR_WEBHOOK_SECRET, se existir, tem prioridade.
+let segredoCache: string | undefined;
+async function segredoDoGatilho(): Promise<string | undefined> {
+  const env = Deno.env.get("RECOMENDAR_WEBHOOK_SECRET");
+  if (env) return env;
+  if (segredoCache) return segredoCache;
+  const { data } = await admin.rpc("segredo_webhook_recomendar");
+  segredoCache = typeof data === "string" && data.length > 0 ? data : undefined;
+  return segredoCache;
+}
 
 const ONDE_ESTA: Record<string, string> = {
   estudando: "estudando",
@@ -129,7 +148,7 @@ Deno.serve(async (req) => {
   const corpo = Corpo.safeParse(await req.json().catch(() => ({})));
   if (!corpo.success) return json({ erro: "pedido inválido" }, 400);
 
-  if (segredoConfere(req.headers.get("x-aliadas-secret"), Deno.env.get("RECOMENDAR_WEBHOOK_SECRET"))) {
+  if (segredoConfere(req.headers.get("x-aliadas-secret"), await segredoDoGatilho())) {
     if (!corpo.data.profile_id) return json({ erro: "profile_id obrigatório" }, 400);
     profileId = corpo.data.profile_id;
     origem = "aprovacao";
@@ -227,7 +246,7 @@ Deno.serve(async (req) => {
   // ---------- chamada à IA: 1 tentativa + 1 nova tentativa se vier inválido
   for (let tentativa = 1; tentativa <= 2 && !saida; tentativa++) {
     try {
-      const resp = await anthropic.messages.parse({
+      const resp = await clienteIA().messages.parse({
         model: MODELO,
         max_tokens: 2000,
         system: SYSTEM,

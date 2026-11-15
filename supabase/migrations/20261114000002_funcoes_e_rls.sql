@@ -423,4 +423,5 @@ grant execute on function public.pedir_conexao(uuid)              to authenticat
 grant execute on function public.responder_conexao(uuid, boolean) to authenticated;
 grant execute on function public.minhas_geracoes_hoje()           to authenticated;
 grant execute on function public.aprovar_indicacao(uuid, text, text, text, text) to authenticated;
--- funções de gatilho rodam sozinhas; não precisam de grant
+-- a service role (Edge Functions) dispara gatilhos que usam estas funções
+grant execute on all functions in schema public to service_role;

@@ -23,8 +23,8 @@ begin
   end;
   raise exception 'FALHOU (deveria bloquear): %', descricao;
 end $$;
-grant usage on schema tst to anon, authenticated;
-grant execute on all functions in schema tst to anon, authenticated;
+grant usage on schema tst to anon, authenticated, service_role;
+grant execute on all functions in schema tst to anon, authenticated, service_role;
 
 -- pessoas de teste
 \set ana   '''aaaaaaaa-0000-0000-0000-000000000001'''
@@ -44,7 +44,7 @@ insert into public.consents values (:bia, true, true, true, true, true), (:cris,
 insert into public.contacts (profile_id, email, linkedin_url) values
   (:bia, 'bia@exemplo.invalid', 'https://www.linkedin.com/in/bia'),
   (:cris, 'cris@exemplo.invalid', null);
-insert into vault.decrypted_secrets values ('recomendar_url', 'https://x/functions/v1/recomendar'), ('recomendar_webhook_secret', 's3gr3d0');
+-- segredos do vault: criados pela migration 005
 
 -- ---------------------------------------------------------------- anon
 \echo '--- visitante (anon)'
@@ -112,6 +112,8 @@ select tst.ok((select count(*) from net.chamadas where body->>'profile_id' = :an
 -- a Edge Function (service role) grava a recomendação
 set role service_role;
 insert into public.recommendations (para_profile_id, aliada_profile_id, motivo) values (:ana, :bia, 'as duas vieram de outra área');
+update public.profiles set resumo = 'resumo da ia' where id = :ana;
+select tst.ok((select resumo from public.profiles where id = :ana) = 'resumo da ia', 'Edge Function (service role) grava o resumo no perfil');
 reset role;
 
 -- ----------------------------------------------------- aliadas e conexão
