@@ -341,7 +341,7 @@ export default function Forum() {
 
   return (
     <Pagina titulo="fórum" largura="max-w-3xl">
-      <Titulo sub="dúvidas, conquistas, dicas e desabafos. só mulheres aprovadas veem o que você escreve aqui.">fórum</Titulo>
+      <Titulo sub={<>dúvidas, conquistas, dicas e desabafos.<span role="note" className="mt-2 block text-sm">só mulheres aprovadas veem o que você escreve aqui.</span></>}>fórum</Titulo>
 
       {perfil && (
         <form onSubmit={publicar} className="mb-10">
@@ -393,7 +393,7 @@ export default function Forum() {
       {!posts ? (
         <Carregando />
       ) : posts.length === 0 ? (
-        <Vazio titulo="o fórum está esperando o primeiro post">que tal contar como foi a sua semana de estudos?</Vazio>
+        <Vazio titulo="o fórum está esperando o primeiro post">que tal contar uma nova descoberta dessa semana?</Vazio>
       ) : (
         <ul className="space-y-5">
           {posts.map((p) => (

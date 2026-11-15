@@ -8,7 +8,7 @@ export function Rodape() {
         <Logo tamanho="text-xl" />
         <nav aria-label="rodapé">
           <ul className="flex flex-wrap gap-x-5 gap-y-2 font-titulo text-sm font-semibold lowercase">
-            <li><Link className="text-destaque underline underline-offset-4" to="/feedback">feedback e sugestões</Link></li>
+            <li><Link className="text-destaque underline underline-offset-4" to="/feedback">feedback</Link></li>
             <li><Link className="text-texto hover:text-destaque" to="/termo-de-conduta">termo de conduta</Link></li>
             <li><Link className="text-texto hover:text-destaque" to="/privacidade">privacidade</Link></li>
           </ul>

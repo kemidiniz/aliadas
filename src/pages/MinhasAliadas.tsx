@@ -111,7 +111,7 @@ export default function MinhasAliadas() {
 
   return (
     <Pagina titulo="minhas aliadas" largura="max-w-5xl">
-      <Titulo sub="mulheres com um caminho parecido com o seu, alguns passos à frente.">minhas aliadas</Titulo>
+      <Titulo sub="conheça mulheres com experiências que se conectam à sua trajetória.">minhas aliadas</Titulo>
 
       {msg && <div className="mb-6"><Aviso tipo={msg.tipo}>{msg.texto}</Aviso></div>}
 

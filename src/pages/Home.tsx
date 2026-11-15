@@ -6,7 +6,7 @@ import { useAuth } from '../lib/auth'
 
 const PASSOS = [
   { n: '1', titulo: 'você conta sua trajetória', texto: 'de onde vem, onde está e aonde quer chegar. leva uns 5 minutos.' },
-  { n: '2', titulo: 'a gente apresenta suas aliadas', texto: 'mulheres com um caminho parecido, alguns passos à frente.' },
+  { n: '2', titulo: 'a gente apresenta suas aliadas', texto: 'conheça mulheres com experiências que se conectam à sua trajetória.' },
   { n: '3', titulo: 'vocês decidem se conectar', texto: 'o contato só aparece quando as duas aceitam.' },
 ]
 
