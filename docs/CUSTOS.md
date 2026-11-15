@@ -49,4 +49,4 @@ A titular confirmou que o projeto Google da chave não tem faturamento habilitad
 
 O frontend consulta o estado de um job no máximo oito vezes por ciclo, durante aproximadamente 30 segundos. Pausa se a página estiver oculta e exige atualização explícita depois do limite. No cenário hipotético de 200 solicitações/mês, são até 1.600 consultas de estado por ciclo automático, além de leituras normais; isso não é consumo medido. São operações de banco, não 1.600 gerações de IA.
 
-A função preparada passa a registrar tokens de raciocínio junto aos tokens de saída quando o provedor os informar. Isso ainda não foi implantado nem medido. A fonte Inter é servida pelo próprio site, sem API de fontes, serviço ou cobrança adicional.
+A função preparada passa a registrar tokens de raciocínio junto aos tokens de saída quando o provedor os informar. A função foi atualizada após autorização, mas esse consumo ainda não foi medido em uma geração real. A fonte Inter é servida pelo próprio site, sem API de fontes, serviço ou cobrança adicional.

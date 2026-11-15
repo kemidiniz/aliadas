@@ -2,7 +2,7 @@
 
 ## situação honesta da entrega
 
-A versão MVP anterior está publicada. Esta finalização visual, administrativa e de processamento foi preparada **somente localmente**, sem novo deploy nem alteração de permissões em produção. Prazo informado: **18/11/2026 às 12h, horário de Brasília**.
+A versão MVP anterior está publicada. Esta finalização foi preparada e testada localmente e, depois, a titular autorizou expressamente o deploy completo e a migration 015 com sua conta principal. O backend administrativo foi aplicado e auditado; nenhuma outra conta foi promovida. Prazo informado: **18/11/2026 às 12h, horário de Brasília**.
 
 Diagnóstico atual, somente de leitura: os secrets `GEMINI_API_KEY`, `GEMINI_MODEL` e `GEMINI_FREE_TIER_CONFIRMED` existem; o modelo foi identificado como `gemini-2.5-flash-lite` por comparação de metadados, sem revelar a chave. A confirmação gratuita está verdadeira e a titular confirmou que o projeto Google não tem faturamento habilitado. Isso não comprova uma resposta válida do Gemini nem as cotas atuais.
 
@@ -90,11 +90,11 @@ Até 1 min: problema e público com evidências coletadas. Até 2 min: demonstra
 |---|---|---|---|---|
 | Landing institucional e duas fontes | Sim, local | Conteúdo, links, contexto histórico e oito combinações de largura/tema testadas; fontes fornecidas pela titular | Verificação independente do conteúdo das páginas (rede bloqueou acesso), aprovação de publicação | Revisar prévias e autorizar deploy |
 | Perfil e jornada profissional | Sim | Build, testes SQL e navegador com API simulada | Duas contas reais completarem perfil/consentimentos e percorrerem produção | Completar Meu perfil nas contas autorizadas |
-| Banco e proteção dos dados | Sim | Backend anterior aplicado; 207 verificações locais; diagnóstico atual de esquema/contagens | Dataset profissional real e novo controle de papéis em produção | Autorizar migration 015 e bootstrap separado após revisão |
+| Banco e proteção dos dados | Sim | Backend anterior aplicado; 207 verificações locais; diagnóstico atual de esquema/contagens | Dataset profissional real | Completar perfis e consentimentos com participantes reais |
 | IA generativa real | Integração implementada | Secrets presentes e modelo identificado; validação de payload/JSON local | Resposta REAL do Gemini, cota atual e tokens reais; não há jobs | Usar duas contas reais consentindo, registrar solicitação e verificar worker |
 | Automação por gatilho | Sim | Trigger/claim/idempotência provados com stub local; pg_net e função existentes | Três execuções reais distintas com evidências | Registrar três solicitações elegíveis e coletar logs higienizados |
 | Revisão humana do convite | Sim | Teste confirma ausência de envio automático e preservação de mensagem editada durante polling | Demonstração por participantes reais | Revisar e enviar convite real, sem texto confidencial |
-| Administração e embaixadoras | Sim, local | Principal, permissões por atribuição, concessão/revogação e auditoria testadas; UUID da titular confirmado | Aplicação de papéis e teste remoto autorizado | Aprovar migration e bootstrap; só então a principal poderá delegar |
+| Administração e embaixadoras | Sim, backend aplicado | Permissões e auditoria testadas localmente; conta principal registrada e verificada no banco | Conferência visual autenticada da seção em produção; nenhuma embaixadora foi criada | A principal poderá delegar somente após conferir cada conta |
 | Entrevistas e validação da dor | Instrumentos preparados | Estudos históricos contextualizam desigualdade de redes; não comprovam necessidade do Aliadas | Entrevistas reais autorizadas | Coletar respostas sem informações pessoais/confidenciais |
 | Linha de base e benefício mensurável | Definidos, não medidos | Baseline técnica: três itens e perfil em uma página | Tempo até indicação, clareza e utilidade com pessoas reais | Registrar tempos, obstáculos e comparações usando a mesma metodologia |
 | 20 casos reais | Planilha vazia preparada | Nenhum caso apresentado como real | Coletar e higienizar 20 casos autorizados | Preencher casos-validacao.csv sem contatos ou nomes |
@@ -138,4 +138,4 @@ Os textos de 27% (Brasil, LinkedIn, 11/03/2020) e 97% (economias, WEF 2024) e se
 
 ## Aprovação necessária
 
-Nenhuma migration de papéis desta finalização foi aplicada à produção, e nenhum deploy foi feito. Após revisão, serão necessárias aprovação expressa para `20261116000015_administracao_e_estado.sql` e para `supabase/admin/bootstrap-principal.sql`, além de aprovação da publicação do frontend e da atualização da Edge Function. A nova interface administrativa e a consulta de estado do job dependem dessa migration. Não publicar o frontend isoladamente antes do backend correspondente.
+A titular posteriormente aprovou expressamente o deploy completo. Foram aplicados em produção `20261116000015_administracao_e_estado.sql` e para `supabase/admin/bootstrap-principal.sql`, e a Edge Function foi atualizada; o frontend é a revisão autorizada para publicação. A nova interface administrativa e a consulta de estado do job dependem dessa migration. Não publicar o frontend isoladamente antes do backend correspondente.

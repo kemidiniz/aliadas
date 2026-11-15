@@ -54,3 +54,7 @@ Testes SQL locais cobrem tentativa de promoção por roles/JSON de usuário, boo
 ## Limites desta auditoria
 
 É uma revisão de definições/privilégios e testes de autorização da aplicação, não uma certificação de segurança. O worker ainda não gerou conteúdo real. A migration administrativa e a correção do helper de bloqueio continuam pendentes de autorização de produção; os privilégios em produção permanecem os anteriores.
+
+## Atualização após autorização expressa
+
+A migration 015 e o bootstrap foram autorizados posteriormente e aplicados em produção. A conta principal foi verificada no banco em contexto autenticado; possui revisão de perfis e denúncias, sem depender do fallback legado. A tabela de embaixadoras está vazia, e nenhuma outra conta foi promovida. O histórico anterior deste relatório descreve o diagnóstico antes da aplicação.

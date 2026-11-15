@@ -127,4 +127,4 @@ Embaixadoras não recebem is_curadora=true: esse helper está ligado a capacidad
 
 A identidade principal é protegida contra exclusão acidental por FK RESTRICT. A eventual exclusão/transferência da conta principal exige procedimento administrativo verificado, não o botão comum de embaixadoras; participantes comuns continuam com exclusão de conta preservada.
 
-`mvp_job_status` retorna apenas estado, modo e código seguro da solicitação da própria pessoa. Não libera logs ou ids de terceiros. O helper mvp_blocked também foi limitado para não informar bloqueios entre outras pessoas. A migration e o bootstrap não foram aplicados em produção nesta finalização.
+`mvp_job_status` retorna apenas estado, modo e código seguro da solicitação da própria pessoa. Não libera logs ou ids de terceiros. O helper mvp_blocked também foi limitado para não informar bloqueios entre outras pessoas. Após a revisão local, a titular autorizou expressamente a migration e o bootstrap; ambos foram aplicados e auditados, sem promover outras contas.
