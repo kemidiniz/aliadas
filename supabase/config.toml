@@ -8,3 +8,7 @@ verify_jwt = false
 
 [functions.excluir-conta]
 verify_jwt = false
+
+[functions.conversa-ia]
+# Chamada interna pelo gatilho; autenticação por segredo no Vault, nunca no navegador.
+verify_jwt = false

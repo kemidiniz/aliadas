@@ -6,15 +6,12 @@ import { Rodape } from './components/Rodape'
 import { Protegida } from './components/Protegida'
 import { Aviso, Carregando } from './components/Aviso'
 import { supabaseConfigurado } from './lib/supabase'
-import Home from './pages/Home'
+import Home from './pages/InicioProfissional'
 import Entrar from './pages/Entrar'
-const Cadastro = lazy(() => import('./pages/Cadastro'))
-const MinhasAliadas = lazy(() => import('./pages/MinhasAliadas'))
-const Conexoes = lazy(() => import('./pages/Conexoes'))
-const MinhaConta = lazy(() => import('./pages/MinhaConta'))
+const Cadastro = lazy(() => import('./pages/PerfilProfissional'))
+const Conversas = lazy(() => import('./pages/ConversasProfissionais'))
 const Curadoria = lazy(() => import('./pages/Curadoria'))
 const FeedbackPagina = lazy(() => import('./pages/Feedback'))
-const Forum = lazy(() => import('./pages/Forum'))
 const TermoDeConduta = lazy(() => import('./pages/Textos').then((m) => ({ default: m.TermoDeConduta })))
 const Privacidade = lazy(() => import('./pages/Textos').then((m) => ({ default: m.Privacidade })))
 import NaoEncontrada from './pages/NaoEncontrada'
@@ -42,10 +39,12 @@ export function App() {
             <Route path="/" element={<Home />} />
             <Route path="/entrar" element={<Entrar />} />
             <Route path="/cadastro" element={<Protegida precisaPerfil={false}><Cadastro /></Protegida>} />
-            <Route path="/minhas-aliadas" element={<Protegida><MinhasAliadas /></Protegida>} />
-            <Route path="/forum" element={<Protegida><Forum /></Protegida>} />
-            <Route path="/conexoes" element={<Protegida><Conexoes /></Protegida>} />
-            <Route path="/minha-conta" element={<Protegida precisaPerfil={false}><MinhaConta /></Protegida>} />
+            <Route path="/minhas-aliadas" element={<Navigate to="/" replace />} />
+            <Route path="/forum" element={<Navigate to="/" replace />} />
+            <Route path="/conexoes" element={<Navigate to="/minhas-conversas" replace />} />
+            <Route path="/minhas-conversas" element={<Protegida><Conversas /></Protegida>} />
+            <Route path="/minha-conta" element={<Navigate to="/meu-perfil" replace />} />
+            <Route path="/meu-perfil" element={<Protegida precisaPerfil={false}><Cadastro /></Protegida>} />
             <Route path="/curadoria" element={<Protegida apenasCuradora><Curadoria /></Protegida>} />
             <Route path="/recomendacoes" element={<Navigate to="/" replace />} />
             <Route path="/feedback" element={<FeedbackPagina />} />

@@ -22,7 +22,7 @@ export default function Entrar() {
   const [ocupado, setOcupado] = useState(false)
 
   if (carregando) return <Carregando />
-  if (session) return <Navigate to={perfil ? '/minhas-aliadas' : curadora ? '/curadoria' : '/cadastro'} replace />
+  if (session) return <Navigate to={perfil ? '/' : curadora ? '/curadoria' : '/meu-perfil'} replace />
 
   function trocarModo(m: Modo) {
     setModo(m)

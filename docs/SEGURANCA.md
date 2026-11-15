@@ -67,3 +67,38 @@ PGHOST=... PGPORT=... PGUSER=postgres npm run test:rls
 A migration `20261115000010_feedback_sem_mais_dificil.sql` retira a exigência de `mais_dificil` nas avaliações. Nota e resposta sobre encontrar aliadas continuam obrigatórias. Respostas antigas são preservadas. As políticas de RLS e permissões por coluna permanecem iguais: visitantes enviam feedback, apenas curadoras leem e respondem, e campos de IA continuam reservados à automação.
 
 A migration `20261115000011_remover_coluna_mais_dificil.sql` remove a coluna e suas respostas antigas a pedido da responsável pelo projeto. Não altera RLS nem as permissões dos campos restantes.
+
+# MVP profissional: regras novas (prevalecem na jornada nova)
+
+Migrations aditivas 012/013. O histórico acima descreve tabelas legadas, não deve orientar o compartilhamento no MVP novo.
+
+| recurso | leitura | escrita/regra |
+|---|---|---|
+| professional_profiles | somente dona diretamente | RPC `mvp_save_profile` exige Auth, termos, campos limitados e categorias; não autoaprova nem altera papéis. Não sobrescreve a trajetória histórica ao editar perfil novo |
+| professional_contacts | somente dona diretamente; nem curadoria recebe novos contatos | canais opcionais; nunca copia auth.users.email ou contacts antigo. RPC devolve somente campos preenchidos E autorizados, após aceite mútuo e sem bloqueio |
+| conversation_requests | dona ou curadoria | RPC exige perfil aprovado, disponível e intenção autorizada; bloqueia quarta solicitação/24h com lock por usuária. Candidata escolhida no servidor, não pelo cliente |
+| conversation_invites | participantes não bloqueadas ou curadoria | RPC de convite exige pedido da dona, candidata elegível e mensagem revisada; só destinatária aceita uma vez. Índice impede duas conexões ativas para o mesmo par |
+| conversation_feedback | autora e curadoria | RPC exige participação e aceite. Não pode avaliar por outra pessoa. Respostas independentes. Nota 1–5 apenas quando ocorreu; resposta negativa não aceita nota nem resultado positivo |
+| conversation_blocks | dona | dona insere somente em seu nome. Bloqueio simétrico para elegibilidade, aceite e contatos. Não remove contatos já copiados por outra pessoa |
+| conversation_jobs | curadoria; service_role processa | participante não cria/finaliza/forja logs ou modo de IA. Claim com lock e estado, máximo 30 por 24h globalmente. Apenas códigos de erro, modelo e contagem de tokens; sem prompts/respostas brutas |
+
+Todas as tabelas novas têm RLS. Grants de escrita direta são revogados; apenas campos do bloqueio podem ser inseridos pela dona. Funções SECURITY DEFINER têm search_path vazio, verificam auth.uid e são revogadas de PUBLIC/anon. RPCs do worker e segredo só service_role. A chave desse papel não chega ao navegador. Conhecer UUID de uma pessoa/pedido/convite não dá acesso aos contatos. A suite testa o acesso antes/depois do aceite, por terceiros e após bloqueio.
+
+O cartão profissional é uma projeção mínima via RPC: nome de apresentação, ocupação, áreas e momento, somente para participantes de sugestão/convite. Não abre leitura de todos os perfis antigos. Textos livres de perfil/pedido e contatos nunca chegam à Gemini; o payload é reconstruído com allowlists de categorias. Instruções fora dessas categorias são rejeitadas antes da chamada. Saída JSON tem limites de comprimento, exatamente duas perguntas e filtros de links/contatos. Isso reduz, mas não elimina, conteúdo inadequado ou alucinação: revisão humana é obrigatória antes de convidar. O filtro não substitui consentimento nem avaliação jurídica.
+
+O consentimento externo é opcional, desmarcado por padrão e informado sobre possível uso dos dados no plano gratuito para melhorar modelos. A versão `mvp-profissional-v1` e timestamp ficam no perfil. Ambas devem consentir; retirar consentimento entre claim e finalização impede publicar o resultado. Sem consentimento, nenhum job novo é criado. A revogação não recupera dados já enviados ao provedor. Antes da ativação, confirmar termos atuais, LGPD, país e condições de retenção.
+
+Tabelas e endpoints legados não são apagados. Os gatilhos pagos/de Make são desativados pela nova migration, e o código de `recomendar` passa a retornar 410. Isso não foi implantado em produção nesta entrega: enquanto migrations e função não forem ativadas após autorização, o remoto continua com o comportamento anterior. Considere bloquear o endpoint legado no procedimento de lançamento, sem alegar que já foi bloqueado.
+
+A exclusão de conta existente apaga Auth/fotos e as novas tabelas em cascata. Jobs são apagados com solicitações, não preservam vínculo pessoal após exclusão. Relatórios do projeto final devem ser agregados e higienizados antes de guardar evidência. Contatos legados históricos permanecem sob suas políticas antigas, sem importação ou liberação automática na nova interface.
+
+## riscos residuais e verificações de ativação
+
+- Sem Gemini/key/termos verificáveis, não ativar IA; não declarar validação real. Cada chamada externa precisa de projeto sem cobrança, modelo gratuito confirmado e consentimentos.
+- Sem CAPTCHA novo; limites por usuária não impedem criação de múltiplas contas. Manter aprovação pela curadoria e observar quotas.
+- Falha de transporte pg_net pode deixar trabalho pendente ou executando; a curadoria acompanha status, fila HTTP e timestamps. Não há reprocessamento automático ilimitado.
+- Não há armazenamento de conversa. Mensagem inicial de convite é armazenada no banco para revisão/auditoria e só participantes/curadoria leem. Nunca vai à Gemini.
+- Texto de ocupação e nome é preenchido pela usuária, mostrado à participante autorizada e renderizado como texto React, sem HTML arbitrário. Orientar a não incluir dados confidenciais.
+- Não são coletadas senhas de aplicativos externos. Links são validados pelo banco (HTTPS/host para LinkedIn e Meet, telefone E.164 e e-mail limitado). Consentir um canal sem preenchê-lo não o libera.
+
+Compartilhamento prematuro por texto: nomes/ocupações novos e mensagens de convite rejeitam padrões de e-mail, links e telefone. Cartões higienizam nomes legados que contenham esses padrões. O filtro não detecta toda forma deliberadamente ofuscada de contato; os termos proíbem essa tentativa e a curadoria trata denúncias.

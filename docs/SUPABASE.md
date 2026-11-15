@@ -1,3 +1,5 @@
+> **Guia histórico.** A jornada profissional nova usa migrations 012/013 e `conversa-ia`, descritas em `MVP.md`. Não executar `db push`, publicar funções ou ativar o fluxo Anthropic/Make sem revisão e autorização.
+
 # guia do supabase (passo a passo)
 
 > Regra de ouro: **nenhuma chave entra no código, em print ou no git.** A única chave que vai para o frontend é a *anon/publishable* (ela é pública por natureza; quem protege os dados é o RLS).

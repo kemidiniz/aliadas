@@ -1,7 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { useAuth } from '../lib/auth'
 import { useTema } from '../lib/tema'
 import { Logo } from './Logo'
 
@@ -29,7 +28,6 @@ function BotaoTema() {
 }
 
 export function Cabecalho() {
-  const { session, perfil, curadora } = useAuth()
   const [aberto, setAberto] = useState(false)
   const local = useLocation()
   const reduzir = useReducedMotion()
@@ -38,18 +36,11 @@ export function Cabecalho() {
     setAberto(false)
   }, [local.pathname])
 
-  const links: { to: string; rotulo: string }[] = session
-    ? [
-        ...(perfil ? [] : [{ to: '/cadastro', rotulo: 'meu cadastro' }]),
-        { to: '/minhas-aliadas', rotulo: 'minhas aliadas' },
-        { to: '/forum', rotulo: 'fórum' },
-        { to: '/conexoes', rotulo: 'conexões' },
-        { to: '/minha-conta', rotulo: 'minha conta' },
-        ...(curadora ? [{ to: '/curadoria', rotulo: 'curadoria' }] : []),
-      ]
-    : [
-        { to: '/entrar', rotulo: 'entrar' },
-      ]
+  const links = [
+    { to: '/', rotulo: 'início' },
+    { to: '/minhas-conversas', rotulo: 'minhas conversas' },
+    { to: '/meu-perfil', rotulo: 'meu perfil' },
+  ]
 
   const classeLink = ({ isActive }: { isActive: boolean }) =>
     `block rounded-full px-3 py-2 font-titulo font-semibold lowercase ${
@@ -67,7 +58,7 @@ export function Cabecalho() {
           <ul className="flex items-center gap-1">
             {links.map((l) => (
               <li key={l.to}>
-                <NavLink to={l.to} className={classeLink}>
+                <NavLink to={l.to} end className={classeLink}>
                   {l.rotulo}
                 </NavLink>
               </li>
@@ -101,7 +92,7 @@ export function Cabecalho() {
             <ul className="space-y-1 px-5 py-4 text-lg">
               {links.map((l) => (
                 <li key={l.to}>
-                  <NavLink to={l.to} className={classeLink}>
+                  <NavLink to={l.to} end className={classeLink}>
                     {l.rotulo}
                   </NavLink>
                 </li>

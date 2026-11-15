@@ -6,12 +6,14 @@ import { Botao } from '../components/Botao'
 import { CampoArea } from '../components/Campo'
 import { Pagina, Titulo } from '../components/Pagina'
 import { useAuth } from '../lib/auth'
+import IndicadoresMvp from './IndicadoresMvp'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
 import { formasTexto, ROTULO_ONDE_ESTA, type Consentimento, type Contato, type Feedback, type Perfil } from '../lib/tipos'
 
-type Aba = 'perfis' | 'feedback' | 'ia' | 'denuncias'
+type Aba = 'indicadores' | 'perfis' | 'feedback' | 'ia' | 'denuncias'
 const ABAS: { id: Aba; rotulo: string }[] = [
+  { id: 'indicadores', rotulo: 'indicadores' },
   { id: 'perfis', rotulo: 'perfis' },
   { id: 'feedback', rotulo: 'feedback' },
   { id: 'ia', rotulo: 'saídas da ia' },
@@ -52,6 +54,7 @@ export default function Curadoria() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
+          {aba === 'indicadores' && <IndicadoresMvp />}
           {aba === 'perfis' && <Perfis />}
           {aba === 'feedback' && <FeedbackAba />}
           {aba === 'ia' && <SaidasIA />}
@@ -157,7 +160,7 @@ function Perfis() {
                 {p.status !== 'reprovado' && <Botao variante="secundario" onClick={() => mudarStatus(p.id, 'reprovado')}>reprovar</Botao>}
                 {p.status === 'aprovado' && <Botao variante="discreto" onClick={() => mudarStatus(p.id, 'pausado')}>pausar</Botao>}
               </div>}
-              {p.status === 'pendente' && <p className="mt-2 text-sm text-suave">ao aprovar, a ia busca as aliadas dela automaticamente.</p>}
+              {p.status === 'pendente' && <p className="mt-2 text-sm text-suave">ao aprovar, a participante pode registrar uma solicitação de conversa.</p>}
             </li>
           ))}
         </ul>

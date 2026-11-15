@@ -112,7 +112,7 @@ update public.feedback set status = 'em_analise';
 select tst.ok((select status from public.feedback limit 1) = 'em_analise', 'curadora muda status do feedback');
 select tst.bloqueia($$update public.feedback set categoria_ia = 'x'$$, 'curadora não sobrescreve campos _ia da automação (exceto rascunho)');
 reset role;
-select tst.ok((select count(*) from net.chamadas where body->>'profile_id' = :ana) = 1, 'aprovação disparou a Edge Function recomendar (1 chamada)');
+select tst.ok((select count(*) from net.chamadas where body->>'profile_id' = :ana) = 0, 'aprovação não chama mais a IA paga do fluxo antigo');
 
 -- a Edge Function (service role) grava a recomendação
 set role service_role;
@@ -176,7 +176,7 @@ update public.profiles set status = 'pausado' where id = auth.uid();
 update public.profiles set status = 'aprovado' where id = auth.uid();
 select tst.ok((select status from public.profiles where id = auth.uid()) = 'aprovado', 'ana (já aprovada) pausa e volta');
 reset role;
-select tst.ok((select count(*) from net.chamadas) = 1, 'despausar NÃO gasta nova geração da IA');
+select tst.ok((select count(*) from net.chamadas) = 0, 'despausar NÃO gasta nova geração da IA');
 set role authenticated; select set_config('request.jwt.claim.sub', :ana, false);
 insert into public.reports (denunciante_id, denunciado_id, motivo) values (auth.uid(), :bia, 'teste de denúncia');
 select tst.ok(true, 'ana denuncia um perfil que ela vê');
@@ -284,4 +284,5 @@ select tst.ok(not exists (select 1 from public.forum_posts where autora_id = :an
 select tst.ok((select output_json->>'removido' from public.ai_runs where funcao = 'recomendar' limit 1) = 'conta excluída', 'registro da IA anonimizado');
 
 \echo ''
+\ir mvp_test.sql
 \echo 'TODOS OS TESTES DE RLS PASSARAM'

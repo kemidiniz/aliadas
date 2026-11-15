@@ -1,3 +1,5 @@
+> **Histórico de configuração anterior.** Para o MVP profissional, siga `MVP.md`, `CUSTOS.md` e `VALIDACAO.md`. Não ative Anthropic paga, Make, fórum ou catálogo por instruções antigas deste arquivo. Nada aqui autoriza deploy ou alteração remota.
+
 # aliadas · o que falta configurar
 
 > Documento para mim (Kemily) e para qualquer assistente de código (Codex, Claude, Cursor) que for continuar o projeto.

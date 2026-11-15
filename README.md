@@ -1,47 +1,41 @@
 # aliadas
 
-Comunidade online onde mulheres que estão começando em tecnologia contam a própria trajetória, e a IA apresenta **aliadas**: referências próximas, com caminho parecido, alguns passos à frente.
+MVP de conexões profissionais entre mulheres universitárias e profissionais de qualquer área, incluindo mulheres cis e trans e pessoas não binárias. Não é rede social, terapia nem mentoria formal.
 
-> o linkedin mostra mulheres famosas; a aliadas apresenta a mulher que estava onde você está há um ano.
+## jornada
 
-Projeto final do curso de IA Aplicada da {reprograma}.
+**início → perfil em uma página → objetivo → uma sugestão → convite revisado pela usuária → aceite mútuo → canal externo → confirmação e utilidade.**
 
-## stack
-React + Vite + TypeScript · Tailwind CSS · Framer Motion · React Router · Zod · Supabase (Auth, Postgres com RLS, Storage, Edge Functions) · API da Anthropic (Claude), chamada **só** dentro de Edge Functions.
+Menu principal: início, minhas conversas, meu perfil. A curadoria fica no rodapé, em área administrativa protegida. Fórum e catálogo saíram da navegação; tabelas e migrations históricas continuam preservadas.
 
-## rodar localmente
+React + Vite + TypeScript + Tailwind + Supabase. Compatibilidade básica determinística e opcionalmente Gemini em Edge Function, com consentimento e sem texto livre ou dados pessoais.
 
-```bash
-npm install
-```
+## desenvolvimento local
 
 ```bash
-cp .env.example .env.local
-```
-
-Preencha o `.env.local` com a URL e a anon key do Supabase e rode:
-
-```bash
+npm ci
+# configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY em .env.local ignorado
 npm run dev
+npm run build
+node --test tests/conversa-ia.test.mjs
+# apenas em Postgres LOCAL DESCARTÁVEL, pois o runner recria aliadas_teste
+PGHOST=... PGPORT=... PGUSER=postgres npm run test:rls
 ```
 
-O site abre em `http://localhost:5173`.
+Use o checkout existente. Não precisa de worktree. Nenhuma nova dependência de frontend foi adicionada. O teste de navegador usa Playwright e Chromium disponíveis no ambiente; não transmite dados ao banco real:
 
-## onde está cada coisa
-| pasta | o que tem |
-|---|---|
-| `src/pages` | uma página por rota (`/`, `/entrar`, `/cadastro`, `/minhas-aliadas`, `/forum`, `/conexoes`, `/minha-conta`, `/curadoria`, `/feedback`, `/recomendacoes`, textos) |
-| `src/components` | logo, botões, campos acessíveis, avatar, transições |
-| `src/lib` | cliente Supabase, sessão, tema, validações Zod, fotos |
-| `src/styles/index.css` | **tokens de cor** (troque as cores aqui) |
-| `supabase/migrations` | tabelas, RLS, storage, gatilho de recomendação |
-| `supabase/functions` | `recomendar` (IA) e `excluir-conta` |
-| `supabase/tests` | 106 testes de RLS |
-| `supabase/seed.sql` | dados **fictícios** para a demo |
-| `docs/SUPABASE.md` | passo a passo do Supabase, segredos, webhooks e deploy |
-| `docs/SEGURANCA.md` | cada política explicada, riscos pendentes |
+```bash
+node tests/mvp-browser.mjs
+```
 
-## comandos
-- `npm run dev`: servidor local
-- `npm run build`: checa tipos e gera `dist/`
-- `npm run test:rls`: testes de RLS num Postgres local (veja `docs/SEGURANCA.md`)
+## situação da entrega
+
+**Implementação local preparada; não publicada, não aplicada ao banco de produção.** IA externa **não validada**: não há chave Gemini, nem comprovação atual de modelo/limites/termos gratuitos. Nenhuma cobrança foi habilitada. O produto mostra claramente “compatibilidade básica • sem IA generativa” enquanto não há resultado real e validado do provedor.
+
+- [Entrega e ativação](docs/MVP.md): arquivos, migrations, limites, comandos e pendências.
+- [Segurança e RLS](docs/SEGURANCA.md): regras atuais e histórico.
+- [Custos e sustentabilidade](docs/CUSTOS.md): fontes, medições e cenários.
+- [Validação do projeto final](docs/VALIDACAO.md): critérios, roteiro e evidências a coletar.
+- [Guia Supabase histórico](docs/SUPABASE.md): não ativar o fluxo antigo da Anthropic/Make no MVP.
+
+Não executar deploy, migrations remotas, seed em produção ou contratar serviços sem autorização explícita. Não reaproveitar automaticamente o e-mail de autenticação como contato.
