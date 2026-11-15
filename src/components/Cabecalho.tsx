@@ -44,12 +44,10 @@ export function Cabecalho() {
         { to: '/minhas-aliadas', rotulo: 'minhas aliadas' },
         { to: '/forum', rotulo: 'fórum' },
         { to: '/conexoes', rotulo: 'conexões' },
-        { to: '/recomendacoes', rotulo: 'recomendações' },
         { to: '/minha-conta', rotulo: 'minha conta' },
         ...(curadora ? [{ to: '/curadoria', rotulo: 'curadoria' }] : []),
       ]
     : [
-        { to: '/recomendacoes', rotulo: 'recomendações' },
         { to: '/entrar', rotulo: 'entrar' },
       ]
 

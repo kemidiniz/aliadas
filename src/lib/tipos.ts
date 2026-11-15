@@ -110,7 +110,6 @@ export const PAGINAS_DO_SITE = [
   'entrar',
   'cadastro',
   'minhas aliadas',
-  'recomendações',
   'conexões',
   'minha conta',
   'feedback',

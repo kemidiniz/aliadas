@@ -1,6 +1,6 @@
 import { AnimatePresence } from 'framer-motion'
 import { lazy, Suspense, useEffect } from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Cabecalho } from './components/Cabecalho'
 import { Rodape } from './components/Rodape'
 import { Protegida } from './components/Protegida'
@@ -14,7 +14,6 @@ const Conexoes = lazy(() => import('./pages/Conexoes'))
 const MinhaConta = lazy(() => import('./pages/MinhaConta'))
 const Curadoria = lazy(() => import('./pages/Curadoria'))
 const FeedbackPagina = lazy(() => import('./pages/Feedback'))
-const Recomendacoes = lazy(() => import('./pages/Recomendacoes'))
 const Forum = lazy(() => import('./pages/Forum'))
 const TermoDeConduta = lazy(() => import('./pages/Textos').then((m) => ({ default: m.TermoDeConduta })))
 const Privacidade = lazy(() => import('./pages/Textos').then((m) => ({ default: m.Privacidade })))
@@ -48,7 +47,7 @@ export function App() {
             <Route path="/conexoes" element={<Protegida><Conexoes /></Protegida>} />
             <Route path="/minha-conta" element={<Protegida precisaPerfil={false}><MinhaConta /></Protegida>} />
             <Route path="/curadoria" element={<Protegida apenasCuradora><Curadoria /></Protegida>} />
-            <Route path="/recomendacoes" element={<Recomendacoes />} />
+            <Route path="/recomendacoes" element={<Navigate to="/" replace />} />
             <Route path="/feedback" element={<FeedbackPagina />} />
             <Route path="/termo-de-conduta" element={<TermoDeConduta />} />
             <Route path="/privacidade" element={<Privacidade />} />

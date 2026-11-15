@@ -88,7 +88,6 @@ export default function MinhasAliadas() {
       <Pagina titulo="minhas aliadas">
         <Titulo>minhas aliadas</Titulo>
         <Aviso>seu perfil está com a curadoria. assim que ele for aprovado, a gente procura suas aliadas.</Aviso>
-        <p className="mt-6">enquanto isso, <Link to="/recomendacoes" className="text-destaque underline underline-offset-4">conheça nossas recomendações</Link>.</p>
       </Pagina>
     )
   if (perfil.status === 'reprovado')
@@ -118,9 +117,8 @@ export default function MinhasAliadas() {
 
       {recs.length === 0 ? (
         <Vazio titulo="ainda estamos procurando sua aliada">
-          <p>enquanto isso, conheça nossas recomendações ou puxe papo no fórum.</p>
+          <p>enquanto isso, puxe papo no fórum.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <BotaoLink to="/recomendacoes" variante="secundario">ver recomendações</BotaoLink>
             <BotaoLink to="/forum" variante="secundario">ir ao fórum</BotaoLink>
           </div>
         </Vazio>

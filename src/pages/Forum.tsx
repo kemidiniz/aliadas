@@ -1,6 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { Aviso, Carregando } from '../components/Aviso'
 import { Avatar } from '../components/Avatar'
 import { Botao } from '../components/Botao'
@@ -334,7 +333,6 @@ export default function Forum() {
       <Pagina titulo="fórum">
         <Titulo>fórum</Titulo>
         <Aviso>o fórum é só para perfis aprovados pela curadoria. assim que o seu for aprovado, é só voltar aqui.</Aviso>
-        <p className="mt-6">enquanto isso, <Link to="/recomendacoes" className="text-destaque underline underline-offset-4">veja nossas recomendações</Link>.</p>
       </Pagina>
     )
   }

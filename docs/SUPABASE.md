@@ -136,31 +136,39 @@ Não existe tela para dar esse papel, de propósito: só quem tem acesso ao pain
 
 ## 9. webhooks para a sua automação (Make)
 
-No Make, crie um cenário com o módulo **Webhooks → Custom webhook** e copie a URL. Ela fica **só** na configuração do webhook do Supabase, nunca no frontend nem no git.
+A migration `20261114000007_avisos_para_o_make.sql` já cria os gatilhos. Não crie webhooks duplicados pelo painel: isso pode enviar e-mails duas vezes.
 
-No Supabase: **Database → Webhooks → Create a new hook** (se pedir, clique em *Enable webhooks*). Crie os três:
+No Make, use **Webhooks → Custom webhook**. As URLs ficam no Vault do Supabase, nunca no frontend nem no Git:
 
-| nome | tabela | evento | para que serve |
-|---|---|---|---|
-| `feedback_novo` | `feedback` | **Insert** | a IA do Make classifica e escreve o rascunho |
-| `feedback_atualizado` | `feedback` | **Update** | no Make, filtre `record.status = aprovado` e envie `record.resposta_aprovada` para `record.email` |
-| `perfil_novo` | `profiles` | **Insert** | e-mail "novo perfil aguardando curadoria" |
+| segredo no Vault | evento | ação no Make |
+|---|---|---|
+| `make_feedback_novo_url` | feedback inserido | buscar feedback por `id`, classificar e gravar rascunho |
+| `make_feedback_atualizado_url` | feedback mudou para aprovado | buscar feedback por `id`, conferir `status = aprovado` e enviar a resposta |
+| `make_perfil_novo_url` | perfil inserido | avisar a curadoria de um novo perfil |
 
-Em cada um:
-- **Type of webhook:** *HTTP Request* · **Method:** `POST` · **URL:** a URL do Make.
-- **HTTP Headers → Add a new header:** `x-aliadas-secret` = um valor aleatório (outro, diferente do da recomendação). No Make, adicione um **filtro** logo depois do webhook: só continua se o cabeçalho for igual a esse valor. Assim ninguém que descubra a URL consegue disparar o cenário. (No webhook do Make, ligue *Advanced settings → Get request headers* para o cabeçalho aparecer.)
+Configure os segredos pelo painel seguro do Supabase. O gatilho não envia o cabeçalho `x-aliadas-secret`; esse cabeçalho pertence ao fluxo de recomendação, separado deste.
 
-O corpo que chega no Make tem este formato:
+O corpo atual contém apenas:
 
 ```json
-{ "type": "INSERT", "table": "feedback", "schema": "public", "record": { ... }, "old_record": null }
+{ "tabela": "feedback", "evento": "insert", "id": "uuid-do-feedback" }
 ```
+
+No cenário, encaminhe apenas as tabelas e eventos esperados e busque a linha no Supabase usando o `id`. Não espere `record`, `old_record` ou `type`: esses campos pertencem ao formato antigo. Para enviar uma resposta, confira no registro buscado o status `aprovado`, o e-mail e a resposta aprovada. Uma chamada recebida não deve fornecer diretamente o conteúdo do e-mail.
+
+### diagnosticar falhas
+
+1. Abra **History** no Make e identifique a execução e o primeiro módulo com erro.
+2. Se o erro for no **Extract information from text** antigo, use **Upgrade module**, selecione a conexão e um modelo disponível, revise os campos de saída usados nos próximos módulos e salve. Confirme que o cenário está ligado.
+3. Se nenhuma execução chegar, confira a existência dos três segredos no Vault e dos gatilhos da migration 007. Não compartilhe os valores dos segredos.
+4. Se o webhook chegar, mas os campos estiverem vazios, confira o mapeamento de `tabela`, `evento` e `id` e a busca da linha no Supabase.
+5. Teste um feedback identificado como teste, sem dados pessoais. Confirme que a análise aparece na curadoria. O teste de envio de e-mail precisa de um destinatário de teste autorizado; não reprocesse em massa execuções antigas.
 
 **Como o Make devolve a análise da IA:** pelo módulo **Supabase → Update a row** (ou HTTP `PATCH` em `https://<ref>.supabase.co/rest/v1/feedback?id=eq.<id>`) usando a **service role key guardada como conexão no Make**. Preencha só `categoria_ia`, `urgencia_ia`, `resumo_ia`, `rascunho_ia`, `alertas_ia` e, se quiser, `status = em_analise`. Depois do envio do e-mail, mude `status` para `respondido`.
 
 > 🔐 A service role ignora o RLS. Ela fica só na conexão do Make. Se um dia vazar: **Project Settings → API Keys → Roll**.
 
-Privacidade: o webhook de `profiles` envia a trajetória e o código, mas **não** e-mail nem LinkedIn (eles moram na tabela `contacts`).
+Privacidade: os avisos enviam só tabela, evento e id. Se a IA analisar feedback, mapeie apenas os campos de texto necessários; não envie nome, e-mail, LinkedIn ou foto.
 
 ## 10. deploy na Vercel
 

@@ -27,7 +27,6 @@ export default function Home() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <BotaoLink to={destino}>encontrar minhas aliadas</BotaoLink>
-            <BotaoLink to="/recomendacoes" variante="secundario">ver recomendações</BotaoLink>
           </div>
         </div>
         {/* formas simples: dois círculos que se tocam */}

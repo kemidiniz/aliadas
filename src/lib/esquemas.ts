@@ -57,7 +57,6 @@ export const feedbackAvaliacao = z.object({
   tipo: z.literal('avaliacao'),
   nota_facilidade: z.number({ message: 'escolha uma nota' }).int().min(1).max(5),
   encontrou_aliadas: z.enum(['sim', 'em_parte', 'nao'], { message: 'escolha uma opção' }),
-  mais_dificil: texto(1, LIMITES.feedbackCurto, 'conta pra gente'),
   mudaria: z.string().trim().max(LIMITES.feedbackCurto),
   email: emailOpcional,
 })

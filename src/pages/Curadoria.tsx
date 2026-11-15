@@ -6,6 +6,7 @@ import { Botao } from '../components/Botao'
 import { CampoArea, CampoTexto } from '../components/Campo'
 import { Pagina, Titulo } from '../components/Pagina'
 import { errosPorCampo, programaSchema } from '../lib/esquemas'
+import { useAuth } from '../lib/auth'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
 import { formasTexto, ROTULO_ONDE_ESTA, type Consentimento, type Contato, type Feedback, type Perfil, type Programa } from '../lib/tipos'
@@ -66,23 +67,34 @@ export default function Curadoria() {
 
 // ------------------------------------------------------------------ perfis
 function Perfis() {
+  const { session } = useAuth()
   const [filtro, setFiltro] = useState<Perfil['status']>('pendente')
   const [lista, setLista] = useState<(Perfil & { contato?: Contato; consent?: Consentimento })[] | null>(null)
   const [erro, setErro] = useState('')
 
   const carregar = useCallback(async () => {
     setLista(null)
-    const { data: ps } = await supabase.from('profiles').select('*').eq('status', filtro).order('created_at')
+    const { data: ps, error: erroPerfis } = await supabase.from('profiles').select('*').eq('status', filtro).order('created_at')
+    if (erroPerfis) {
+      setErro(mensagemAmigavel(erroPerfis, 'não foi possível carregar os perfis. tente novamente.'))
+      setLista([])
+      return
+    }
     const ids = (ps ?? []).map((p) => p.id)
-    const [{ data: cs }, { data: cn }] = ids.length
+    const [{ data: cs, error: erroContatos }, { data: cn, error: erroConsents }] = ids.length
       ? await Promise.all([
           supabase.from('contacts').select('*').in('profile_id', ids),
           supabase.from('consents').select('*').in('profile_id', ids),
         ])
-      : [{ data: [] }, { data: [] }]
-    const contatos = new Map((cs as Contato[]).map((c) => [c.profile_id, c]))
-    const consents = new Map((cn as Consentimento[]).map((c) => [c.profile_id, c]))
-    setLista((ps as Perfil[]).map((p) => ({ ...p, contato: contatos.get(p.id), consent: consents.get(p.id) })))
+      : [{ data: [], error: null }, { data: [], error: null }]
+    if (erroContatos || erroConsents) {
+      setErro('não foi possível carregar contatos ou consentimentos. recarregue a página antes de avaliar os perfis.')
+      setLista([])
+      return
+    }
+    const contatos = new Map(((cs ?? []) as Contato[]).map((c) => [c.profile_id, c]))
+    const consents = new Map(((cn ?? []) as Consentimento[]).map((c) => [c.profile_id, c]))
+    setLista(((ps ?? []) as Perfil[]).map((p) => ({ ...p, contato: contatos.get(p.id), consent: consents.get(p.id) })))
   }, [filtro])
 
   useEffect(() => {
@@ -91,6 +103,10 @@ function Perfis() {
 
   async function mudarStatus(id: string, status: Perfil['status']) {
     setErro('')
+    if (id === session?.user.id) {
+      setErro('seu perfil precisa ser avaliado por outra curadora. para pausar ou retomar um perfil já aprovado, vá em minha conta.')
+      return
+    }
     const { error } = await supabase.from('profiles').update({ status }).eq('id', id)
     if (error) setErro(mensagemAmigavel(error))
     carregar()
@@ -137,11 +153,13 @@ function Perfis() {
                   </dl>
                 </div>
               </div>
-              <div className="mt-5 flex flex-wrap gap-3">
+              {p.id === session?.user.id ? (
+                <p className="mt-5 text-sm text-suave">este é seu perfil. a aprovação precisa ser feita por outra curadora. para pausar ou retomar um perfil já aprovado, vá em minha conta.</p>
+              ) : <div className="mt-5 flex flex-wrap gap-3">
                 {p.status !== 'aprovado' && <Botao onClick={() => mudarStatus(p.id, 'aprovado')}>aprovar</Botao>}
                 {p.status !== 'reprovado' && <Botao variante="secundario" onClick={() => mudarStatus(p.id, 'reprovado')}>reprovar</Botao>}
                 {p.status === 'aprovado' && <Botao variante="discreto" onClick={() => mudarStatus(p.id, 'pausado')}>pausar</Botao>}
-              </div>
+              </div>}
               {p.status === 'pendente' && <p className="mt-2 text-sm text-suave">ao aprovar, a ia busca as aliadas dela automaticamente.</p>}
             </li>
           ))}
@@ -233,7 +251,7 @@ function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
           <>
             <div><dt className="inline text-suave">facilidade: </dt><dd className="inline">{f.nota_facilidade}/5</dd></div>
             <div><dt className="inline text-suave">encontrou aliadas: </dt><dd className="inline">{f.encontrou_aliadas?.replace('_', ' ')}</dd></div>
-            <div><dt className="text-suave">mais difícil</dt><dd>{f.mais_dificil}</dd></div>
+            {f.mais_dificil && <div><dt className="text-suave">mais difícil</dt><dd>{f.mais_dificil}</dd></div>}
             {f.mudaria && <div><dt className="text-suave">mudaria</dt><dd>{f.mudaria}</dd></div>}
           </>
         )}

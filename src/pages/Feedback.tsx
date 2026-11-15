@@ -4,27 +4,21 @@ import { Aviso } from '../components/Aviso'
 import { Botao } from '../components/Botao'
 import { CampoArea, CampoTexto, Escolha } from '../components/Campo'
 import { Pagina, Titulo } from '../components/Pagina'
-import { errosPorCampo, feedbackAvaliacao, feedbackIndicacao, feedbackProblema, LIMITES } from '../lib/esquemas'
+import { errosPorCampo, feedbackAvaliacao, feedbackProblema, LIMITES } from '../lib/esquemas'
 import { supabase } from '../lib/supabase'
 import { PAGINAS_DO_SITE } from '../lib/tipos'
 
-type Caminho = 'avaliacao' | 'indicacao' | 'problema'
+type Caminho = 'avaliacao' | 'problema'
 
 const CAMINHOS: { valor: Caminho; rotulo: string; detalhe: string }[] = [
   { valor: 'avaliacao', rotulo: 'avaliar o site', detalhe: 'conta como foi usar a aliadas' },
-  { valor: 'indicacao', rotulo: 'indicar um programa ou comunidade', detalhe: 'tem um programa incrível para mulheres na tecnologia? indica pra gente.' },
   { valor: 'problema', rotulo: 'relatar um problema', detalhe: 'algo quebrou ou ficou confuso' },
 ]
 
 const vazio = {
   nota_facilidade: 0,
   encontrou_aliadas: '' as '' | 'sim' | 'em_parte' | 'nao',
-  mais_dificil: '',
   mudaria: '',
-  indicacao_nome: '',
-  indicacao_link: '',
-  indicacao_motivo: '',
-  indicacao_gratuito: '' as '' | 'sim' | 'nao' | 'nao_sei',
   problema_descricao: '',
   problema_pagina: '',
   email: '',
@@ -40,7 +34,7 @@ export default function FeedbackPagina() {
   async function enviar(e: FormEvent) {
     e.preventDefault()
     if (!caminho) return
-    const esquema = caminho === 'avaliacao' ? feedbackAvaliacao : caminho === 'indicacao' ? feedbackIndicacao : feedbackProblema
+    const esquema = caminho === 'avaliacao' ? feedbackAvaliacao : feedbackProblema
     const r = esquema.safeParse({ ...f, tipo: caminho, nota_facilidade: f.nota_facilidade || undefined })
     if (!r.success) return setErros(errosPorCampo(r.error))
     setErros({})
@@ -103,33 +97,7 @@ export default function FeedbackPagina() {
                     erro={erros.encontrou_aliadas}
                     opcoes={[{ valor: 'sim', rotulo: 'sim' }, { valor: 'em_parte', rotulo: 'em parte' }, { valor: 'nao', rotulo: 'não' }]}
                   />
-                  <CampoArea rotulo="o que foi mais difícil?" rows={3} maxLength={LIMITES.feedbackCurto} value={f.mais_dificil} onChange={(e) => muda('mais_dificil', e.target.value)} erro={erros.mais_dificil} />
                   <CampoArea rotulo="o que você mudaria? (opcional)" rows={3} maxLength={LIMITES.feedbackCurto} value={f.mudaria} onChange={(e) => muda('mudaria', e.target.value)} erro={erros.mudaria} />
-                </>
-              )}
-
-              {caminho === 'indicacao' && (
-                <>
-                  <CampoTexto rotulo="nome do programa ou comunidade" maxLength={120} value={f.indicacao_nome} onChange={(e) => muda('indicacao_nome', e.target.value)} erro={erros.indicacao_nome} />
-                  <CampoTexto
-                    rotulo="link do site ou do instagram"
-                    ajuda="começando com https://"
-                    type="url"
-                    inputMode="url"
-                    placeholder="https://"
-                    value={f.indicacao_link}
-                    onChange={(e) => muda('indicacao_link', e.target.value)}
-                    erro={erros.indicacao_link}
-                  />
-                  <CampoArea rotulo="por que você indica?" rows={3} maxLength={LIMITES.feedbackCurto} value={f.indicacao_motivo} onChange={(e) => muda('indicacao_motivo', e.target.value)} erro={erros.indicacao_motivo} />
-                  <Escolha
-                    nome="gratuito"
-                    rotulo="é gratuito?"
-                    valor={f.indicacao_gratuito}
-                    aoMudar={(v) => muda('indicacao_gratuito', v)}
-                    erro={erros.indicacao_gratuito}
-                    opcoes={[{ valor: 'sim', rotulo: 'sim' }, { valor: 'nao', rotulo: 'não' }, { valor: 'nao_sei', rotulo: 'não sei' }]}
-                  />
                 </>
               )}
 

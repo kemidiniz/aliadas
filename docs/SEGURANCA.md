@@ -61,3 +61,7 @@ PGHOST=... PGPORT=... PGUSER=postgres npm run test:rls
 | Depois de aprovada, a pessoa pode trocar o LinkedIn sem nova revisão | baixa | numa próxima versão, voltar o perfil para `pendente` quando o contato mudar |
 | CORS das funções aceita qualquer origem se `SITE_URL` não estiver configurado | baixa (as funções exigem JWT ou segredo) | configurar `SITE_URL` (passo 5) |
 | Links das fontes da home apontam para a página inicial das organizações | conteúdo | trocar pelos links exatos dos estudos em `src/lib/fontes.ts` |
+
+## avaliação sem a pergunta de dificuldade
+
+A migration `20261115000010_feedback_sem_mais_dificil.sql` retira a exigência de `mais_dificil` nas avaliações. Nota e resposta sobre encontrar aliadas continuam obrigatórias. Respostas antigas são preservadas. As políticas de RLS e permissões por coluna permanecem iguais: visitantes enviam feedback, apenas curadoras leem e respondem, e campos de IA continuam reservados à automação.

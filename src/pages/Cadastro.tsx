@@ -85,7 +85,6 @@ export default function Cadastro() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <BotaoLink to="/minhas-aliadas">minhas aliadas</BotaoLink>
-          <BotaoLink to="/recomendacoes" variante="secundario">ver recomendações</BotaoLink>
         </div>
       </Pagina>
     )

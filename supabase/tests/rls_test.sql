@@ -53,7 +53,7 @@ select tst.bloqueia('select * from public.profiles', 'anon não lê perfis');
 select tst.bloqueia('select * from public.contacts', 'anon não lê contatos');
 select tst.bloqueia('select * from public.feedback', 'anon não lê feedback');
 select tst.ok((select count(*) from public.programs) = 0, 'anon só vê programas ativos (os PREENCHER estão inativos)');
-insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, mais_dificil) values ('avaliacao', 4, 'sim', 'nada');
+insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas) values ('avaliacao', 4, 'sim');
 select tst.ok(true, 'anon envia feedback de avaliação');
 select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, mais_dificil, status) values ('avaliacao', 4, 'sim', 'x', 'aprovado')$$, 'anon não escolhe o status do feedback');
 select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, mais_dificil, categoria_ia) values ('avaliacao', 4, 'sim', 'x', 'falso')$$, 'anon não preenche campos _ia');
