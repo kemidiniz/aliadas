@@ -30,13 +30,13 @@ O site abre em `http://localhost:5173`.
 ## onde está cada coisa
 | pasta | o que tem |
 |---|---|
-| `src/pages` | uma página por rota (`/`, `/entrar`, `/cadastro`, `/minhas-aliadas`, `/conexoes`, `/minha-conta`, `/curadoria`, `/feedback`, `/recomendacoes`, textos) |
+| `src/pages` | uma página por rota (`/`, `/entrar`, `/cadastro`, `/minhas-aliadas`, `/forum`, `/conexoes`, `/minha-conta`, `/curadoria`, `/feedback`, `/recomendacoes`, textos) |
 | `src/components` | logo, botões, campos acessíveis, avatar, transições |
 | `src/lib` | cliente Supabase, sessão, tema, validações Zod, fotos |
 | `src/styles/index.css` | **tokens de cor** (troque as cores aqui) |
 | `supabase/migrations` | tabelas, RLS, storage, gatilho de recomendação |
 | `supabase/functions` | `recomendar` (IA) e `excluir-conta` |
-| `supabase/tests` | 74 testes de RLS |
+| `supabase/tests` | 106 testes de RLS |
 | `supabase/seed.sql` | dados **fictícios** para a demo |
 | `docs/SUPABASE.md` | passo a passo do Supabase, segredos, webhooks e deploy |
 | `docs/SEGURANCA.md` | cada política explicada, riscos pendentes |

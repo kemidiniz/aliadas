@@ -216,6 +216,59 @@ set role anon;
 select tst.ok((select count(*) from public.programs where origem = 'sugestao' and ativo) = 1, 'programa indicado aparece para todo mundo');
 reset role;
 
+
+-- ------------------------------------------------------------- fórum
+\echo '--- fórum'
+set role authenticated; select set_config('request.jwt.claim.sub', :eve, false);
+select tst.bloqueia($$select * from public.forum_feed()$$, 'sem perfil aprovado não lê o fórum');
+select tst.bloqueia($$insert into public.forum_posts (autora_id, texto) values (auth.uid(), 'oi')$$, 'sem perfil aprovado não posta');
+reset role;
+
+set role authenticated; select set_config('request.jwt.claim.sub', :ana, false);
+insert into public.forum_posts (autora_id, texto, area) values (auth.uid(), 'alguém indica curso de sql?', 'dados');
+select tst.ok(true, 'aprovada publica no fórum');
+select tst.bloqueia($$insert into public.forum_posts (autora_id, texto) values ('cccccccc-0000-0000-0000-000000000003', 'em nome da cris')$$, 'não publica em nome de outra');
+select tst.bloqueia($$insert into public.forum_posts (autora_id, texto, oculto) values (auth.uid(), 'x', true)$$, 'autora não escolhe o campo oculto ao publicar');
+select tst.bloqueia($$update public.forum_posts set oculto = true where autora_id = auth.uid()$$, 'autora não mexe no oculto');
+reset role;
+
+set role authenticated; select set_config('request.jwt.claim.sub', :cris, false);
+select tst.ok((select count(*) from public.forum_feed()) = 1, 'outra aprovada vê o post no feed');
+select tst.ok((select autora_apelido from public.forum_feed() limit 1) = 'ana b', 'feed mostra o apelido de quem postou');
+select tst.ok(not exists (select 1 from public.contacts where profile_id = :ana), 'fórum não libera contato de ninguém');
+insert into public.forum_curtidas (post_id, profile_id) select id, auth.uid() from public.forum_posts limit 1;
+select tst.ok((select curtidas from public.forum_feed() limit 1) = 1 and (select curti from public.forum_feed() limit 1), 'curtida conta e aparece como minha');
+select tst.bloqueia($$insert into public.forum_curtidas (post_id, profile_id) select id, 'bbbbbbbb-0000-0000-0000-000000000002' from public.forum_posts limit 1$$, 'não curte em nome de outra');
+insert into public.forum_comentarios (post_id, autora_id, texto) select id, auth.uid(), 'recomendo o da escola x' from public.forum_posts limit 1;
+select tst.ok((select comentarios from public.forum_feed() limit 1) = 1, 'comentário aparece no contador');
+update public.forum_posts set texto = 'editado pela cris';
+select tst.ok((select count(*) from public.forum_posts where texto = 'editado pela cris') = 0, 'não edita post de outra');
+select public.denunciar_conteudo('post', (select id from public.forum_posts limit 1), 'teste de denúncia de post');
+select tst.ok(true, 'aprovada denuncia um post');
+select tst.bloqueia($$select public.denunciar_conteudo('comentario', (select id from public.forum_comentarios limit 1), 'meu próprio')$$, 'não denuncia o próprio comentário');
+reset role;
+
+set role authenticated; select set_config('request.jwt.claim.sub', :cur, false);
+select tst.ok((select count(*) from public.reports where post_id is not null) = 1, 'curadoria vê a denúncia do post');
+select tst.bloqueia($$update public.forum_posts set texto = 'censurado'$$, 'curadora não reescreve post alheio');
+update public.forum_posts set oculto = true;
+select tst.ok((select bool_and(oculto) from public.forum_posts), 'curadora oculta o post');
+reset role;
+
+select id as post_oculto from public.forum_posts limit 1 \gset
+set role authenticated; select set_config('request.jwt.claim.sub', :cris, false);
+select tst.ok((select count(*) from public.forum_feed()) = 0, 'post oculto some do feed das outras');
+select tst.bloqueia(format('insert into public.forum_comentarios (post_id, autora_id, texto) values (%L, auth.uid(), ''x'')', :'post_oculto'), 'não comenta em post oculto');
+select tst.bloqueia(format('insert into public.forum_curtidas (post_id, profile_id) values (%L, auth.uid())', :'post_oculto'), 'não curte post oculto');
+reset role;
+
+set role authenticated; select set_config('request.jwt.claim.sub', :ana, false);
+select tst.ok((select count(*) from public.forum_feed()) = 1 and (select oculto from public.forum_feed() limit 1), 'autora ainda vê o próprio post marcado como oculto');
+select tst.bloqueia($$update public.forum_posts set oculto = false$$, 'autora não desfaz o oculto');
+insert into public.forum_posts (autora_id, texto) select auth.uid(), 'post ' || g from generate_series(1, 9) g;
+select tst.bloqueia($$insert into public.forum_posts (autora_id, texto) values (auth.uid(), 'o 11º do dia')$$, 'limite de 10 posts por dia');
+reset role;
+
 -- ------------------------------------------------------- excluir conta
 \echo '--- excluir conta'
 insert into public.ai_runs (profile_id, funcao, input_resumido, output_json, sucesso) values (:ana, 'recomendar', 'P00x', '{"resumo":"ana"}', true);
@@ -225,6 +278,7 @@ select tst.ok(not exists (select 1 from public.contacts where profile_id = :ana)
 select tst.ok(not exists (select 1 from public.consents where profile_id = :ana), 'consentimentos apagados');
 select tst.ok(not exists (select 1 from public.connections where :ana in (de_profile_id, para_profile_id)), 'conexões apagadas');
 select tst.ok(not exists (select 1 from public.recommendations where :ana in (para_profile_id, aliada_profile_id)), 'recomendações apagadas');
+select tst.ok(not exists (select 1 from public.forum_posts where autora_id = :ana), 'posts do fórum apagados');
 select tst.ok((select output_json->>'removido' from public.ai_runs where funcao = 'recomendar' limit 1) = 'conta excluída', 'registro da IA anonimizado');
 
 \echo ''

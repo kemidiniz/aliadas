@@ -48,3 +48,34 @@ begin
             format('https://www.linkedin.com/in/perfil-ficticio-%s', i));
   end loop;
 end $$;
+
+-- fórum: conversas fictícias para a demo
+do $$
+declare
+  bia uuid := (select id from public.profiles where apelido = 'bia' order by created_at limit 1);
+  ro  uuid := (select id from public.profiles where apelido = 'rô' order by created_at limit 1);
+  mari uuid := (select id from public.profiles where apelido = 'mari' order by created_at limit 1);
+  cacau uuid := (select id from public.profiles where apelido = 'cacau' order by created_at limit 1);
+  nina uuid := (select id from public.profiles where apelido = 'nina' order by created_at limit 1);
+  p1 uuid; p2 uuid; p3 uuid;
+begin
+  if bia is null then return; end if;
+  insert into public.forum_posts (autora_id, texto, area, created_at)
+  values (bia, 'saí da sala de aula há um ano e meio. a maior virada foi parar de esperar "estar pronta" para mandar currículo. alguém mais travou nisso?', 'dados', now() - interval '2 days')
+  returning id into p1;
+  insert into public.forum_posts (autora_id, texto, area, created_at)
+  values (mari, 'estou montando um projeto com dados públicos de saúde para o portfólio. dicas de onde achar bases boas?', 'dados', now() - interval '1 day')
+  returning id into p2;
+  insert into public.forum_posts (autora_id, texto, area, created_at)
+  values (cacau, 'primeira entrevista técnica na semana que vem. o que vocês gostariam de ter sabido antes da primeira de vocês?', 'qualidade de software', now() - interval '5 hours')
+  returning id into p3;
+
+  insert into public.forum_comentarios (post_id, autora_id, texto) values
+    (p1, ro, 'travei por meses! o que me ajudou foi aplicar para vagas de estágio também, sem vergonha.'),
+    (p1, mari, 'tô exatamente nessa fase. obrigada por escrever isso.'),
+    (p3, nina, 'que tudo bem dizer "não sei, mas eu buscaria assim". mostra raciocínio.'),
+    (p3, bia, 'treina explicar um projeto seu em voz alta. faz muita diferença.');
+
+  insert into public.forum_curtidas (post_id, profile_id) values
+    (p1, ro), (p1, mari), (p1, nina), (p1, cacau), (p3, bia), (p3, ro), (p2, bia);
+end $$;

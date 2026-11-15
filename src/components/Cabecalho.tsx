@@ -42,6 +42,7 @@ export function Cabecalho() {
     ? [
         ...(perfil ? [] : [{ to: '/cadastro', rotulo: 'meu cadastro' }]),
         { to: '/minhas-aliadas', rotulo: 'minhas aliadas' },
+        { to: '/forum', rotulo: 'fórum' },
         { to: '/conexoes', rotulo: 'conexões' },
         { to: '/recomendacoes', rotulo: 'recomendações' },
         { to: '/minha-conta', rotulo: 'minha conta' },
@@ -58,13 +59,13 @@ export function Cabecalho() {
     }`
 
   return (
-    <header className="border-b border-linha">
+    <header className="sticky top-0 z-40 border-b border-linha bg-fundo/85 backdrop-blur-md">
       <a href="#conteudo" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-destaque focus:px-4 focus:py-2 focus:text-sobre-destaque">
         pular para o conteúdo
       </a>
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4">
         <Logo />
-        <nav aria-label="principal" className="hidden md:block">
+        <nav aria-label="principal" className="hidden lg:block">
           <ul className="flex items-center gap-1">
             {links.map((l) => (
               <li key={l.to}>
@@ -79,7 +80,7 @@ export function Cabecalho() {
           <BotaoTema />
           <button
             type="button"
-            className="inline-flex h-11 items-center rounded-full border-2 border-campo px-4 font-titulo font-semibold lowercase text-destaque md:hidden"
+            className="inline-flex h-11 items-center rounded-full border-2 border-campo px-4 font-titulo font-semibold lowercase text-destaque lg:hidden"
             aria-expanded={aberto}
             aria-controls="menu-celular"
             onClick={() => setAberto((a) => !a)}
@@ -93,7 +94,7 @@ export function Cabecalho() {
           <motion.nav
             id="menu-celular"
             aria-label="principal"
-            className="overflow-hidden border-t border-linha md:hidden"
+            className="overflow-hidden border-t border-linha lg:hidden"
             initial={reduzir ? { opacity: 0 } : { height: 0, opacity: 0 }}
             animate={reduzir ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
             exit={reduzir ? { opacity: 0 } : { height: 0, opacity: 0 }}

@@ -511,15 +511,33 @@ function SaidasIA() {
 }
 
 // --------------------------------------------------------------- denúncias
-type Denuncia = { id: string; denunciante_id: string | null; denunciado_id: string; motivo: string; status: string; created_at: string }
+type Denuncia = {
+  id: string
+  denunciante_id: string | null
+  denunciado_id: string
+  motivo: string
+  status: string
+  created_at: string
+  post_id: string | null
+  comentario_id: string | null
+}
+type ConteudoForum = { id: string; texto: string; oculto: boolean }
 
 function Denuncias() {
   const [lista, setLista] = useState<Denuncia[] | null>(null)
   const [perfis, setPerfis] = useState<Map<string, Perfil>>(new Map())
+  const [conteudos, setConteudos] = useState<Map<string, ConteudoForum>>(new Map())
 
   const carregar = useCallback(async () => {
     const { data } = await supabase.from('reports').select('*').order('created_at', { ascending: false })
     const ds = (data as Denuncia[]) ?? []
+    const idsPosts = ds.map((d) => d.post_id).filter((x): x is string => Boolean(x))
+    const idsComs = ds.map((d) => d.comentario_id).filter((x): x is string => Boolean(x))
+    const [{ data: ps2 }, { data: cs2 }] = await Promise.all([
+      idsPosts.length ? supabase.from('forum_posts').select('id, texto, oculto').in('id', idsPosts) : Promise.resolve({ data: [] }),
+      idsComs.length ? supabase.from('forum_comentarios').select('id, texto, oculto').in('id', idsComs) : Promise.resolve({ data: [] }),
+    ])
+    setConteudos(new Map([...((ps2 ?? []) as ConteudoForum[]), ...((cs2 ?? []) as ConteudoForum[])].map((c) => [c.id, c])))
     const ids = [...new Set(ds.flatMap((d) => [d.denunciado_id, d.denunciante_id]).filter((x): x is string => Boolean(x)))]
     if (ids.length) {
       const { data: ps } = await supabase.from('profiles').select('*').in('id', ids)
@@ -533,6 +551,12 @@ function Denuncias() {
 
   async function mudar(id: string, status: string) {
     await supabase.from('reports').update({ status }).eq('id', id)
+    carregar()
+  }
+
+  async function ocultar(d: Denuncia, oculto: boolean) {
+    const tabela = d.post_id ? 'forum_posts' : 'forum_comentarios'
+    await supabase.from(tabela).update({ oculto }).eq('id', (d.post_id ?? d.comentario_id)!)
     carregar()
   }
 
@@ -550,7 +574,23 @@ function Denuncias() {
             <p className="text-sm text-suave">
               por {d.denunciante_id ? perfis.get(d.denunciante_id)?.codigo ?? '—' : 'conta excluída'} · {data(d.created_at)}
             </p>
-            <p className="mt-2">{d.motivo}</p>
+            <p className="mt-2"><span className="text-suave">motivo: </span>{d.motivo}</p>
+            {(d.post_id || d.comentario_id) && (() => {
+              const c = conteudos.get((d.post_id ?? d.comentario_id)!)
+              return (
+                <div className="mt-3 rounded-2xl bg-superficie p-4">
+                  <p className="text-sm text-suave">{d.post_id ? 'post do fórum' : 'comentário do fórum'}{c?.oculto ? ' · oculto' : ''}</p>
+                  <p className="mt-1 whitespace-pre-line">{c ? c.texto : 'conteúdo já apagado'}</p>
+                  {c && (
+                    <div className="mt-3">
+                      <Botao variante={c.oculto ? 'secundario' : 'perigo'} onClick={() => ocultar(d, !c.oculto)}>
+                        {c.oculto ? 'mostrar de novo' : 'ocultar do fórum'}
+                      </Botao>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
             <label className="mt-3 flex items-center gap-3">
               <span className="text-sm">status</span>
               <select className={seletor} value={d.status} onChange={(e) => mudar(d.id, e.target.value)}>

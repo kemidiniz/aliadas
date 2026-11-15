@@ -55,7 +55,14 @@ Sem a CLI: **SQL Editor → New query**, cole cada arquivo de `supabase/migratio
 2. **Authentication → URL Configuration:**
    - **Site URL:** a URL do site na Vercel (ex.: `https://aliadas.vercel.app`). Antes do deploy, use `http://localhost:5173`.
    - **Redirect URLs:** adicione `http://localhost:5173/entrar` e `https://<seu-site>/entrar`.
-3. **Authentication → Emails → Magic Link:** traduza o e-mail (sugestão: assunto "seu link para entrar na aliadas").
+3. **Authentication → Emails:** o login usa **código de 6 dígitos** (e senha opcional). Edite os modelos **Magic Link** e **Confirm signup** para mostrar o código. Sem isso, o e-mail chega só com o link. Sugestão de conteúdo para os dois:
+   ```html
+   <h2>seu código para entrar na aliadas</h2>
+   <p style="font-size:32px;letter-spacing:8px"><strong>{{ .Token }}</strong></p>
+   <p>ou, se estiver no mesmo aparelho, <a href="{{ .ConfirmationURL }}">clique aqui para entrar</a>.</p>
+   <p>se não foi você, é só ignorar este e-mail.</p>
+   ```
+   Em **Authentication → Providers → Email**, confira se *Email OTP Length* está em 6. Em **Authentication → Policies** (ou *Password security*), ligue a proteção contra senhas vazadas e defina tamanho mínimo 8.
 4. ⚠️ O e-mail padrão do Supabase envia **poucos e-mails por hora** e serve só para testes. Para a demo, configure um SMTP próprio em **Authentication → Emails → SMTP Settings** (ex.: Resend, Brevo). Se não fizer isso, deixe a sua conta e a de teste já logadas antes do pitch.
 
 ## 5. segredos das Edge Functions

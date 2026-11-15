@@ -6,6 +6,7 @@ import { Botao, BotaoLink } from '../components/Botao'
 import { Denunciar } from '../components/Denunciar'
 import { Pagina, Titulo } from '../components/Pagina'
 import { Revelar } from '../components/Revelar'
+import { Cartao, Chips, Selo, Vazio } from '../components/ui'
 import { useAuth } from '../lib/auth'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
@@ -110,44 +111,54 @@ export default function MinhasAliadas() {
     conexoes.find((c) => c.de_profile_id === id || c.para_profile_id === id)
 
   return (
-    <Pagina titulo="minhas aliadas">
+    <Pagina titulo="minhas aliadas" largura="max-w-5xl">
       <Titulo sub="mulheres com um caminho parecido com o seu, alguns passos à frente.">minhas aliadas</Titulo>
 
       {msg && <div className="mb-6"><Aviso tipo={msg.tipo}>{msg.texto}</Aviso></div>}
 
       {recs.length === 0 ? (
-        <div className="space-y-4">
-          <p className="text-lg">ainda estamos procurando sua aliada. enquanto isso, conheça nossas recomendações.</p>
-          <BotaoLink to="/recomendacoes" variante="secundario">ver recomendações</BotaoLink>
-        </div>
+        <Vazio titulo="ainda estamos procurando sua aliada">
+          <p>enquanto isso, conheça nossas recomendações ou puxe papo no fórum.</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <BotaoLink to="/recomendacoes" variante="secundario">ver recomendações</BotaoLink>
+            <BotaoLink to="/forum" variante="secundario">ir ao fórum</BotaoLink>
+          </div>
+        </Vazio>
       ) : (
-        <ul className="space-y-6">
+        <ul className="grid gap-5 md:grid-cols-2">
           {recs.map((r, idx) => {
             const c = estadoConexao(r.aliada.id)
             return (
-              <Revelar key={r.id} atraso={idx * 0.08}>
-                <li className="list-none rounded-3xl border border-linha p-6 sm:p-8">
-                  <div className="flex items-start gap-5">
-                    <Avatar apelido={r.aliada.apelido} fotoPath={r.aliada.foto_path} tamanho={72} />
-                    <div className="min-w-0 flex-1">
-                      <h2 className="font-titulo text-2xl font-bold text-destaque">{r.aliada.apelido}</h2>
-                      <p className="mt-2 text-texto">{trajetoriaCurta(r.aliada)}</p>
+              <Revelar key={r.id} atraso={idx * 0.08} className="h-full">
+                <li className="h-full list-none">
+                  <Cartao className="flex h-full flex-col gap-4">
+                    <div className="flex items-start gap-4">
+                      <Avatar apelido={r.aliada.apelido} fotoPath={r.aliada.foto_path} tamanho={64} />
+                      <div className="min-w-0 flex-1">
+                        <h2 className="font-titulo text-2xl font-bold text-destaque">{r.aliada.apelido}</h2>
+                        <p className="text-sm text-suave">{ROTULO_ONDE_ESTA[r.aliada.onde_esta]}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-5 border-l-2 border-coral pl-4">
-                    <p className="font-titulo text-sm font-semibold lowercase text-suave">por que vocês combinam</p>
-                    <p className="mt-1">{r.motivo}</p>
-                  </div>
-                  <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-                    {!c && (
-                      <Botao onClick={() => conectar(r.aliada.id)} carregando={pedindo === r.aliada.id}>quero me conectar</Botao>
-                    )}
-                    {c?.status === 'pendente' && c.de_profile_id === session!.user.id && <p className="text-suave">pedido enviado. agora é com ela.</p>}
-                    {c?.status === 'pendente' && c.para_profile_id === session!.user.id && <BotaoLink to="/conexoes">ela quer se conectar com você</BotaoLink>}
-                    {c?.status === 'aceita' && <BotaoLink to="/conexoes" variante="secundario">vocês estão conectadas: ver contato</BotaoLink>}
-                    {c?.status === 'recusada' && <p className="text-suave">dessa vez não rolou. tudo bem: cada uma tem seu tempo.</p>}
-                    <Denunciar perfilId={r.aliada.id} apelido={r.aliada.apelido} />
-                  </div>
+                    <p className="text-texto">{r.aliada.resumo ?? r.aliada.de_onde_vem}</p>
+                    <Chips itens={r.aliada.areas} rotulo="áreas de interesse" />
+                    <div className="rounded-2xl bg-fundo p-4 ring-1 ring-linha">
+                      <p className="flex items-center gap-2 font-titulo text-sm font-semibold lowercase text-destaque">
+                        <span aria-hidden className="h-2 w-2 rounded-full bg-coral" />
+                        por que vocês combinam
+                      </p>
+                      <p className="mt-1.5">{r.motivo}</p>
+                    </div>
+                    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
+                      {!c && (
+                        <Botao onClick={() => conectar(r.aliada.id)} carregando={pedindo === r.aliada.id}>quero me conectar</Botao>
+                      )}
+                      {c?.status === 'pendente' && c.de_profile_id === session!.user.id && <Selo tom="suave">pedido enviado</Selo>}
+                      {c?.status === 'pendente' && c.para_profile_id === session!.user.id && <BotaoLink to="/conexoes">ela quer se conectar com você</BotaoLink>}
+                      {c?.status === 'aceita' && <BotaoLink to="/conexoes" variante="secundario">ver contato</BotaoLink>}
+                      {c?.status === 'recusada' && <Selo tom="suave">dessa vez não rolou</Selo>}
+                      <Denunciar perfilId={r.aliada.id} apelido={r.aliada.apelido} />
+                    </div>
+                  </Cartao>
                 </li>
               </Revelar>
             )
