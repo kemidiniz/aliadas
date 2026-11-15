@@ -17,7 +17,7 @@ export default function Home() {
   return (
     <Pagina titulo="aliadas" largura="max-w-5xl">
       {/* hero */}
-      <section className="grid items-center gap-10 py-6 sm:py-12 md:grid-cols-[1.4fr_1fr]">
+      <section className="grid items-center gap-10 pb-12 sm:pb-14 md:grid-cols-[1.4fr_1fr]">
         <div>
           <h1 className="font-titulo text-4xl font-bold leading-tight text-destaque sm:text-6xl">
             todas nós temos algo a ensinar e muito a aprender.
@@ -26,8 +26,9 @@ export default function Home() {
             vem conhecer sua próxima aliada!
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <BotaoLink to={destino}>encontrar minhas aliadas</BotaoLink>
+            <BotaoLink to={destino}>{perfil ? 'minhas aliadas' : 'quero encontrar'}</BotaoLink>
           </div>
+          {!session && <p className="mt-3 text-sm text-suave">primeira vez? confirme seu e-mail para criar seu perfil na comunidade.</p>}
         </div>
         {/* formas simples: dois círculos que se tocam */}
         <div aria-hidden className="relative mx-auto hidden h-64 w-64 md:block">
@@ -103,21 +104,6 @@ export default function Home() {
         </dl>
       </section>
 
-      {/* dois chamados */}
-      <section className="grid gap-6 border-t border-linha py-14 sm:grid-cols-2">
-        <Revelar>
-          <div className="h-full rounded-3xl bg-superficie p-8">
-            <p className="font-titulo text-2xl font-semibold text-texto">conte de onde você vem. a gente apresenta quem já passou por onde você está agora.</p>
-            <div className="mt-6"><BotaoLink to={destino}>encontrar minhas aliadas</BotaoLink></div>
-          </div>
-        </Revelar>
-        <Revelar atraso={0.08}>
-          <div className="h-full rounded-3xl border-2 border-destaque p-8">
-            <p className="font-titulo text-2xl font-semibold text-texto">você já é referência para alguém. e talvez nem saiba.</p>
-            <div className="mt-6"><BotaoLink to={destino} variante="secundario">quero ser aliada</BotaoLink></div>
-          </div>
-        </Revelar>
-      </section>
     </Pagina>
   )
 }

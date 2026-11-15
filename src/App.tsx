@@ -29,7 +29,7 @@ export function App() {
     <div className="flex min-h-dvh flex-col">
       <Cabecalho />
       {!supabaseConfigurado && (
-        <div className="mx-auto mt-4 w-full max-w-3xl px-5">
+        <div className="mx-auto mt-4 w-full max-w-5xl px-5">
           <Aviso tipo="erro">
             configuração ausente: crie o arquivo <code>.env.local</code> a partir do <code>.env.example</code> (veja docs/SUPABASE.md).
           </Aviso>

@@ -55,15 +55,10 @@ Sem a CLI: **SQL Editor → New query**, cole cada arquivo de `supabase/migratio
 2. **Authentication → URL Configuration:**
    - **Site URL:** a URL do site na Vercel (ex.: `https://aliadas.vercel.app`). Antes do deploy, use `http://localhost:5173`.
    - **Redirect URLs:** adicione `http://localhost:5173/entrar` e `https://<seu-site>/entrar`.
-3. **Authentication → Emails:** o login usa **código de 6 dígitos** (e senha opcional). Edite os modelos **Magic Link** e **Confirm signup** para mostrar o código. Sem isso, o e-mail chega só com o link. Sugestão de conteúdo para os dois:
-   ```html
-   <h2>seu código para entrar na aliadas</h2>
-   <p style="font-size:32px;letter-spacing:8px"><strong>{{ .Token }}</strong></p>
-   <p>ou, se estiver no mesmo aparelho, <a href="{{ .ConfirmationURL }}">clique aqui para entrar</a>.</p>
-   <p>se não foi você, é só ignorar este e-mail.</p>
-   ```
-   Em **Authentication → Providers → Email**, confira se *Email OTP Length* está em 6. Em **Authentication → Policies** (ou *Password security*), ligue a proteção contra senhas vazadas e defina tamanho mínimo 8.
-4. ⚠️ O e-mail padrão do Supabase envia **poucos e-mails por hora** e serve só para testes. Para a demo, configure um SMTP próprio em **Authentication → Emails → SMTP Settings** (ex.: Resend, Brevo). Se não fizer isso, deixe a sua conta e a de teste já logadas antes do pitch.
+3. **Authentication → Emails:** o login usa código por e-mail e link alternativo. O modelo HTML com a identidade visual da comunidade está em `supabase/templates/codigo.html`. Use o mesmo conteúdo em **Magic Link** e **Confirm signup**, com o assunto `seu código para entrar na aliadas`. Preserve `{{ .Token }}` e `{{ .ConfirmationURL }}`.
+4. **Limitação verificada:** a API recusou a personalização com `entitlement_required`: projetos gratuitos com o provedor padrão precisam configurar SMTP próprio ou mudar de plano para alterar os modelos. O HTML está preparado no repositório, mas ainda não foi aplicado no Supabase.
+5. Em **Authentication → Emails → SMTP Settings**, configure um provedor com domínio verificado (por exemplo, Resend ou Brevo) usando os campos seguros do painel. Depois aplique os dois modelos e teste o recebimento em uma conta autorizada. Não coloque credenciais SMTP no repositório.
+6. Não altere o tamanho ou a validade do código só para mudar a aparência. O ambiente atual usa código de 8 dígitos; o formulário aceita esse formato.
 
 ## 5. segredos das Edge Functions
 
@@ -182,3 +177,9 @@ Netlify também funciona: o arquivo `public/_redirects` já está pronto.
 ## 11. depois de tudo: Security Advisor
 
 **Advisors → Security Advisor** no painel. Ele deve mostrar zero alertas de "RLS disabled". Se aparecer aviso sobre as funções `security definer`, é esperado: elas são as funções auxiliares do RLS, e cada uma está explicada em `docs/SEGURANCA.md`.
+
+## diagnóstico da IA de aliadas
+
+A função `recomendar` está ativa, mas a verificação de 15/11/2026 encontrou `ANTHROPIC_API_KEY` ausente nas Edge Functions e uma execução com falha por esse motivo. Cadastre a chave apenas em **Edge Functions → Secrets**. O modelo configurado no código também precisa ser conferido na conta Anthropic antes do teste. Não é possível validar a chamada real sem a credencial.
+
+As sugestões aparecem em `/minhas-aliadas`, com o motivo da escolha em cada cartão. A curadoria acompanha as execuções em **saídas da ia**. É necessário haver ao menos outra pessoa aprovada, com consentimento para ser sugerida e perfil adequado; um único perfil aprovado não basta.

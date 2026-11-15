@@ -13,9 +13,9 @@ export function Pagina({ titulo, children, largura = 'max-w-3xl' }: { titulo: st
       animate={{ opacity: 1, y: 0 }}
       exit={reduzir ? { opacity: 0 } : { opacity: 0, y: -8 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className={`mx-auto w-full ${largura} px-5 py-10 sm:py-14`}
+      className="mx-auto w-full max-w-5xl px-5 py-10 sm:py-14"
     >
-      {children}
+      <div className={`w-full ${largura}`}>{children}</div>
     </motion.div>
   )
 }
