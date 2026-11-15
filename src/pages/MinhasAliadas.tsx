@@ -15,7 +15,7 @@ type Recomendacao = { id: string; motivo: string; aliada: Perfil }
 
 export function trajetoriaCurta(p: Perfil) {
   if (p.resumo) return p.resumo
-  return `${p.de_onde_vem}. hoje: ${ROTULO_ONDE_ESTA[p.onde_esta]}, em ${p.area_interesse}.`
+  return `${p.de_onde_vem}. hoje: ${ROTULO_ONDE_ESTA[p.onde_esta]}. interesses: ${p.areas.join(', ')}.`
 }
 
 const LIMITE_DIA = 3

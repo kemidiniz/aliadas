@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { Aviso, Carregando } from '../components/Aviso'
 import { Avatar } from '../components/Avatar'
 import { Botao, BotaoLink } from '../components/Botao'
-import { Caixinha, CampoArea, CampoTexto, Escolha } from '../components/Campo'
+import { Caixinha, CampoArea, CampoTexto, Escolha, MultiEscolha } from '../components/Campo'
 import { Pagina, Titulo } from '../components/Pagina'
 import { useAuth } from '../lib/auth'
-import { emailSchema, errosPorCampo, LIMITES, linkedinSchema, perfilSchema } from '../lib/esquemas'
+import { emailSchema, errosPorCampo, LIMITES, linkedinSchema, perfilSchema, senhaSchema } from '../lib/esquemas'
 import { mensagemAmigavel } from '../lib/erros'
 import { apagarFoto, enviarFoto, validarFoto } from '../lib/fotos'
 import { supabase } from '../lib/supabase'
-import { ROTULO_FORMA, ROTULO_ONDE_ESTA, type FormaConexao, type OndeEsta, type Perfil } from '../lib/tipos'
+import { AREAS, ROTULO_FORMA, ROTULO_ONDE_ESTA, type FormaConexao, type OndeEsta, type Perfil } from '../lib/tipos'
 
 const STATUS: Record<Perfil['status'], string> = {
   pendente: 'em análise pela curadoria',
@@ -31,6 +31,47 @@ export default function MinhaConta() {
   const [salvando, setSalvando] = useState(false)
   const [confirmacao, setConfirmacao] = useState('')
   const [excluindo, setExcluindo] = useState(false)
+  const [novaArea, setNovaArea] = useState('')
+  const [senha, setSenha] = useState('')
+  const [senha2, setSenha2] = useState('')
+  const [erroSenha, setErroSenha] = useState('')
+  const [salvandoSenha, setSalvandoSenha] = useState(false)
+
+  async function salvarSenha(e: FormEvent) {
+    e.preventDefault()
+    const v = senhaSchema.safeParse(senha)
+    if (!v.success) return setErroSenha(v.error.issues[0].message)
+    if (senha !== senha2) return setErroSenha('as duas senhas não são iguais')
+    setErroSenha('')
+    setSalvandoSenha(true)
+    const { error } = await supabase.auth.updateUser({ password: senha })
+    setSalvandoSenha(false)
+    if (error) {
+      setErroSenha(
+        error.code === 'weak_password'
+          ? 'essa senha é fraca ou já apareceu em vazamentos. tente outra.'
+          : error.code === 'same_password'
+            ? 'essa já é a sua senha atual.'
+            : 'não conseguimos salvar a senha agora. tente de novo.',
+      )
+      return
+    }
+    setSenha('')
+    setSenha2('')
+    setMsg({ tipo: 'ok', texto: 'senha salva. agora você pode entrar com e-mail e senha, ou com código.' })
+  }
+
+  const blocoSenha = (
+    <section aria-labelledby="senha" className="mt-14 border-t border-linha pt-8">
+      <h2 id="senha" className="font-titulo text-2xl font-bold text-destaque">senha</h2>
+      <p className="mt-2 text-suave">opcional. com senha você entra direto; sem senha, entra com um código enviado ao seu e-mail.</p>
+      <form onSubmit={salvarSenha} noValidate className="mt-4 max-w-sm space-y-4">
+        <CampoTexto rotulo="nova senha" type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} ajuda="pelo menos 8 caracteres." />
+        <CampoTexto rotulo="repita a senha" type="password" autoComplete="new-password" value={senha2} onChange={(e) => setSenha2(e.target.value)} erro={erroSenha} />
+        <Botao type="submit" variante="secundario" carregando={salvandoSenha}>salvar senha</Botao>
+      </form>
+    </section>
+  )
 
   useEffect(() => {
     setForm(perfil)
@@ -81,6 +122,7 @@ export default function MinhaConta() {
           <Botao variante="secundario" onClick={sair}>sair</Botao>
         </div>
         {msg && <div className="mt-6"><Aviso tipo={msg.tipo}>{msg.texto}</Aviso></div>}
+        {blocoSenha}
         {blocoExcluir}
       </Pagina>
     )
@@ -92,7 +134,7 @@ export default function MinhaConta() {
   async function salvar(e: FormEvent) {
     e.preventDefault()
     setMsg(null)
-    const v = perfilSchema.safeParse({ ...form, conquista: form!.conquista ?? '' })
+    const v = perfilSchema.safeParse(form)
     const errs = v.success ? {} : errosPorCampo(v.error)
     if (!emailSchema.safeParse(email).success) errs.email = 'confira o e-mail'
     const l = linkedinSchema.safeParse(linkedin)
@@ -107,10 +149,8 @@ export default function MinhaConta() {
         apelido: p.apelido,
         de_onde_vem: p.de_onde_vem,
         onde_esta: p.onde_esta,
-        area_interesse: p.area_interesse,
-        objetivo_12_meses: p.objetivo_12_meses,
-        conquista: p.conquista || null,
-        forma_conexao: p.forma_conexao,
+        areas: p.areas,
+        formas_conexao: p.formas_conexao,
       }).eq('id', perfil!.id),
       supabase.from('contacts').update({ email: email.trim(), linkedin_url: linkedin.trim() }).eq('profile_id', perfil!.id),
       supabase.from('consents').update({ aceita_ser_recomendada: recomendavel }).eq('profile_id', perfil!.id),
@@ -155,7 +195,7 @@ export default function MinhaConta() {
 
   return (
     <Pagina titulo="minha conta">
-      <Titulo sub={<>código {perfil.codigo} · perfil {STATUS[perfil.status]}</>}>minha conta</Titulo>
+      <Titulo sub={<>seu perfil está {STATUS[perfil.status]}.</>}>minha conta</Titulo>
       {msg && <div className="mb-6"><Aviso tipo={msg.tipo}>{msg.texto}</Aviso></div>}
 
       <section aria-labelledby="foto" className="mb-12">
@@ -185,14 +225,37 @@ export default function MinhaConta() {
           erro={erros.onde_esta}
           opcoes={(Object.keys(ROTULO_ONDE_ESTA) as OndeEsta[]).map((v) => ({ valor: v, rotulo: ROTULO_ONDE_ESTA[v] }))}
         />
-        <CampoTexto rotulo="área que te interessa" value={form.area_interesse} maxLength={LIMITES.area_interesse} onChange={(e) => muda('area_interesse', e.target.value)} erro={erros.area_interesse} />
-        <CampoArea rotulo="aonde quer chegar em 12 meses" value={form.objetivo_12_meses} maxLength={LIMITES.objetivo_12_meses} onChange={(e) => muda('objetivo_12_meses', e.target.value)} erro={erros.objetivo_12_meses} />
-        <CampoArea rotulo="uma conquista (opcional)" value={form.conquista ?? ''} maxLength={LIMITES.conquista} onChange={(e) => muda('conquista', e.target.value)} erro={erros.conquista} />
-        <Escolha
-          nome="forma_conexao"
+        <div className="space-y-3">
+          <MultiEscolha
+            rotulo="áreas que te interessam"
+            valores={form.areas}
+            aoMudar={(v) => muda('areas', v)}
+            erro={erros.areas}
+            opcoes={[...new Set([...AREAS, ...form.areas])].map((a) => ({ valor: a, rotulo: a }))}
+          />
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              <CampoTexto rotulo="adicionar outra área" value={novaArea} maxLength={LIMITES.area} onChange={(e) => setNovaArea(e.target.value)} />
+            </div>
+            <Botao
+              type="button"
+              variante="secundario"
+              className="mb-7"
+              onClick={() => {
+                const a = novaArea.trim()
+                if (a.length >= 2 && !form.areas.includes(a)) muda('areas', [...form.areas, a])
+                setNovaArea('')
+              }}
+            >
+              adicionar
+            </Botao>
+          </div>
+        </div>
+        <MultiEscolha
           rotulo="como prefere se conectar"
-          valor={form.forma_conexao}
-          aoMudar={(v) => muda('forma_conexao', v)}
+          valores={form.formas_conexao}
+          aoMudar={(v) => muda('formas_conexao', v)}
+          erro={erros.formas_conexao}
           opcoes={(Object.keys(ROTULO_FORMA) as FormaConexao[]).map((v) => ({ valor: v, rotulo: ROTULO_FORMA[v] }))}
         />
         <CampoTexto rotulo="e-mail para contato" type="email" value={email} onChange={(e) => setEmail(e.target.value)} erro={erros.email} />
@@ -220,6 +283,7 @@ export default function MinhaConta() {
         </div>
       </section>
 
+      {blocoSenha}
       {blocoExcluir}
     </Pagina>
   )

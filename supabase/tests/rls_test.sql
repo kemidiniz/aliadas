@@ -37,9 +37,9 @@ insert into auth.users (id, email) values
   (:ana, 'ana@exemplo.invalid'), (:bia, 'bia@exemplo.invalid'), (:cris, 'cris@exemplo.invalid'),
   (:cur, 'cur@exemplo.invalid'), (:eve, 'eve@exemplo.invalid');
 insert into public.roles values (:cur, 'curadora');
-insert into public.profiles (id, apelido, de_onde_vem, onde_esta, area_interesse, objetivo_12_meses, forma_conexao, status, aprovado_em)
-values (:bia,  'bia',  'professora que migrou', 'ate_2_anos', 'dados', 'ser pleno', 'chamada', 'aprovado', now()),
-       (:cris, 'cris', 'veio do comércio',      'ate_2_anos', 'front', 'ser pleno', 'mensagem', 'aprovado', now());
+insert into public.profiles (id, apelido, de_onde_vem, onde_esta, areas, formas_conexao, status, aprovado_em)
+values (:bia,  'bia',  'professora que migrou', 'ate_2_anos', '{dados}', '{chamada}', 'aprovado', now()),
+       (:cris, 'cris', 'veio do comércio',      'ate_2_anos', '{front-end}', '{mensagem,chamada}', 'aprovado', now());
 insert into public.consents values (:bia, true, true, true, true, true), (:cris, true, true, true, true, true);
 insert into public.contacts (profile_id, email, linkedin_url) values
   (:bia, 'bia@exemplo.invalid', 'https://www.linkedin.com/in/bia'),
@@ -66,15 +66,18 @@ reset role;
 \echo '--- cadastro da ana'
 set role authenticated; select set_config('request.jwt.claim.sub', :ana, false);
 select tst.bloqueia($$select public.salvar_cadastro(
-  '{"apelido":"ana","de_onde_vem":"vim do jornalismo","onde_esta":"estudando","area_interesse":"dados","objetivo_12_meses":"primeira vaga","forma_conexao":"chamada"}',
+  '{"apelido":"ana","de_onde_vem":"vim do jornalismo","onde_esta":"estudando","areas":["dados","inteligência artificial"],"formas_conexao":["chamada","mensagem"]}',
   '{"autodeclaracao":true,"aceita_ser_recomendada":true,"entende_contato_pos_aceite":false,"sabe_que_pode_apagar":true,"aceita_termo_conduta":true}',
   '{"email":"ana@exemplo.invalid"}')$$, 'sem todos os consentimentos obrigatórios não há cadastro');
 select tst.ok(not exists (select 1 from public.profiles where id = auth.uid()), 'cadastro recusado não deixa perfil pela metade');
 select tst.ok(public.salvar_cadastro(
-  '{"apelido":"ana","de_onde_vem":"vim do jornalismo","onde_esta":"estudando","area_interesse":"dados","objetivo_12_meses":"primeira vaga","forma_conexao":"chamada"}',
+  '{"apelido":"ana","de_onde_vem":"vim do jornalismo","onde_esta":"estudando","areas":["dados","inteligência artificial"],"formas_conexao":["chamada","mensagem"]}',
   '{"autodeclaracao":true,"aceita_ser_recomendada":true,"entende_contato_pos_aceite":true,"sabe_que_pode_apagar":true,"aceita_termo_conduta":true}',
   '{"email":"ana@exemplo.invalid","linkedin_url":"https://www.linkedin.com/in/ana"}') like 'P%', 'cadastro completo gera código P…');
 select tst.ok((select status from public.profiles where id = auth.uid()) = 'pendente', 'perfil nasce pendente');
+select tst.ok((select cardinality(areas) = 2 and cardinality(formas_conexao) = 2 from public.profiles where id = auth.uid()), 'cadastro guarda várias áreas e formas de conexão');
+select tst.bloqueia($$update public.profiles set formas_conexao = '{chamada,fax}' where id = auth.uid()$$, 'forma de conexão fora da lista é recusada');
+select tst.bloqueia($$update public.profiles set areas = '{}' where id = auth.uid()$$, 'precisa de pelo menos uma área');
 select tst.bloqueia($$update public.profiles set status = 'aprovado' where id = auth.uid()$$, 'ana não se autoaprova');
 select tst.bloqueia($$update public.profiles set status = 'pausado' where id = auth.uid()$$, 'pendente não pode pausar para depois "despausar"');
 select tst.bloqueia($$update public.profiles set codigo = 'P999' where id = auth.uid()$$, 'ana não muda o próprio código');

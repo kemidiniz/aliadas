@@ -9,10 +9,8 @@ export type Perfil = {
   foto_path: string | null
   de_onde_vem: string
   onde_esta: OndeEsta
-  area_interesse: string
-  objetivo_12_meses: string
-  conquista: string | null
-  forma_conexao: FormaConexao
+  areas: string[]
+  formas_conexao: FormaConexao[]
   status: StatusPerfil
   resumo: string | null
   aprovado_em: string | null
@@ -90,6 +88,22 @@ export const ROTULO_FORMA: Record<FormaConexao, string> = {
   mensagem: 'mensagem',
   encontro: 'encontro presencial',
 }
+
+export const formasTexto = (f: FormaConexao[]) => f.map((x) => ROTULO_FORMA[x]).join(', ')
+
+// sugestões de áreas; quem quiser pode escrever outra
+export const AREAS = [
+  'inteligência artificial',
+  'dados',
+  'desenvolvimento front-end',
+  'desenvolvimento back-end',
+  'desenvolvimento mobile',
+  'ux design',
+  'produto',
+  'qualidade de software',
+  'infraestrutura e nuvem',
+  'segurança da informação',
+] as const
 
 export const PAGINAS_DO_SITE = [
   'home',

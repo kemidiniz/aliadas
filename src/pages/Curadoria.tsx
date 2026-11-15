@@ -8,7 +8,7 @@ import { Pagina, Titulo } from '../components/Pagina'
 import { errosPorCampo, programaSchema } from '../lib/esquemas'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
-import { ROTULO_FORMA, ROTULO_ONDE_ESTA, type Consentimento, type Contato, type Feedback, type Perfil, type Programa } from '../lib/tipos'
+import { formasTexto, ROTULO_ONDE_ESTA, type Consentimento, type Contato, type Feedback, type Perfil, type Programa } from '../lib/tipos'
 
 type Aba = 'perfis' | 'feedback' | 'programas' | 'ia' | 'denuncias'
 const ABAS: { id: Aba; rotulo: string }[] = [
@@ -119,10 +119,8 @@ function Perfis() {
                   <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                     <div><dt className="text-suave">de onde vem</dt><dd>{p.de_onde_vem}</dd></div>
                     <div><dt className="text-suave">onde está</dt><dd>{ROTULO_ONDE_ESTA[p.onde_esta]}</dd></div>
-                    <div><dt className="text-suave">área</dt><dd>{p.area_interesse}</dd></div>
-                    <div><dt className="text-suave">objetivo</dt><dd>{p.objetivo_12_meses}</dd></div>
-                    {p.conquista && <div><dt className="text-suave">conquista</dt><dd>{p.conquista}</dd></div>}
-                    <div><dt className="text-suave">prefere</dt><dd>{ROTULO_FORMA[p.forma_conexao]}</dd></div>
+                    <div><dt className="text-suave">áreas</dt><dd>{p.areas.join(', ')}</dd></div>
+                    <div><dt className="text-suave">prefere</dt><dd>{formasTexto(p.formas_conexao)}</dd></div>
                     <div className="break-words"><dt className="text-suave">e-mail</dt><dd>{p.contato?.email ?? 'sem contato'}</dd></div>
                     <div className="break-words">
                       <dt className="text-suave">linkedin</dt>

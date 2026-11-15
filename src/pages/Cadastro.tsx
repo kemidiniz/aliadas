@@ -4,23 +4,23 @@ import { Link } from 'react-router-dom'
 import { Aviso } from '../components/Aviso'
 import { Avatar } from '../components/Avatar'
 import { Botao, BotaoLink } from '../components/Botao'
-import { Caixinha, CampoArea, CampoTexto, Escolha } from '../components/Campo'
+import { Caixinha, CampoArea, CampoTexto, Escolha, MultiEscolha } from '../components/Campo'
 import { Pagina } from '../components/Pagina'
 import { useAuth } from '../lib/auth'
 import { emailSchema, LIMITES, linkedinSchema, perfilSchema } from '../lib/esquemas'
 import { mensagemAmigavel } from '../lib/erros'
 import { enviarFoto, validarFoto } from '../lib/fotos'
 import { supabase } from '../lib/supabase'
-import { ROTULO_FORMA, ROTULO_ONDE_ESTA, type FormaConexao, type OndeEsta } from '../lib/tipos'
+import { AREAS, ROTULO_FORMA, ROTULO_ONDE_ESTA, type FormaConexao, type OndeEsta } from '../lib/tipos'
 
 type Dados = {
   apelido: string
   de_onde_vem: string
   onde_esta: OndeEsta | ''
-  area_interesse: string
-  objetivo_12_meses: string
-  conquista: string
-  forma_conexao: FormaConexao | ''
+  areas: string[]
+  querOutra: boolean
+  outraArea: string
+  formas_conexao: FormaConexao[]
   email: string
   linkedin_url: string
   autodeclaracao: boolean
@@ -36,7 +36,7 @@ type Etapa = {
   validar: () => string | null
 }
 
-const AREAS = ['dados', 'desenvolvimento front-end', 'desenvolvimento back-end', 'ux design', 'produto', 'qualidade de software', 'suporte e infraestrutura', 'segurança']
+const OUTRA = '__outra__'
 
 export default function Cadastro() {
   const { session, perfil, recarregar } = useAuth()
@@ -52,10 +52,10 @@ export default function Cadastro() {
     apelido: '',
     de_onde_vem: '',
     onde_esta: '',
-    area_interesse: '',
-    objetivo_12_meses: '',
-    conquista: '',
-    forma_conexao: '',
+    areas: [],
+    querOutra: false,
+    outraArea: '',
+    formas_conexao: [],
     email: session?.user.email ?? '',
     linkedin_url: '',
     autodeclaracao: false,
@@ -79,7 +79,6 @@ export default function Cadastro() {
       <Pagina titulo="cadastro" largura="max-w-xl">
         <h1 className="font-titulo text-3xl font-bold text-destaque">recebemos seu cadastro</h1>
         <p className="mt-4 text-lg">
-          seu código é <strong>{perfil.codigo}</strong>.{' '}
           {perfil.status === 'pendente'
             ? 'a curadoria vai olhar seu perfil com carinho. quando ele for aprovado, a gente já procura suas aliadas.'
             : 'seu perfil já passou pela curadoria.'}
@@ -92,8 +91,10 @@ export default function Cadastro() {
     )
   }
 
-  const campo = (k: keyof typeof perfilSchema.shape) => () => {
-    const r = perfilSchema.shape[k].safeParse(d[k] === '' && k === 'conquista' ? undefined : d[k])
+  const areasFinais = () => [...d.areas, ...(d.querOutra && d.outraArea.trim() ? [d.outraArea.trim()] : [])]
+
+  const campo = (k: 'apelido' | 'de_onde_vem' | 'onde_esta' | 'formas_conexao') => () => {
+    const r = perfilSchema.shape[k].safeParse(d[k])
     return r.success ? null : r.error.issues[0].message
   }
 
@@ -181,70 +182,43 @@ export default function Cadastro() {
       ),
     },
     {
-      chave: 'area_interesse',
-      validar: campo('area_interesse'),
+      chave: 'areas',
+      validar: () => {
+        if (d.querOutra && d.outraArea.trim().length < 2) return 'escreva qual é a outra área'
+        const r = perfilSchema.shape.areas.safeParse(areasFinais())
+        return r.success ? null : r.error.issues[0].message
+      },
       render: () => (
         <div className="space-y-4">
-          <CampoTexto
-            rotulo="qual área te interessa?"
-            value={d.area_interesse}
-            maxLength={LIMITES.area_interesse}
-            list="areas"
-            onChange={(e) => muda('area_interesse', e.target.value)}
-            erro={erro}
+          <MultiEscolha
+            rotulo="quais áreas te interessam?"
+            ajuda="pode escolher mais de uma."
+            valores={[...d.areas, ...(d.querOutra ? [OUTRA] : [])]}
+            aoMudar={(v) => setD((x) => ({ ...x, areas: v.filter((a) => a !== OUTRA), querOutra: v.includes(OUTRA) }))}
+            opcoes={[...AREAS.map((a) => ({ valor: a as string, rotulo: a })), { valor: OUTRA, rotulo: 'outra' }]}
+            erro={d.querOutra ? undefined : erro}
           />
-          <datalist id="areas">{AREAS.map((a) => <option key={a} value={a} />)}</datalist>
-          <div className="flex flex-wrap gap-2" aria-label="sugestões">
-            {AREAS.map((a) => (
-              <button
-                key={a}
-                type="button"
-                onClick={() => muda('area_interesse', a)}
-                className={`rounded-full border px-3 py-1.5 text-sm ${d.area_interesse === a ? 'border-destaque bg-superficie text-destaque' : 'border-linha text-suave hover:border-destaque'}`}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
+          {d.querOutra && (
+            <CampoTexto
+              rotulo="qual outra área?"
+              value={d.outraArea}
+              maxLength={LIMITES.area}
+              onChange={(e) => muda('outraArea', e.target.value)}
+              erro={erro}
+            />
+          )}
         </div>
       ),
     },
     {
-      chave: 'objetivo',
-      validar: campo('objetivo_12_meses'),
+      chave: 'formas_conexao',
+      validar: campo('formas_conexao'),
       render: () => (
-        <CampoArea
-          rotulo="aonde você quer chegar em 12 meses?"
-          value={d.objetivo_12_meses}
-          maxLength={LIMITES.objetivo_12_meses}
-          onChange={(e) => muda('objetivo_12_meses', e.target.value)}
-          erro={erro}
-        />
-      ),
-    },
-    {
-      chave: 'conquista',
-      validar: campo('conquista'),
-      render: () => (
-        <CampoArea
-          rotulo="uma conquista que poderia inspirar quem está começando"
-          ajuda="opcional. pode ser pequena: terminar um curso, um projeto, uma entrevista."
-          value={d.conquista}
-          maxLength={LIMITES.conquista}
-          onChange={(e) => muda('conquista', e.target.value)}
-          erro={erro}
-        />
-      ),
-    },
-    {
-      chave: 'forma_conexao',
-      validar: campo('forma_conexao'),
-      render: () => (
-        <Escolha
-          nome="forma_conexao"
+        <MultiEscolha
           rotulo="como você prefere se conectar?"
-          valor={d.forma_conexao}
-          aoMudar={(v) => muda('forma_conexao', v)}
+          ajuda="pode escolher mais de uma."
+          valores={d.formas_conexao}
+          aoMudar={(v) => muda('formas_conexao', v)}
           erro={erro}
           opcoes={(Object.keys(ROTULO_FORMA) as FormaConexao[]).map((v) => ({ valor: v, rotulo: ROTULO_FORMA[v] }))}
         />
@@ -276,29 +250,19 @@ export default function Cadastro() {
       ),
     },
     {
-      chave: 'autodeclaracao',
-      validar: () => (d.autodeclaracao ? null : 'para participar, marque a autodeclaração'),
-      render: () => (
-        <div className="space-y-4">
-          <p className="font-titulo text-lg font-semibold">autodeclaração</p>
-          <Caixinha obrigatoria marcado={d.autodeclaracao} aoMudar={(v) => muda('autodeclaracao', v)}>
-            sou mulher (cis ou trans) ou pessoa não binária e concordo com o{' '}
-            <Link to="/termo-de-conduta" target="_blank" className="text-destaque underline underline-offset-4">termo de conduta</Link>.
-          </Caixinha>
-          <p className="text-sm text-erro" aria-live="polite">{erro}</p>
-        </div>
-      ),
-    },
-    {
       chave: 'consentimentos',
       validar: () =>
-        d.entende_contato_pos_aceite && d.sabe_que_pode_apagar && d.aceita_termo_conduta
+        d.autodeclaracao && d.entende_contato_pos_aceite && d.sabe_que_pode_apagar && d.aceita_termo_conduta
           ? null
           : 'faltam caixas obrigatórias',
       render: () => (
         <div className="space-y-3">
           <p className="font-titulo text-lg font-semibold">antes de terminar</p>
           <p className="text-sm text-suave">leia com calma. nenhuma caixa vem marcada.</p>
+          <Caixinha obrigatoria marcado={d.autodeclaracao} aoMudar={(v) => muda('autodeclaracao', v)}>
+            sou mulher (cis ou trans) ou pessoa não binária e concordo com o{' '}
+            <Link to="/termo-de-conduta" target="_blank" className="text-destaque underline underline-offset-4">termo de conduta</Link>.
+          </Caixinha>
           <Caixinha marcado={d.aceita_ser_recomendada} aoMudar={(v) => muda('aceita_ser_recomendada', v)}>
             aceito ser recomendada como aliada para outras mulheres (dá para mudar depois em "minha conta").
           </Caixinha>
@@ -354,10 +318,8 @@ export default function Cadastro() {
           foto_path,
           de_onde_vem: d.de_onde_vem,
           onde_esta: d.onde_esta,
-          area_interesse: d.area_interesse,
-          objetivo_12_meses: d.objetivo_12_meses,
-          conquista: d.conquista,
-          forma_conexao: d.forma_conexao,
+          areas: areasFinais(),
+          formas_conexao: d.formas_conexao,
         },
         consentimento: {
           autodeclaracao: d.autodeclaracao,

@@ -7,9 +7,8 @@ const texto = (min: number, max: number, msg: string) =>
 export const LIMITES = {
   apelido: 40,
   de_onde_vem: 400,
-  area_interesse: 80,
-  objetivo_12_meses: 400,
-  conquista: 400,
+  area: 60,
+  maxAreas: 8,
   feedbackCurto: 500,
   problema: 1000,
   denuncia: 800,
@@ -27,11 +26,19 @@ export const perfilSchema = z.object({
   apelido: texto(2, LIMITES.apelido, 'escreva pelo menos 2 letras'),
   de_onde_vem: texto(3, LIMITES.de_onde_vem, 'conta um pouquinho'),
   onde_esta: z.enum(['estudando', 'primeira_vaga', 'ate_2_anos'], { message: 'escolha uma opção' }),
-  area_interesse: texto(2, LIMITES.area_interesse, 'qual área?'),
-  objetivo_12_meses: texto(3, LIMITES.objetivo_12_meses, 'conta aonde quer chegar'),
-  conquista: z.string().trim().max(LIMITES.conquista, `até ${LIMITES.conquista} caracteres`).optional(),
-  forma_conexao: z.enum(['chamada', 'mensagem', 'encontro'], { message: 'escolha uma opção' }),
+  areas: z
+    .array(z.string().trim().min(2, 'escreva a área').max(LIMITES.area, `até ${LIMITES.area} caracteres`))
+    .min(1, 'escolha pelo menos uma área')
+    .max(LIMITES.maxAreas, `escolha até ${LIMITES.maxAreas} áreas`),
+  formas_conexao: z
+    .array(z.enum(['chamada', 'mensagem', 'encontro']))
+    .min(1, 'escolha pelo menos uma opção'),
 })
+
+export const senhaSchema = z
+  .string()
+  .min(8, 'use pelo menos 8 caracteres')
+  .max(72, 'senha longa demais')
 
 export const urlHttps = z
   .string()

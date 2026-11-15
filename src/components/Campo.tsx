@@ -131,3 +131,42 @@ export function Caixinha({ marcado, aoMudar, children, obrigatoria }: { marcado:
     </div>
   )
 }
+
+// várias opções ao mesmo tempo (caixinhas com cara de botão)
+export function MultiEscolha<T extends string>({
+  rotulo,
+  ajuda,
+  erro,
+  opcoes,
+  valores,
+  aoMudar,
+}: Base & { opcoes: { valor: T; rotulo: string }[]; valores: T[]; aoMudar: (v: T[]) => void }) {
+  const id = useId()
+  const alternar = (v: T) => aoMudar(valores.includes(v) ? valores.filter((x) => x !== v) : [...valores, v])
+  return (
+    <fieldset className="space-y-3" aria-describedby={`${id}-erro`}>
+      <legend className="mb-2 font-titulo text-lg font-semibold lowercase text-texto">{rotulo}</legend>
+      {ajuda && <p className="text-sm text-suave">{ajuda}</p>}
+      <div className="flex flex-wrap gap-2">
+        {opcoes.map((o) => {
+          const marcado = valores.includes(o.valor)
+          return (
+            <label
+              key={o.valor}
+              className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border-2 px-4 py-2 transition-colors focus-within:outline focus-within:outline-3 focus-within:outline-offset-3 ${
+                marcado ? 'border-destaque bg-destaque text-sobre-destaque' : 'border-campo text-texto hover:border-destaque'
+              }`}
+            >
+              <input type="checkbox" className="sr-only" checked={marcado} onChange={() => alternar(o.valor)} />
+              <span aria-hidden className="font-bold">{marcado ? '✓' : '+'}</span>
+              {o.rotulo}
+            </label>
+          )
+        })}
+      </div>
+      <p id={`${id}-erro`} className="text-sm text-erro" aria-live="polite">
+        {erro}
+      </p>
+    </fieldset>
+  )
+}

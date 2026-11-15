@@ -20,10 +20,10 @@ export default function Home() {
       <section className="grid items-center gap-10 py-6 sm:py-12 md:grid-cols-[1.4fr_1fr]">
         <div>
           <h1 className="font-titulo text-4xl font-bold leading-tight text-destaque sm:text-6xl">
-            você não precisa de uma ceo.
+            todas nós temos algo a ensinar e muito a aprender.
           </h1>
           <p className="mt-5 max-w-xl text-xl text-texto sm:text-2xl">
-            precisa de alguém que estava onde você está há um ano.
+            vem conhecer sua próxima aliada!
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <BotaoLink to={destino}>encontrar minhas aliadas</BotaoLink>
@@ -108,7 +108,7 @@ export default function Home() {
       <section className="grid gap-6 border-t border-linha py-14 sm:grid-cols-2">
         <Revelar>
           <div className="h-full rounded-3xl bg-superficie p-8">
-            <p className="font-titulo text-2xl font-semibold text-texto">você não precisa de uma ceo. precisa de alguém que estava onde você está há um ano.</p>
+            <p className="font-titulo text-2xl font-semibold text-texto">conte de onde você vem. a gente apresenta quem já passou por onde você está agora.</p>
             <div className="mt-6"><BotaoLink to={destino}>encontrar minhas aliadas</BotaoLink></div>
           </div>
         </Revelar>

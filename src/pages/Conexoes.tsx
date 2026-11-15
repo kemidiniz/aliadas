@@ -7,7 +7,7 @@ import { Pagina, Titulo } from '../components/Pagina'
 import { useAuth } from '../lib/auth'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
-import { ROTULO_FORMA, type Conexao, type Contato, type Perfil } from '../lib/tipos'
+import { formasTexto, type Conexao, type Contato, type Perfil } from '../lib/tipos'
 import { trajetoriaCurta } from './MinhasAliadas'
 
 type Item = Conexao & { outra: Perfil | null; contato: Contato | null }
@@ -108,7 +108,7 @@ export default function Conexoes() {
                       <Avatar apelido={c.outra.apelido} fotoPath={c.outra.foto_path} />
                       <div className="min-w-0">
                         <p className="font-titulo text-xl font-semibold">{c.outra.apelido}</p>
-                        <p className="text-sm text-suave">prefere: {ROTULO_FORMA[c.outra.forma_conexao]}</p>
+                        <p className="text-sm text-suave">prefere: {formasTexto(c.outra.formas_conexao)}</p>
                       </div>
                     </div>
                   )}
