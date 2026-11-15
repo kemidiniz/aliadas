@@ -24,7 +24,7 @@ const data = (s: string) => new Date(s).toLocaleString('pt-BR', { dateStyle: 'sh
 export default function Curadoria() {
   const [aba, setAba] = useState<Aba>('perfis')
   return (
-    <Pagina titulo="curadoria" largura="max-w-5xl">
+    <Pagina titulo="curadoria">
       <Titulo>curadoria</Titulo>
       <div role="tablist" aria-label="áreas da curadoria" className="mb-8 flex flex-wrap gap-2">
         {ABAS.map((a) => (

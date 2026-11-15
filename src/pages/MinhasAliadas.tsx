@@ -110,7 +110,7 @@ export default function MinhasAliadas() {
     conexoes.find((c) => c.de_profile_id === id || c.para_profile_id === id)
 
   return (
-    <Pagina titulo="minhas aliadas" largura="max-w-5xl">
+    <Pagina titulo="minhas aliadas">
       <Titulo sub="conheça mulheres com experiências que se conectam à sua trajetória.">minhas aliadas</Titulo>
 
       {msg && <div className="mb-6"><Aviso tipo={msg.tipo}>{msg.texto}</Aviso></div>}

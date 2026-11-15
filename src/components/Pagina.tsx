@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, type ReactNode } from 'react'
 
 // Transição suave entre páginas (300 ms) e título da aba.
-export function Pagina({ titulo, children, largura = 'max-w-3xl' }: { titulo: string; children: ReactNode; largura?: string }) {
+export function Pagina({ titulo, children }: { titulo: string; children: ReactNode }) {
   const reduzir = useReducedMotion()
   useEffect(() => {
     document.title = titulo === 'aliadas' ? 'aliadas' : `${titulo} · aliadas`
@@ -15,7 +15,7 @@ export function Pagina({ titulo, children, largura = 'max-w-3xl' }: { titulo: st
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="mx-auto w-full max-w-5xl px-5 py-10 sm:py-14"
     >
-      <div className={`w-full ${largura}`}>{children}</div>
+      <div className="w-full">{children}</div>
     </motion.div>
   )
 }

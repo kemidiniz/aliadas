@@ -76,7 +76,7 @@ export default function Cadastro() {
 
   if (perfil) {
     return (
-      <Pagina titulo="cadastro" largura="max-w-xl">
+      <Pagina titulo="cadastro">
         <h1 className="font-titulo text-3xl font-bold text-destaque">recebemos seu cadastro</h1>
         <p className="mt-4 text-lg">
           {perfil.status === 'pendente'
@@ -342,7 +342,7 @@ export default function Cadastro() {
   const progresso = Math.round(((i + 1) / etapas.length) * 100)
 
   return (
-    <Pagina titulo="cadastro" largura="max-w-xl">
+    <Pagina titulo="cadastro">
       <div className="mb-8">
         <div className="flex items-baseline justify-between">
           <h1 className="font-titulo text-2xl font-bold text-destaque">seu cadastro</h1>

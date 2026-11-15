@@ -65,7 +65,7 @@ export default function MinhaConta() {
     <section aria-labelledby="senha" className="mt-14 border-t border-linha pt-8">
       <h2 id="senha" className="font-titulo text-2xl font-bold text-destaque">senha</h2>
       <p className="mt-2 text-suave">opcional. com senha você entra direto; sem senha, entra com um código enviado ao seu e-mail.</p>
-      <form onSubmit={salvarSenha} noValidate className="mt-4 max-w-sm space-y-4">
+      <form onSubmit={salvarSenha} noValidate className="mt-4 w-full space-y-4">
         <CampoTexto rotulo="nova senha" type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} ajuda="pelo menos 8 caracteres." />
         <CampoTexto rotulo="repita a senha" type="password" autoComplete="new-password" value={senha2} onChange={(e) => setSenha2(e.target.value)} erro={erroSenha} />
         <Botao type="submit" variante="secundario" carregando={salvandoSenha}>salvar senha</Botao>
@@ -101,7 +101,7 @@ export default function MinhaConta() {
     <section aria-labelledby="excluir" className="mt-14 rounded-3xl border-2 border-erro p-6">
       <h2 id="excluir" className="font-titulo text-2xl font-bold text-erro">excluir conta</h2>
       <p className="mt-2">apaga de vez seu perfil, foto, contatos, consentimentos e conexões. não dá para desfazer.</p>
-      <div className="mt-4 max-w-sm">
+      <div className="mt-4 w-full">
         <CampoTexto rotulo='para confirmar, escreva "excluir"' value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} />
       </div>
       <div className="mt-4">

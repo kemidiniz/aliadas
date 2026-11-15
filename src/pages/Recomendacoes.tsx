@@ -62,7 +62,7 @@ export default function Recomendacoes() {
   const outros = filtrados.filter((p) => !paraMim.has(p.id))
 
   return (
-    <Pagina titulo="recomendações" largura="max-w-4xl">
+    <Pagina titulo="recomendações">
       <Titulo sub="cursos, programas e comunidades para mulheres em tecnologia, escolhidos pela curadoria e pela comunidade.">
         aliada, temos uma recomendação pra você!
       </Titulo>

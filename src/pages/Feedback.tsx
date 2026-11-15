@@ -48,7 +48,7 @@ export default function FeedbackPagina() {
 
   if (estado === 'ok') {
     return (
-      <Pagina titulo="feedback" largura="max-w-xl">
+      <Pagina titulo="feedback">
         <Titulo>recebemos!</Titulo>
         <p className="text-xl">obrigada por construir a aliadas com a gente.</p>
         <div className="mt-8">
@@ -59,7 +59,7 @@ export default function FeedbackPagina() {
   }
 
   return (
-    <Pagina titulo="feedback" largura="max-w-xl">
+    <Pagina titulo="feedback">
       <Titulo sub="nossa comunidade pode evoluir com a sua opinião">feedback</Titulo>
       <form onSubmit={enviar} noValidate className="space-y-8">
         <Escolha nome="caminho" rotulo="o que você quer fazer?" valor={caminho} aoMudar={(v) => { setCaminho(v); setErros({}) }} opcoes={CAMINHOS} />

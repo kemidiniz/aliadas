@@ -81,7 +81,7 @@ export default function Conexoes() {
   const abaAtual: Aba = aba ?? (recebidos.length ? 'recebidos' : conectadas.length ? 'conectadas' : 'enviados')
 
   return (
-    <Pagina titulo="conexões" largura="max-w-4xl">
+    <Pagina titulo="conexões">
       <Titulo sub="o contato só aparece quando as duas aceitam.">conexões</Titulo>
       {erro && <div className="mb-6"><Aviso tipo="erro">{erro}</Aviso></div>}
 

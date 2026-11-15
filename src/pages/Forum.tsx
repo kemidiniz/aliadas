@@ -340,7 +340,7 @@ export default function Forum() {
   const opcoesArea = [...new Set([...(perfil?.areas ?? []), ...AREAS])]
 
   return (
-    <Pagina titulo="fórum" largura="max-w-3xl">
+    <Pagina titulo="fórum">
       <Titulo sub={<>dúvidas, conquistas, dicas e desabafos.<span role="note" className="mt-2 block text-sm">só mulheres aprovadas veem o que você escreve aqui.</span></>}>fórum</Titulo>
 
       {perfil && (

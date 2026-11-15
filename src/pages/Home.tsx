@@ -15,14 +15,14 @@ export default function Home() {
   const destino = !session ? '/entrar' : perfil ? '/minhas-aliadas' : '/cadastro'
 
   return (
-    <Pagina titulo="aliadas" largura="max-w-5xl">
+    <Pagina titulo="aliadas">
       {/* hero */}
       <section className="grid items-center gap-10 pb-12 sm:pb-14 md:grid-cols-[1.4fr_1fr]">
         <div>
           <h1 className="font-titulo text-4xl font-bold leading-tight text-destaque sm:text-6xl">
             todas nós temos algo a ensinar e muito a aprender.
           </h1>
-          <p className="mt-5 max-w-xl text-xl text-texto sm:text-2xl">
+          <p className="mt-5 text-xl text-texto sm:text-2xl">
             vem conhecer sua próxima aliada!
           </p>
           <div className="mt-8 flex flex-wrap gap-3">

@@ -107,7 +107,7 @@ export default function Entrar() {
   )
 
   return (
-    <Pagina titulo="entrar" largura="max-w-xl">
+    <Pagina titulo="entrar">
       <Titulo sub="primeira vez aqui? entre com código: sua conta é criada na hora.">entrar</Titulo>
 
       <div role="tablist" aria-label="como entrar" className="mb-8 flex gap-1 rounded-full border-2 border-campo p-1">
