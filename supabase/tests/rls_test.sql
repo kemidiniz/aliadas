@@ -62,6 +62,8 @@ select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encont
 select tst.bloqueia($$insert into public.feedback (tipo, indicacao_nome, indicacao_link, indicacao_motivo, indicacao_gratuito) values ('indicacao', 'x', 'http://inseguro.com', 'y', 'sim')$$, 'indicação só aceita https://');
 select tst.bloqueia($$insert into public.feedback (tipo) values ('avaliacao')$$, 'feedback exige os campos do caminho');
 select tst.bloqueia($$select public.salvar_cadastro('{}', '{}', '{}')$$, 'anon não cria cadastro');
+insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, email) select 'avaliacao', 5, 'sim', 'Repetida@exemplo.invalid' from generate_series(1, 3);
+select tst.bloqueia($$insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, email) values ('avaliacao', 5, 'sim', 'repetida@exemplo.invalid')$$, 'no máximo 3 feedbacks por e-mail por dia');
 reset role;
 
 -- ------------------------------------------------------------- cadastro
@@ -107,7 +109,7 @@ select tst.ok((select linkedin_url from public.contacts where profile_id = :ana)
 select tst.bloqueia($$update public.profiles set apelido = 'hackeado' where id = 'aaaaaaaa-0000-0000-0000-000000000001'$$, 'curadora não edita o conteúdo do perfil de outra');
 update public.profiles set status = 'aprovado' where id = :ana;
 select tst.ok((select aprovado_em is not null from public.profiles where id = :ana), 'aprovação marca aprovado_em');
-select tst.ok((select count(*) from public.feedback) = 1, 'curadora lê feedback');
+select tst.ok((select count(*) from public.feedback) >= 1, 'curadora lê feedback');
 update public.feedback set status = 'em_analise';
 select tst.ok((select status from public.feedback limit 1) = 'em_analise', 'curadora muda status do feedback');
 select tst.bloqueia($$update public.feedback set categoria_ia = 'x'$$, 'curadora não sobrescreve campos _ia da automação (exceto rascunho)');

@@ -14,7 +14,7 @@ type Aba = 'perfis' | 'feedback' | 'ia' | 'denuncias'
 const ABAS: { id: Aba; rotulo: string }[] = [
   { id: 'perfis', rotulo: 'perfis' },
   { id: 'feedback', rotulo: 'feedback' },
-  { id: 'ia', rotulo: 'saídas da ia' },
+  { id: 'ia', rotulo: 'registro da ia' },
   { id: 'denuncias', rotulo: 'denúncias' },
 ]
 
@@ -204,7 +204,7 @@ function FeedbackAba() {
 }
 
 function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
-  const [rascunho, setRascunho] = useState(f.rascunho_ia ?? f.resposta_aprovada ?? '')
+  const [rascunho, setRascunho] = useState(f.resposta_aprovada ?? '')
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const aberto = f.status === 'novo' || f.status === 'em_analise'
@@ -253,21 +253,13 @@ function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
         <div className="break-words"><dt className="inline text-suave">e-mail: </dt><dd className="inline">{f.email ?? 'não quis resposta'}</dd></div>
       </dl>
 
-      {(f.categoria_ia || f.resumo_ia || f.alertas_ia) && (
-        <div className="mt-5 rounded-2xl bg-superficie p-4 text-sm">
-          <p className="font-titulo font-semibold lowercase text-suave">análise da ia (automação)</p>
-          {f.categoria_ia && <p className="mt-1">categoria: {f.categoria_ia}{f.urgencia_ia ? ` · urgência: ${f.urgencia_ia}` : ''}</p>}
-          {f.resumo_ia && <p className="mt-1">resumo: {f.resumo_ia}</p>}
-          {f.alertas_ia && <p className="mt-1 text-erro">alertas: {f.alertas_ia}</p>}
-        </div>
-      )}
 
       {aberto && (
         <div className="mt-5 space-y-4">
           {f.email && (
             <CampoArea
-              rotulo="resposta"
-              ajuda={f.rascunho_ia ? 'rascunho da ia: revise antes de aprovar.' : 'o rascunho da ia ainda não chegou. você pode escrever direto.'}
+              rotulo="resposta pessoal (opcional)"
+              ajuda="a confirmação automática já foi enviada. se quiser responder algo específico, escreva aqui."
               value={rascunho}
               rows={5}
               maxLength={4000}
@@ -283,9 +275,9 @@ function ItemFeedback({ f, aoMudar }: { f: Feedback; aoMudar: () => void }) {
                 <Botao
                   carregando={ocupado}
                   disabled={!rascunho.trim()}
-                  onClick={() => atualizar({ resposta_aprovada: rascunho.trim(), rascunho_ia: rascunho.trim(), status: 'aprovado' })}
+                  onClick={() => atualizar({ resposta_aprovada: rascunho.trim(), status: 'aprovado' })}
                 >
-                  aprovar e enviar
+                  enviar resposta
                 </Botao>
               ) : (
                 <Botao carregando={ocupado} onClick={() => atualizar({ status: 'respondido' })}>marcar como lido</Botao>

@@ -28,13 +28,9 @@ Fluxo principal: entrar (código por e-mail ou senha) → cadastro em 8 telas �
 
 Marque conforme for fazendo.
 
-### 2.1 Make: consertar o módulo de IA (bloqueia a IA do feedback)
-- [ ] Abrir https://us2.make.com/2735987/scenarios/7042820/edit
-- [ ] Clicar no módulo **"Extract information from text"** → **Upgrade module** → conexão **"Make's AI Provider"** → escolher um modelo → OK → **Save**.
-- [ ] Conferir se o cenário está **ligado** (botão no canto inferior esquerdo). Ele pode ter desligado sozinho por causa do erro.
-- [ ] Em `/curadoria` → aba feedback, **descartar** o feedback de teste ("teste da automação…").
-
-> Por quê: o módulo foi criado na versão antiga do app de IA do Make. O resto do cenário (ler o Supabase, gravar a análise, mandar e-mail) já está montado.
+### 2.1 Make: feedback sem IA ✅ (feito)
+O cenário **aliadas · automações** está ligado e testado: feedback novo → e-mail HTML para a curadora + resposta automática para quem deixou e-mail. Resposta pessoal da curadora e aviso de perfil novo também passam por ele.
+- [ ] Em `/curadoria` → aba feedback, **descartar** os feedbacks de teste.
 
 ### 2.2 Supabase: segredos das Edge Functions (bloqueia a busca de aliadas)
 Link: https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/functions/secrets
@@ -48,16 +44,12 @@ Link: https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/url-confi
 - [ ] **Site URL:** `https://aliadas-indol.vercel.app`
 - [ ] **Redirect URLs:** adicionar `https://aliadas-indol.vercel.app/entrar` e `http://localhost:5173/entrar`
 
-### 2.4 Supabase: e-mail com o código de 6 dígitos
+### 2.4 Supabase: e-mail bonito com o código (depende do 2.6 — SMTP próprio)
+No plano gratuito, o Supabase só deixa trocar o modelo depois de configurar SMTP próprio (item 2.6).
 Link: https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/templates
-- [ ] Nos modelos **Magic Link** e **Confirm signup**, trocar o assunto para `seu código para entrar na aliadas` e o corpo por:
-  ```html
-  <h2>seu código para entrar na aliadas</h2>
-  <p style="font-size:32px;letter-spacing:8px"><strong>{{ .Token }}</strong></p>
-  <p>ou, se estiver no mesmo aparelho, <a href="{{ .ConfirmationURL }}">clique aqui para entrar</a>.</p>
-  <p>se não foi você, é só ignorar este e-mail.</p>
-  ```
-- [ ] Em https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/providers → Email: conferir **Email OTP Length = 6**.
+- [ ] **Confirm signup** → assunto `bem-vinda à aliadas · seu código` → colar todo o conteúdo de `supabase/templates/confirmar-cadastro.html`
+- [ ] **Magic Link** → assunto `seu código para entrar na aliadas` → colar todo o conteúdo de `supabase/templates/entrar.html`
+- [ ] Salvar e testar entrando no site com um e-mail seu.
 
 ### 2.5 Supabase: segurança de senha
 Link: https://supabase.com/dashboard/project/mbiutzyteuvcoahhizmg/auth/providers (seção de senhas / *Password security*)

@@ -55,7 +55,10 @@ Sem a CLI: **SQL Editor → New query**, cole cada arquivo de `supabase/migratio
 2. **Authentication → URL Configuration:**
    - **Site URL:** a URL do site na Vercel (ex.: `https://aliadas.vercel.app`). Antes do deploy, use `http://localhost:5173`.
    - **Redirect URLs:** adicione `http://localhost:5173/entrar` e `https://<seu-site>/entrar`.
-3. **Authentication → Emails:** o login usa código por e-mail e link alternativo. O modelo HTML com a identidade visual da comunidade está em `supabase/templates/codigo.html`. Use o mesmo conteúdo em **Magic Link** e **Confirm signup**, com o assunto `seu código para entrar na aliadas`. Preserve `{{ .Token }}` e `{{ .ConfirmationURL }}`.
+3. **Authentication → Emails:** o login usa código por e-mail e link alternativo. Os modelos HTML com a identidade visual estão em `supabase/templates/`:
+   - **Confirm signup** (primeiro acesso) → `confirmar-cadastro.html`, assunto `bem-vinda à aliadas · seu código`
+   - **Magic Link** (entrar de novo) → `entrar.html`, assunto `seu código para entrar na aliadas`
+   Preserve `{{ .Token }}` e `{{ .ConfirmationURL }}`.
 4. **Limitação verificada:** a API recusou a personalização com `entitlement_required`: projetos gratuitos com o provedor padrão precisam configurar SMTP próprio ou mudar de plano para alterar os modelos. O HTML está preparado no repositório, mas ainda não foi aplicado no Supabase.
 5. Em **Authentication → Emails → SMTP Settings**, configure um provedor com domínio verificado (por exemplo, Resend ou Brevo) usando os campos seguros do painel. Depois aplique os dois modelos e teste o recebimento em uma conta autorizada. Não coloque credenciais SMTP no repositório.
 6. Não altere o tamanho ou a validade do código só para mudar a aparência. O ambiente atual usa código de 8 dígitos; o formulário aceita esse formato.
@@ -137,8 +140,8 @@ No Make, use **Webhooks → Custom webhook**. As URLs ficam no Vault do Supabase
 
 | segredo no Vault | evento | ação no Make |
 |---|---|---|
-| `make_feedback_novo_url` | feedback inserido | buscar feedback por `id`, classificar e gravar rascunho |
-| `make_feedback_atualizado_url` | feedback mudou para aprovado | buscar feedback por `id`, conferir `status = aprovado` e enviar a resposta |
+| `make_feedback_novo_url` | feedback inserido | buscar feedback por `id`, mandar e-mail HTML para a curadoria e resposta automática (texto fixo) para quem deixou e-mail |
+| `make_feedback_atualizado_url` | curadora enviou uma resposta pessoal | buscar feedback por `id`, conferir `status = aprovado` e enviar a resposta |
 | `make_perfil_novo_url` | perfil inserido | avisar a curadoria de um novo perfil |
 
 Configure os segredos pelo painel seguro do Supabase. O gatilho não envia o cabeçalho `x-aliadas-secret`; esse cabeçalho pertence ao fluxo de recomendação, separado deste.
@@ -154,16 +157,18 @@ No cenário, encaminhe apenas as tabelas e eventos esperados e busque a linha no
 ### diagnosticar falhas
 
 1. Abra **History** no Make e identifique a execução e o primeiro módulo com erro.
-2. Se o erro for no **Extract information from text** antigo, use **Upgrade module**, selecione a conexão e um modelo disponível, revise os campos de saída usados nos próximos módulos e salve. Confirme que o cenário está ligado.
+2. Confirme que o cenário **aliadas · automações** está ligado (o plano gratuito permite 2 cenários ativos). Ele tem um webhook e três rotas: feedback novo, resposta pessoal e perfil novo.
 3. Se nenhuma execução chegar, confira a existência dos três segredos no Vault e dos gatilhos da migration 007. Não compartilhe os valores dos segredos.
 4. Se o webhook chegar, mas os campos estiverem vazios, confira o mapeamento de `tabela`, `evento` e `id` e a busca da linha no Supabase.
-5. Teste um feedback identificado como teste, sem dados pessoais. Confirme que a análise aparece na curadoria. O teste de envio de e-mail precisa de um destinatário de teste autorizado; não reprocesse em massa execuções antigas.
+5. Teste um feedback identificado como teste usando o seu próprio e-mail: devem chegar o aviso da curadoria e a resposta automática. Não reprocesse em massa execuções antigas.
 
-**Como o Make devolve a análise da IA:** pelo módulo **Supabase → Update a row** (ou HTTP `PATCH` em `https://<ref>.supabase.co/rest/v1/feedback?id=eq.<id>`) usando a **service role key guardada como conexão no Make**. Preencha só `categoria_ia`, `urgencia_ia`, `resumo_ia`, `rascunho_ia`, `alertas_ia` e, se quiser, `status = em_analise`. Depois do envio do e-mail, mude `status` para `respondido`.
+**Sem IA no feedback.** A automação só lê o feedback com a **service role key guardada como conexão no Make** e envia os e-mails. Depois de uma resposta pessoal, ela muda `status` para `respondido`. Os campos `*_ia` da tabela não são usados.
+
+**Proteção contra abuso:** o formulário é público e gera e-mail para o endereço digitado. Por isso a resposta automática tem texto fixo (nada do que a pessoa escreveu) e o banco limita a 3 feedbacks por e-mail a cada 24 h e 60 por hora no total (migration 012).
 
 > 🔐 A service role ignora o RLS. Ela fica só na conexão do Make. Se um dia vazar: **Project Settings → API Keys → Roll**.
 
-Privacidade: os avisos enviam só tabela, evento e id. Se a IA analisar feedback, mapeie apenas os campos de texto necessários; não envie nome, e-mail, LinkedIn ou foto.
+Privacidade: os avisos enviam só tabela, evento e id. O conteúdo do feedback e o e-mail de quem enviou vão apenas para a curadora.
 
 ## 10. deploy na Vercel
 
