@@ -6,7 +6,8 @@ import { Botao, BotaoLink } from '../components/Botao'
 import { Denunciar } from '../components/Denunciar'
 import { Pagina, Titulo } from '../components/Pagina'
 import { Revelar } from '../components/Revelar'
-import { Cartao, Chips, Selo, Vazio } from '../components/ui'
+import { Abas, Cartao, Chips, Selo, Vazio } from '../components/ui'
+import { BuscarMulheres } from '../components/BuscarMulheres'
 import { useAuth } from '../lib/auth'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
@@ -29,6 +30,7 @@ export default function MinhasAliadas() {
   const [buscando, setBuscando] = useState(false)
   const [msg, setMsg] = useState<{ tipo: 'erro' | 'ok' | 'info'; texto: string } | null>(null)
   const [pedindo, setPedindo] = useState<string | null>(null)
+  const [aba, setAba] = useState<'recomendadas' | 'buscar'>('recomendadas')
 
   const carregar = useCallback(async () => {
     if (!perfil || perfil.status !== 'aprovado') return setRecs([])
@@ -113,12 +115,25 @@ export default function MinhasAliadas() {
     <Pagina titulo="minhas aliadas">
       <Titulo sub="conheça mulheres com experiências que se conectam à sua trajetória.">minhas aliadas</Titulo>
 
-      {msg && <div className="mb-6"><Aviso tipo={msg.tipo}>{msg.texto}</Aviso></div>}
+      <Abas
+        rotulo="minhas aliadas"
+        atual={aba}
+        aoMudar={setAba}
+        abas={[
+          { id: 'recomendadas', rotulo: 'recomendadas', contagem: recs.length },
+          { id: 'buscar', rotulo: 'buscar mulheres' },
+        ]}
+      />
 
-      {recs.length === 0 ? (
+      {aba === 'buscar' && <BuscarMulheres />}
+
+      {aba === 'recomendadas' && msg && <div className="mb-6"><Aviso tipo={msg.tipo}>{msg.texto}</Aviso></div>}
+
+      {aba === 'recomendadas' && (recs.length === 0 ? (
         <Vazio titulo="ainda estamos procurando sua aliada">
-          <p>enquanto isso, puxe papo no fórum.</p>
+          <p>enquanto isso, procure mulheres da comunidade ou puxe papo no fórum.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Botao variante="secundario" onClick={() => setAba('buscar')}>buscar mulheres</Botao>
             <BotaoLink to="/forum" variante="secundario">ir ao fórum</BotaoLink>
           </div>
         </Vazio>
@@ -162,16 +177,16 @@ export default function MinhasAliadas() {
             )
           })}
         </ul>
-      )}
+      ))}
 
-      <div className="mt-10 border-t border-linha pt-6">
+      {aba === 'recomendadas' && <div className="mt-10 border-t border-linha pt-6">
         <Botao variante="secundario" onClick={buscarDeNovo} carregando={buscando} disabled={usadas >= LIMITE_DIA}>
-          buscar aliadas de novo
+          atualizar recomendações
         </Botao>
         <p className="mt-2 text-sm text-suave">
-          {usadas >= LIMITE_DIA ? 'você já usou as 3 buscas de hoje. amanhã tem mais.' : `você pode buscar mais ${LIMITE_DIA - usadas} ${LIMITE_DIA - usadas === 1 ? 'vez' : 'vezes'} hoje.`}
+          {usadas >= LIMITE_DIA ? 'você já atualizou 3 vezes hoje. amanhã tem mais.' : `você pode atualizar mais ${LIMITE_DIA - usadas} ${LIMITE_DIA - usadas === 1 ? 'vez' : 'vezes'} hoje.`}
         </p>
-      </div>
+      </div>}
     </Pagina>
   )
 }

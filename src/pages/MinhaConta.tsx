@@ -148,8 +148,10 @@ export default function MinhaConta() {
     const v = perfilSchema.safeParse(form)
     const errs = v.success ? {} : errosPorCampo(v.error)
     if (!emailSchema.safeParse(email).success) errs.email = 'confira o e-mail'
-    const l = linkedinSchema.safeParse(linkedin)
-    if (!l.success) errs.linkedin = l.error.issues[0].message
+    if (linkedin.trim()) {
+      const l = linkedinSchema.safeParse(linkedin)
+      if (!l.success) errs.linkedin = l.error.issues[0].message
+    }
     setErros(errs)
     if (Object.keys(errs).length) return
 
@@ -163,7 +165,7 @@ export default function MinhaConta() {
         areas: p.areas,
         formas_conexao: p.formas_conexao,
       }).eq('id', perfil!.id),
-      supabase.from('contacts').update({ email: email.trim(), linkedin_url: linkedin.trim() }).eq('profile_id', perfil!.id),
+      supabase.from('contacts').update({ email: email.trim(), linkedin_url: linkedin.trim() || null }).eq('profile_id', perfil!.id),
       supabase.from('consents').update({ aceita_ser_recomendada: recomendavel }).eq('profile_id', perfil!.id),
     ])
     setSalvando(false)
@@ -270,9 +272,9 @@ export default function MinhaConta() {
           opcoes={(Object.keys(ROTULO_FORMA) as FormaConexao[]).map((v) => ({ valor: v, rotulo: ROTULO_FORMA[v] }))}
         />
         <CampoTexto rotulo="e-mail para contato" type="email" value={email} onChange={(e) => setEmail(e.target.value)} erro={erros.email} />
-        <CampoTexto rotulo="linkedin" type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} erro={erros.linkedin} />
+        <CampoTexto rotulo="linkedin (opcional)" ajuda={perfil.status === 'pendente' ? 'adicionando seu linkedin, seu perfil entra na hora.' : undefined} type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} erro={erros.linkedin} />
         <Caixinha marcado={recomendavel} aoMudar={setRecomendavel}>
-          aceito ser recomendada como aliada para outras mulheres.
+          aceito aparecer na busca e ser recomendada como aliada para outras mulheres da comunidade.
         </Caixinha>
         <Botao type="submit" carregando={salvando}>salvar</Botao>
       </form>

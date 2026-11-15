@@ -31,8 +31,8 @@ export function Privacidade() {
       <p className={p}>sua trajetória (apelido, de onde vem, onde está e áreas de interesse), como prefere se conectar, foto opcional, e-mail e linkedin, e quais consentimentos você deu.</p>
       <h2 className={h2}>quem vê o quê</h2>
       <ul className="mt-4 list-disc space-y-2 pl-6 text-lg">
-        <li>sua trajetória e foto: só pessoas aprovadas para quem você foi recomendada ou com quem tem um pedido de conexão, e a curadoria.</li>
-        <li>seu e-mail e linkedin: a curadoria (para conferir o perfil) e, depois do aceite das duas, a pessoa da conexão. mais ninguém.</li>
+        <li>sua trajetória, áreas e foto: outras mulheres aprovadas na comunidade, se você aceitou aparecer na busca (dá para desligar em "minha conta"). sem esse aceite, só quem tem um pedido de conexão com você, e a curadoria.</li>
+        <li>seu e-mail e linkedin (se informado): a curadoria e, depois do aceite das duas, a pessoa da conexão. mais ninguém.</li>
         <li>fotos ficam num armazenamento privado e só abrem por links temporários.</li>
       </ul>
       <h2 className={h2}>a inteligência artificial</h2>
