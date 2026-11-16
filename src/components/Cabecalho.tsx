@@ -97,7 +97,7 @@ export function Cabecalho() {
           <BotaoTema />
           <button
             type="button"
-            className="inline-flex h-11 items-center rounded-full border-2 border-campo px-4 font-titulo font-semibold text-destaque lg:hidden"
+            className={`h-11 items-center rounded-full border-2 border-campo px-4 font-semibold text-destaque lg:hidden ${session ? "hidden sm:inline-flex" : "inline-flex"}`}
             aria-expanded={aberto}
             aria-controls="menu-celular"
             onClick={() => setAberto((a) => !a)}

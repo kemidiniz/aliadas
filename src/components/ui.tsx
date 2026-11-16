@@ -68,7 +68,7 @@ export function Abas<T extends string>({
             role="tab"
             aria-selected={ativa}
             onClick={() => aoMudar(a.id)}
-            className={`relative min-h-11 flex-1 whitespace-nowrap rounded-full px-4 font-titulo text-sm font-semibold sm:text-base ${
+            className={`relative min-h-11 flex-1 whitespace-nowrap rounded-full px-2 sm:px-4 text-sm font-semibold sm:text-base ${
               ativa ? 'text-sobre-destaque' : 'text-texto hover:text-destaque'
             }`}
           >

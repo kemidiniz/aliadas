@@ -25,3 +25,4 @@ supabase/functions/**/.env
 .idea/
 .vscode/*
 !.vscode/extensions.json
+prints/
