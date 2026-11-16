@@ -2,6 +2,13 @@
 import { createRequire } from "node:module";
 import assert from "node:assert/strict";
 const { chromium } = createRequire(import.meta.url)("playwright");
+import { existsSync } from "node:fs";
+// usa CHROMIUM_PATH, o Chromium do sistema ou o do Playwright, o que existir
+function chromiumPath() {
+  for (const p of [process.env.CHROMIUM_PATH, "/usr/bin/chromium", "/opt/pw-browsers/chromium"])
+    if (p && existsSync(p)) return p;
+  return undefined;
+}
 const base = process.env.TEST_BASE_URL || "http://localhost:5173";
 const backend = process.env.VITE_SUPABASE_URL || "http://localhost";
 const project = new URL(backend).hostname.split(".")[0];
@@ -22,10 +29,10 @@ const professional = {
   occupation: "formação em saúde",
   moment: "inicio",
   areas: ["saude"],
-  themes: ["carreira"],
-  intentions: ["buscar", "compartilhar"],
+  can_help: ["entrevista"],
+  want_talk: ["carreira"],
   channels: ["email"],
-  slots: ["1_tarde"],
+  slots: ["1_tarde", "3_noite"],
   ai_consent: false,
   available: true,
 };
@@ -42,11 +49,12 @@ const request = {
   candidate_id: other,
   state: "pronta",
   mode: "basica",
-  explanation: "compatibilidade básica por objetivo e áreas.",
+  explanation: "Ela pode ajudar com o objetivo que você escolheu.",
   questions: [],
   draft: null,
   goal: "carreira",
-  intention: "buscar",
+  description: null,
+  created_at: new Date().toISOString(),
 };
 const invite = {
   id: "30000000-0000-0000-0000-000000000001",
@@ -55,9 +63,12 @@ const invite = {
   recipient_id: other,
   message: "mensagem de teste autorizada",
   state: "aceita",
-  sender_time: null,
-  recipient_time: null,
+  created_at: new Date().toISOString(),
+  responded_at: new Date().toISOString(),
+  horario_confirmado: null,
 };
+let proposals = [];
+let hasProfessional = true;
 let requests = [],
   invites = [],
   savedProfile = null,
@@ -68,7 +79,7 @@ const ci = (value) =>
 let jobState = "sem_ia";
 const browser = await chromium.launch({
   headless: true,
-  executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
+  executablePath: chromiumPath(),
   args: ["--no-sandbox"],
 });
 try {
@@ -82,7 +93,7 @@ try {
     .waitFor();
   assert.equal(
     await g
-      .getByRole("navigation", { name: ci("principal") })
+      .getByRole("navigation", { name: ci("Principal") })
       .first()
       .getByRole("link")
       .count(),
@@ -124,7 +135,11 @@ try {
     let data = [];
     if (endpoint === "profiles") data = [profile];
     if (endpoint === "roles") data = [];
-    if (endpoint === "professional_profiles") data = [professional];
+    if (endpoint === "professional_profiles")
+      data = hasProfessional ? [professional] : [];
+    if (endpoint === "conversation_time_proposals") data = proposals;
+    if (endpoint === "mvp_next_suggestion") data = other;
+    if (endpoint === "mvp_propose_times") data = null;
     if (endpoint === "professional_contacts")
       data = [
         {
@@ -169,7 +184,7 @@ try {
         email: "autorizado@exemplo.invalid",
         whatsapp: null,
         linkedin: null,
-        meet: null,
+        meet: invites[0]?.horario_confirmado ? "https://meet.jit.si/sala-teste" : null,
         common_slots: ["1_tarde"],
       };
     if (endpoint === "mvp_feedback") {
@@ -183,29 +198,22 @@ try {
     });
   });
   const p = await context.newPage();
-  p.setDefaultTimeout(8000);
+  p.setDefaultTimeout(9000);
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
-  await p.goto(base);
-  await p.getByRole("heading", { name: ci("encontre uma aliada") }).waitFor();
-  await p
-    .getByRole("button", { name: ci("encontrar uma aliada"), exact: true })
-    .click();
-  await p.getByText(ci("aliada de teste"), { exact: true }).waitFor();
-  await p
-    .getByText(ci("compatibilidade básica • sem IA generativa"), {
-      exact: true,
-    })
-    .waitFor();
-  assert(!calls.some((x) => x.endpoint === "mvp_invite"));
-  console.log(
-    "PASSOU: solicitação mostra uma sugestão e não convida automaticamente",
-  );
-  await p
-    .getByRole("textbox", { name: ci("sua mensagem inicial") })
-    .fill("minha mensagem revisada de teste");
   jobState = "executando";
-  await p.getByRole("button", { name: /atualizar resultado/i }).click();
+  await p.goto(base);
+  await p.getByRole("heading", { level: 1, name: /Olá/ }).waitFor();
+  // "Quero conversar sobre" só pré-seleciona o objetivo
+  assert(await p.getByRole("radio", { name: "Dicas de carreira" }).isChecked());
+  await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).click();
+  await p.getByRole("heading", { name: "Suas buscas" }).waitFor();
+  await p.getByText("aliada de teste", { exact: true }).waitFor();
+  assert(!calls.some((x) => x.endpoint === "mvp_invite"));
+  assert.deepEqual(calls.find((x) => x.endpoint === "mvp_create_request").body, { goal: "carreira", description: "" });
+  assert.equal(await p.getByRole("button", { name: /atualizar resultado/i }).count(), 0);
+  console.log("PASSOU: objetivo da conversa em chips, busca em cartão e sem convite automático");
+  await p.getByRole("textbox", { name: "Sua mensagem" }).fill("minha mensagem revisada de teste");
   await p.getByText("Preparando a conversa com IA", { exact: true }).waitFor();
   requests = [
     {
@@ -216,81 +224,82 @@ try {
     },
   ];
   jobState = "concluida";
-  await p.getByText("Sugestão pronta", { exact: true }).waitFor();
-  await p.getByText("Pergunta de teste um?", { exact: true }).waitFor();
-  assert.equal(
-    await p
-      .getByRole("textbox", { name: /sua mensagem inicial/i })
-      .inputValue(),
-    "minha mensagem revisada de teste",
-  );
-  console.log(
-    "PASSOU: atualização assíncrona mostra resultado e preserva rascunho editado (API simulada)",
-  );
-  await p.getByRole("button", { name: ci("aprovar e enviar convite") }).click();
-  await p
-    .getByText(ci("convite enviado. acompanhe o aceite em minhas conversas."))
-    .waitFor();
-  assert.equal(
-    calls.find((x) => x.endpoint === "mvp_invite").body.message,
-    "minha mensagem revisada de teste",
-  );
+  await p.getByText("Pergunta de teste um?", { exact: true }).waitFor({ timeout: 15000 });
+  assert.equal(await p.getByRole("textbox", { name: "Sua mensagem" }).inputValue(), "minha mensagem revisada de teste");
+  console.log("PASSOU: resultado assíncrono aparece sozinho e preserva a mensagem editada (API simulada)");
+  const antes = calls.filter((x) => x.endpoint === "mvp_create_request").length;
+  await p.getByRole("button", { name: "Ver outra sugestão" }).click();
+  await p.waitForTimeout(300);
+  assert(calls.some((x) => x.endpoint === "mvp_next_suggestion"));
+  assert.equal(calls.filter((x) => x.endpoint === "mvp_create_request").length, antes);
+  console.log("PASSOU: ver outra sugestão usa a RPC própria e não cria nova busca");
+  await p.getByRole("button", { name: "Enviar convite" }).click();
+  await p.getByText("Convite enviado. Você acompanha em Conversas.").waitFor();
+  assert.equal(calls.find((x) => x.endpoint === "mvp_invite").body.message, "minha mensagem revisada de teste");
+  console.log("PASSOU: convite só com a mensagem revisada");
+
   await p.goto(base + "/minhas-conversas");
-  await p.getByRole("link", { name: ci("e-mail"), exact: true }).waitFor();
-  assert.equal(
-    await p.getByRole("link", { name: ci("WhatsApp"), exact: true }).count(),
-    0,
-  );
-  await p.getByText(ci("como foi a conversa?"), { exact: true }).waitFor();
-  await p
-    .getByText(ci("a conversa aconteceu?"), { exact: false })
-    .locator("select")
-    .selectOption("sim");
-  await p
-    .getByText(
-      ci("de 1 a 5, quanto contribuiu para o objetivo profissional?"),
-      {
-        exact: false,
-      },
-    )
-    .locator("select")
-    .selectOption("5");
-  await p.getByRole("button", { name: ci("salvar minha avaliação") }).click();
-  await p.getByText(ci("salvo."), { exact: true }).waitFor();
+  await p.getByRole("tab", { name: /Enviados/, selected: true }).waitFor();
+  await p.getByRole("link", { name: "E-mail", exact: true }).waitFor();
+  assert.equal(await p.getByRole("link", { name: "WhatsApp", exact: true }).count(), 0);
+  await p.locator('[aria-current="step"]').getByText("Horário").waitFor();
+  await p.getByText("Proponha até 3 horários (Brasília)").waitFor();
+  await p.getByRole("button", { name: "Enviar horários" }).click();
+  await p.getByText("Horários enviados.").waitFor();
+  const prop = calls.find((x) => x.endpoint === "mvp_propose_times").body;
+  assert(prop.horarios.length >= 1 && prop.horarios.length <= 3);
+  for (const h of prop.horarios) {
+    const t = new Date(h).getTime();
+    assert(t > Date.now() && t < Date.now() + 14 * 86400000, "horário nos próximos 14 dias");
+  }
+  console.log("PASSOU: horários sugeridos dos períodos em comum, até 3 e nos próximos 14 dias");
+  // menu ⋯ pelo teclado
+  await p.getByRole("button", { name: "Mais opções" }).focus();
+  await p.keyboard.press("Enter");
+  await p.getByRole("menuitem", { name: "Bloquear" }).waitFor();
+  await p.keyboard.press("ArrowDown");
+  assert.equal(await p.evaluate(() => document.activeElement?.textContent), "Denunciar");
+  await p.keyboard.press("Escape");
+  assert.equal(await p.getByRole("menu").count(), 0);
+  console.log("PASSOU: menu de bloqueio e denúncia acessível pelo teclado");
+  invites = [{ ...invite, horario_confirmado: new Date(Date.now() + 2 * 86400000).toISOString() }];
+  await p.goto(base + "/minhas-conversas");
+  await p.getByText("Horário confirmado", { exact: true }).waitFor();
+  assert.equal(await p.getByRole("link", { name: /Entrar na chamada/ }).getAttribute("href"), "https://meet.jit.si/sala-teste");
+  assert.match(await p.getByRole("link", { name: /Adicionar à agenda/ }).getAttribute("href"), /^https:\/\/calendar\.google\.com\/calendar\/render\?action=TEMPLATE/);
+  console.log("PASSOU: horário confirmado mostra sala e link de agenda");
+  await p.getByRole("button", { name: /Avaliar a conversa/ }).click();
+  await p.getByText("Sim", { exact: true }).click();
+  await p.getByRole("button", { name: "5", exact: true }).click();
+  await p.getByText("Mais clareza", { exact: true }).click();
+  await p.getByRole("button", { name: "Salvar avaliação" }).click();
+  await p.getByText("Avaliação salva. Obrigada!").waitFor();
   assert.equal(feedback.utility, 5);
-  console.log("PASSOU: contatos autorizados e feedback independente");
+  assert.equal(feedback.outcome, "clareza");
+  console.log("PASSOU: contatos autorizados e avaliação em botões");
+
   await p.goto(base + "/meu-perfil");
-  await p
-    .getByRole("heading", { name: ci("meu perfil"), exact: true })
-    .waitFor();
-  assert.equal(
-    await p.getByRole("textbox", { name: ci("e-mail"), exact: true }).count(),
-    0,
-  ); // contatos ficam no details fechado
-  await p.getByText(ci("Contatos privados"), { exact: true }).click();
-  assert.equal(
-    await p
-      .getByRole("textbox", { name: ci("e-mail"), exact: true })
-      .inputValue(),
-    "",
-  );
-  await p
-    .getByRole("checkbox", {
-      name: ci("sou mulher cis, trans ou pessoa não binária"),
-      exact: false,
-    })
-    .check();
-  await p.getByRole("button", { name: ci("salvar meu perfil") }).click();
-  await p
-    .getByText(
-      ci("perfil salvo. novos perfis aguardam aprovação da curadoria."),
-    )
-    .waitFor();
+  await p.getByRole("heading", { name: "Meu perfil", exact: true }).waitFor();
+  await p.getByText("de 5 seções completas").waitFor();
+  const celula = p.getByRole("button", { name: "segunda, manhã" });
+  assert.equal(await celula.getAttribute("aria-pressed"), "false");
+  await celula.click();
+  assert.equal(await celula.getAttribute("aria-pressed"), "true");
+  await celula.focus();
+  await p.keyboard.press("ArrowRight");
+  assert.equal(await p.evaluate(() => document.activeElement?.getAttribute("aria-label")), "terça, manhã");
+  await p.getByRole("button", { name: "Salvar", exact: true }).click();
+  await p.getByText("Confira o e-mail.").waitFor();
+  assert(!calls.some((x) => x.endpoint === "mvp_save_profile"), "não salva com erro");
+  await p.getByRole("textbox", { name: "E-mail para contato" }).fill("contato@exemplo.invalid");
+  await p.getByRole("button", { name: "Salvar", exact: true }).click();
+  await p.getByText("Perfil salvo.").waitFor();
   assert.equal(savedProfile.p.ai_consent, false);
-  assert(!savedProfile.c.email);
-  console.log(
-    "PASSOU: cadastro em página única, sem copiar autenticação e sem consentimento automático de IA",
-  );
+  assert.equal(savedProfile.c.email, "contato@exemplo.invalid");
+  assert.notEqual(savedProfile.c.email, session.user.email);
+  assert.deepEqual(savedProfile.p.can_help, ["entrevista"]);
+  assert(savedProfile.p.slots.includes("1_manha"));
+  console.log("PASSOU: perfil com seções abertas, erro ao lado do campo, grade pelo teclado e sem consentimento automático de IA");
   await context.route("**/auth/v1/user", (route) =>
     route.fulfill({
       status: 200,
@@ -302,10 +311,10 @@ try {
   await p.goto(base + "/entrar");
   await p.waitForURL(base + "/meu-perfil");
   await p
-    .getByLabel("nova senha", { exact: true })
+    .getByLabel("Nova senha", { exact: true })
     .fill("senha-apenas-do-teste");
   await p
-    .getByLabel("confirmar nova senha", { exact: true })
+    .getByLabel("Confirmar nova senha", { exact: true })
     .fill("senha-apenas-do-teste");
   await p
     .getByRole("button", { name: ci("salvar senha"), exact: true })
@@ -324,6 +333,17 @@ try {
   console.log(
     "PASSOU: participante comum não vê administração e URL direta bloqueia",
   );
+  hasProfessional = false;
+  await p.goto(base + "/meu-perfil");
+  await p.getByText("Passo 1 de 3").waitFor();
+  await p.getByRole("button", { name: "Continuar" }).click();
+  await p.getByText("Conte o que você faz ou estuda.").waitFor();
+  await p.getByRole("textbox", { name: "O que você faz ou estuda" }).fill("analista de teste");
+  await p.locator("label.chip", { hasText: "Saúde" }).click();
+  await p.getByRole("button", { name: "Continuar" }).click();
+  await p.getByText("Passo 2 de 3").waitFor();
+  hasProfessional = true;
+  console.log("PASSOU: primeiro acesso em 3 passos com barra de progresso");
   for (const width of [375, 390, 768, 1440])
     for (const theme of ["light", "dark"]) {
       await p.emulateMedia({ colorScheme: theme });
@@ -331,6 +351,11 @@ try {
       for (const path of ["/", "/minhas-conversas", "/meu-perfil"]) {
         await p.goto(base + path);
         await p.getByRole("heading", { level: 1 }).waitFor();
+        assert.equal(
+          await p.getByRole("navigation", { name: "Navegação" }).isVisible(),
+          width < 640,
+          `${path}: navegação inferior em ${width}`,
+        );
         await p.waitForTimeout(350);
         assert.equal(
           await p.evaluate(() => document.body.scrollWidth > innerWidth),
@@ -341,6 +366,7 @@ try {
     }
   jobState = "executando";
   requests = [{ ...request }];
+  invites = [];
   await p.clock.install();
   const start = calls.length;
   await p.goto(base);

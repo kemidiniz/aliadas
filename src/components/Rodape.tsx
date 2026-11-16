@@ -10,8 +10,8 @@ export function Rodape() {
         <div>
           <Logo tamanho="text-xl" />
           <p className="mt-3 max-w-xs text-xs text-suave">
-            Iniciativa independente criada durante a formação em IA Aplicada da{" "}
-            {"{reprograma}"}.
+            Criada na formação em IA Aplicada da {"{reprograma}"}. A{" "}
+            {"{reprograma}"} não administra nem patrocina a plataforma.
           </p>
         </div>
         <nav aria-label="rodapé">

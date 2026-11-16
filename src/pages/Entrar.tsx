@@ -44,7 +44,7 @@ export default function Entrar() {
   function emailValido() {
     const v = emailSchema.safeParse(email);
     if (!v.success) {
-      setErro("confira o e-mail");
+      setErro("Confira o e-mail");
       return null;
     }
     return v.data;
@@ -70,8 +70,8 @@ export default function Entrar() {
     if (error) {
       setErro(
         error.status === 429
-          ? "você pediu vários códigos seguidos. espere um minuto e tente de novo."
-          : "não conseguimos enviar o código agora. tente de novo em instantes.",
+          ? "Você pediu vários códigos seguidos. Espere um minuto e tente de novo."
+          : "Não conseguimos enviar o código agora. Tente de novo em instantes.",
       );
       return;
     }
@@ -82,7 +82,7 @@ export default function Entrar() {
     e.preventDefault();
     const token = codigo.replace(/\D/g, "");
     if (token.length < 6)
-      return setErro("digite o código que chegou no seu e-mail");
+      return setErro("Digite o código que chegou no seu e-mail");
     setErro("");
     setOcupado(true);
     if (modo === "recuperar") sessionStorage.setItem(CHAVE_NOVA_SENHA, "1");
@@ -95,7 +95,7 @@ export default function Entrar() {
     if (error) {
       sessionStorage.removeItem(CHAVE_NOVA_SENHA);
       setErro(
-        "esse código não confere ou já expirou. confira ou peça um novo.",
+        "Esse código não confere ou já expirou. Confira ou peça um novo.",
       );
     }
   }
@@ -104,7 +104,7 @@ export default function Entrar() {
     e.preventDefault();
     const em = emailValido();
     if (!em) return;
-    if (!senha) return setErro("digite sua senha");
+    if (!senha) return setErro("Digite sua senha");
     setErro("");
     setOcupado(true);
     const { error } = await supabase.auth.signInWithPassword({
@@ -115,8 +115,8 @@ export default function Entrar() {
     if (error) {
       setErro(
         error.status === 429
-          ? "muitas tentativas seguidas. espere um minuto e tente de novo."
-          : "e-mail ou senha não conferem. se você ainda não criou uma senha, entre com código.",
+          ? "Muitas tentativas seguidas. Espere um minuto e tente de novo."
+          : "E-mail ou senha não conferem. Se você ainda não criou uma senha, entre com código.",
       );
     }
   }
@@ -138,25 +138,25 @@ export default function Entrar() {
   );
 
   return (
-    <Pagina titulo="entrar">
+    <Pagina titulo="Entrar">
       <Titulo
         sub={
           modo === "recuperar"
-            ? "vamos te mandar um código para criar uma senha nova."
-            : "primeira vez aqui? entre com código: sua conta é criada na hora."
+            ? "Vamos te mandar um código para criar uma senha nova."
+            : "Primeira vez aqui? Entre com código: sua conta é criada na hora."
         }
       >
-        {modo === "recuperar" ? "esqueci a senha" : "entrar"}
+        {modo === "recuperar" ? "Esqueci a senha" : "Entrar"}
       </Titulo>
 
       {modo !== "recuperar" && (
         <div
           role="tablist"
-          aria-label="como entrar"
+          aria-label="Como entrar"
           className="mb-8 flex gap-1 rounded-full border-2 border-campo p-1"
         >
-          {aba("codigo", "com código")}
-          {aba("senha", "com senha")}
+          {aba("codigo", "Com código")}
+          {aba("senha", "Com senha")}
         </div>
       )}
 
@@ -171,7 +171,7 @@ export default function Entrar() {
           {(modo === "codigo" || modo === "recuperar") && !codigoEnviado && (
             <form onSubmit={enviarCodigo} noValidate className="space-y-6">
               <CampoTexto
-                rotulo="seu e-mail"
+                rotulo="Seu e-mail"
                 type="email"
                 autoComplete="email"
                 inputMode="email"
@@ -181,7 +181,7 @@ export default function Entrar() {
               />
               <div className="flex flex-wrap items-center gap-3">
                 <Botao type="submit" carregando={ocupado}>
-                  receber código
+                  Receber código
                 </Botao>
                 {modo === "recuperar" && (
                   <Botao
@@ -189,7 +189,7 @@ export default function Entrar() {
                     variante="discreto"
                     onClick={() => trocarModo("senha")}
                   >
-                    voltar
+                    Voltar
                   </Botao>
                 )}
               </div>
@@ -199,14 +199,14 @@ export default function Entrar() {
           {(modo === "codigo" || modo === "recuperar") && codigoEnviado && (
             <form onSubmit={confirmarCodigo} noValidate className="space-y-6">
               <Aviso tipo="ok">
-                enviamos um código{" "}
+                Enviamos um código{" "}
                 {modo === "recuperar" ? "para criar uma senha nova " : ""}para{" "}
-                <strong>{email}</strong>. se não chegar em alguns minutos, olhe
+                <strong>{email}</strong>. Se não chegar em alguns minutos, olhe
                 o spam.
               </Aviso>
               <CampoTexto
-                rotulo="código"
-                ajuda="pode digitar aqui ou clicar no link do e-mail, se estiver no mesmo aparelho."
+                rotulo="Código"
+                ajuda="Pode digitar aqui ou clicar no link do e-mail, se estiver no mesmo aparelho."
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 maxLength={10}
@@ -217,7 +217,7 @@ export default function Entrar() {
               />
               <div className="flex flex-wrap items-center gap-3">
                 <Botao type="submit" carregando={ocupado}>
-                  {modo === "recuperar" ? "continuar" : "entrar"}
+                  {modo === "recuperar" ? "Continuar" : "Entrar"}
                 </Botao>
                 <Botao
                   type="button"
@@ -225,7 +225,7 @@ export default function Entrar() {
                   disabled={ocupado}
                   onClick={() => enviarCodigo()}
                 >
-                  enviar outro código
+                  Enviar outro código
                 </Botao>
               </div>
             </form>
@@ -234,7 +234,7 @@ export default function Entrar() {
           {modo === "senha" && (
             <form onSubmit={entrarComSenha} noValidate className="space-y-6">
               <CampoTexto
-                rotulo="seu e-mail"
+                rotulo="Seu e-mail"
                 type="email"
                 autoComplete="email"
                 inputMode="email"
@@ -242,7 +242,7 @@ export default function Entrar() {
                 onChange={(e) => setEmail(e.target.value)}
               />
               <CampoTexto
-                rotulo="senha"
+                rotulo="Senha"
                 type="password"
                 autoComplete="current-password"
                 value={senha}
@@ -251,25 +251,25 @@ export default function Entrar() {
               />
               <div className="flex flex-wrap items-center gap-3">
                 <Botao type="submit" carregando={ocupado}>
-                  entrar
+                  Entrar
                 </Botao>
                 <Botao
                   type="button"
                   variante="discreto"
                   onClick={() => trocarModo("recuperar")}
                 >
-                  esqueci a senha
+                  Esqueci a senha
                 </Botao>
                 <Botao
                   type="button"
                   variante="discreto"
                   onClick={() => trocarModo("codigo")}
                 >
-                  não tenho senha
+                  Não tenho senha
                 </Botao>
               </div>
               <p className="text-sm text-suave">
-                a senha é opcional: você pode criar uma em "minha conta" depois
+                A senha é opcional: você pode criar uma em Meu perfil depois.
                 de entrar com código.
               </p>
             </form>

@@ -1,387 +1,678 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Pagina, Titulo } from "../components/Pagina";
 import { Botao, BotaoLink } from "../components/Botao";
-import { CampoTexto } from "../components/Campo";
-import { Aviso, Carregando } from "../components/Aviso";
+import { CampoArea, EscolhaChips, Nota1a5, rotuloCampo, caixa } from "../components/Campo";
+import { Avatar } from "../components/Avatar";
+import { Abas, Badge, CartaoCarregando, Vazio, type EstadoConversa } from "../components/ui";
+import {
+  IconeCalendario,
+  IconeEmail,
+  IconeLinkedin,
+  IconeMais,
+  IconeVideo,
+  IconeWhatsapp,
+} from "../components/Icones";
+import { useToast } from "../components/Toast";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
 import {
-  slotsLabel,
-  type ProInvite,
+  baixarIcs,
+  formatarHorario,
+  hojeBrasilia,
+  isoBrasilia,
+  limiteBrasilia,
+  linkGoogleAgenda,
+  sugerirHorarios,
+} from "../lib/agenda";
+import {
+  AREAS_PRO,
   type ProCard,
   type ProContacts,
+  type ProInvite,
+  type ProProposal,
 } from "../lib/professional";
+
+type Feedback = { invite_id: string; happened: boolean; utility: number | null; outcome: string };
+type Aba = "recebidos" | "enviados" | "concluidas";
+
 export default function ConversasProfissionais() {
   const { session } = useAuth();
+  const eu = session!.user.id;
   const [invites, setInvites] = useState<ProInvite[] | null>(null);
   const [cards, setCards] = useState<ProCard[]>([]);
-  const [error, setError] = useState("");
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [propostas, setPropostas] = useState<ProProposal[]>([]);
+  const [minhaSala, setMinhaSala] = useState<string | null>(null);
+  const [meusSlots, setMeusSlots] = useState<string[]>([]);
+  const [erro, setErro] = useState("");
+  const [aba, setAba] = useState<Aba>("recebidos");
+  const escolhida = useRef(false);
+
   async function load() {
-    const [i, c] = await Promise.all([
+    const [i, c, f, p, sala, pro] = await Promise.all([
       supabase
         .from("conversation_invites")
         .select("*")
-        .or(
-          `sender_id.eq.${session!.user.id},recipient_id.eq.${session!.user.id}`,
-        )
+        .or(`sender_id.eq.${eu},recipient_id.eq.${eu}`)
         .order("created_at", { ascending: false }),
       supabase.rpc("mvp_cards"),
+      supabase.from("conversation_feedback").select("*").eq("author_id", eu),
+      supabase.from("conversation_time_proposals").select("*").order("inicio"),
+      supabase.from("professional_contacts").select("meet").eq("profile_id", eu).maybeSingle(),
+      supabase.from("professional_profiles").select("slots").eq("profile_id", eu).maybeSingle(),
     ]);
     if (i.error || c.error) {
-      setError("não foi possível carregar as conversas. tente novamente.");
+      setErro("Não foi possível carregar as conversas. Tente novamente.");
       setInvites([]);
-    } else {
-      setInvites(i.data);
-      setCards(c.data);
+      return;
+    }
+    const lista = i.data as ProInvite[];
+    const fb = (f.data as Feedback[]) ?? [];
+    setInvites(lista);
+    setCards(c.data);
+    setFeedback(fb);
+    setPropostas((p.data as ProProposal[]) ?? []);
+    setMinhaSala(sala.data?.meet ?? null);
+    setMeusSlots(pro.data?.slots ?? []);
+    // abre na aba com algo esperando resposta
+    if (!escolhida.current) {
+      escolhida.current = true;
+      const temRecebido = lista.some((x) => grupo(x, eu, fb) === "recebidos");
+      const temEnviado = lista.some((x) => grupo(x, eu, fb) === "enviados");
+      setAba(temRecebido ? "recebidos" : temEnviado ? "enviados" : "recebidos");
     }
   }
   useEffect(() => {
     load();
-  }, [session]);
+  }, [eu]);
+
+  const contagem = (a: Aba) => (invites ?? []).filter((x) => grupo(x, eu, feedback) === a).length;
+  const pendentesParaMim = (invites ?? []).filter((x) => x.state === "pendente" && x.recipient_id === eu).length;
+  const visiveis = (invites ?? []).filter((x) => grupo(x, eu, feedback) === aba);
+
   return (
     <Pagina titulo="Minhas conversas">
-      <Titulo sub="Seus convites, encontros e resultados em um só lugar.">
-        Minhas conversas
-      </Titulo>
-      {error && <Aviso tipo="erro">{error}</Aviso>}
+      <Titulo sub="Convites, horários e avaliações em um só lugar.">Minhas conversas</Titulo>
+      {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
       {!invites ? (
-        <Carregando />
+        <CartaoCarregando />
       ) : !invites.length ? (
-        <div>
-          <p className="mb-5">nenhuma conversa por aqui ainda.</p>
-          <BotaoLink to="/">encontrar uma aliada</BotaoLink>
-        </div>
+        <Vazio titulo="Nenhuma conversa por aqui ainda.">
+          <p className="mb-5">Escolha um objetivo e receba uma indicação.</p>
+          <BotaoLink to="/">Encontrar minha aliada</BotaoLink>
+        </Vazio>
       ) : (
-        <div className="space-y-6">
-          {invites.map((i) => (
-            <Conversa
-              key={i.id}
-              invite={i}
-              card={cards.find(
-                (c) =>
-                  c.id ===
-                  (i.sender_id === session!.user.id
-                    ? i.recipient_id
-                    : i.sender_id),
-              )}
-              reload={load}
-            />
-          ))}
-        </div>
+        <>
+          <Abas
+            rotulo="Conversas"
+            atual={aba}
+            aoMudar={setAba}
+            abas={[
+              { id: "recebidos", rotulo: "Recebidos", contagem: pendentesParaMim },
+              { id: "enviados", rotulo: "Enviados", contagem: undefined },
+              { id: "concluidas", rotulo: "Concluídas", contagem: undefined },
+            ]}
+          />
+          {!visiveis.length ? (
+            <Vazio titulo={aba === "concluidas" ? "Nenhuma conversa concluída ainda." : "Nada nesta aba agora."} />
+          ) : (
+            <div className="space-y-6">
+              {visiveis.map((i) => {
+                const outra = i.sender_id === eu ? i.recipient_id : i.sender_id;
+                return (
+                  <Conversa
+                    key={i.id}
+                    invite={i}
+                    eu={eu}
+                    card={cards.find((c) => c.id === outra)}
+                    feedback={feedback.find((f) => f.invite_id === i.id)}
+                    propostas={propostas.filter((p) => p.invite_id === i.id)}
+                    minhaSala={minhaSala}
+                    meusSlots={meusSlots}
+                    reload={load}
+                  />
+                );
+              })}
+            </div>
+          )}
+          <p className="sr-only" aria-live="polite">
+            {contagem(aba)} conversas nesta aba
+          </p>
+        </>
       )}
     </Pagina>
   );
 }
+
+function grupo(i: ProInvite, eu: string, fb: Feedback[]): Aba {
+  if (i.state === "recusada" || fb.some((f) => f.invite_id === i.id)) return "concluidas";
+  return i.recipient_id === eu ? "recebidos" : "enviados";
+}
+
+const PASSOS = ["Convite", "Aceite", "Horário", "Conversa", "Avaliação"];
+function Linha({ atual, parada }: { atual: number; parada?: boolean }) {
+  return (
+    <ol className="flex items-center gap-1" aria-label="Etapas da conversa">
+      {PASSOS.map((p, n) => {
+        const feito = n < atual;
+        const agora = n === atual && !parada;
+        return (
+          <li key={p} className="flex flex-1 flex-col items-center gap-1 text-center" aria-current={agora ? "step" : undefined}>
+            <span
+              className={`h-1.5 w-full rounded-full ${feito ? "bg-destaque" : agora ? "bg-coral" : "bg-linha"}`}
+            />
+            <span className={`text-xs ${agora ? "font-semibold text-texto" : "text-suave"}`}>
+              {p}
+              <span className="sr-only">{feito ? " (feito)" : agora ? " (etapa atual)" : ""}</span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function Conversa({
   invite: i,
+  eu,
   card,
+  feedback,
+  propostas,
+  minhaSala,
+  meusSlots,
   reload,
 }: {
   invite: ProInvite;
+  eu: string;
   card?: ProCard;
+  feedback?: Feedback;
+  propostas: ProProposal[];
+  minhaSala: string | null;
+  meusSlots: string[];
   reload: () => Promise<void>;
 }) {
-  const { session } = useAuth();
-  const [contacts, setContacts] = useState<ProContacts | null>(null);
-  const [proposal, setProposal] = useState("");
-  const [happened, setHappened] = useState("");
-  const [savedHappened, setSavedHappened] = useState<boolean | null>(null);
-  const [utility, setUtility] = useState("");
-  const [outcome, setOutcome] = useState("clareza");
-  const [msg, setMsg] = useState("");
+  const toast = useToast();
+  const [contatos, setContatos] = useState<(ProContacts & { slots?: string[] }) | null>(null);
   const [busy, setBusy] = useState(false);
-  const [confirmBlock, setConfirmBlock] = useState(false);
-  const [report, setReport] = useState(false);
-  const [reason, setReason] = useState("");
-  const other = i.sender_id === session!.user.id ? i.recipient_id : i.sender_id;
+  const [avaliar, setAvaliar] = useState(false);
+  const [painel, setPainel] = useState<"" | "bloquear" | "denunciar">("");
+  const souRemetente = i.sender_id === eu;
+  const outra = souRemetente ? i.recipient_id : i.sender_id;
+  const nome = card?.name ?? "Participante";
+
   useEffect(() => {
     if (i.state !== "aceita") return;
-    supabase
-      .rpc("mvp_shared_contacts", { invite: i.id })
-      .then(({ data, error }) => {
-        if (!error) setContacts(data);
-      });
-    supabase
-      .from("conversation_feedback")
-      .select("*")
-      .eq("invite_id", i.id)
-      .eq("author_id", session!.user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setHappened(data.happened ? "sim" : "nao");
-          setSavedHappened(data.happened);
-          setUtility(String(data.utility ?? ""));
-          setOutcome(data.outcome);
-        }
-      });
-  }, [i.id, i.state, session]);
-  async function rpc(name: string, args: Record<string, unknown>) {
+    supabase.rpc("mvp_shared_contacts", { invite: i.id }).then(({ data, error }) => {
+      if (!error) setContatos(data);
+    });
+  }, [i.id, i.state]);
+
+  async function rpc(name: string, args: Record<string, unknown>, ok: string) {
     setBusy(true);
-    setMsg("");
     const { error } = await supabase.rpc(name, args);
     setBusy(false);
-    setMsg(error ? mensagemAmigavel(error) : "salvo.");
-    if (!error) {
-      if (name === "mvp_feedback") setSavedHappened(Boolean(args.happened));
+    if (error) toast(mensagemAmigavel(error), "erro");
+    else {
+      toast(ok);
       await reload();
     }
+    return !error;
   }
-  async function block() {
-    setBusy(true);
-    const { error } = await supabase
-      .from("conversation_blocks")
-      .insert({ owner_id: session!.user.id, blocked_id: other });
-    setBusy(false);
-    if (error) setMsg(mensagemAmigavel(error));
-    else await reload();
-  }
+
+  const horario = i.horario_confirmado;
+  const passou = horario ? new Date(horario).getTime() < Date.now() - 30 * 60_000 : false;
+  const atual =
+    i.state === "pendente" ? 1 : i.state === "recusada" ? 1 : feedback ? 5 : !horario ? 2 : !passou ? 3 : 4;
+  const estado: EstadoConversa =
+    i.state === "pendente"
+      ? "pendente"
+      : i.state === "recusada"
+        ? "recusada"
+        : feedback?.happened
+          ? "realizada"
+          : horario
+            ? "horario"
+            : "aceita";
+  const sala = (souRemetente ? minhaSala : contatos?.meet) || (souRemetente ? contatos?.meet : minhaSala) || null;
+  const titulo = `Conversa aliadas com ${nome}`;
+
   return (
-    <article className="space-y-4 rounded-3xl border border-linha p-6">
-      <h2 className="font-titulo text-2xl font-bold">
-        {card?.name ?? "conversa profissional"}
-      </h2>
-      <p>{card?.occupation}</p>
-      <p className="text-sm text-suave">
-        {i.state === "pendente"
-          ? i.sender_id === session!.user.id
-            ? "Convite enviado · aguardando aceite"
-            : "Convite recebido · aguardando sua decisão"
-          : i.state === "aceita"
-            ? savedHappened === true
-              ? "Realizado · confirmado por você"
-              : i.sender_time && i.sender_time === i.recipient_time
-                ? "Horário confirmado pelas duas"
-                : "Aceito · combinando a conversa"
-            : "Convite recusado"}
-      </p>
-      <p className="break-words">{i.message}</p>
-      {msg && <Aviso>{msg}</Aviso>}
-      {i.state === "pendente" && i.recipient_id === session!.user.id && (
-        <div className="flex gap-3">
-          <Botao
-            carregando={busy}
-            onClick={() => rpc("mvp_respond", { invite: i.id, accept: true })}
-          >
-            Aceitar convite
-          </Botao>
-          <Botao
-            variante="secundario"
-            carregando={busy}
-            onClick={() => rpc("mvp_respond", { invite: i.id, accept: false })}
-          >
-            Agora não
-          </Botao>
+    <article className="space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
+      <header className="flex items-start gap-4">
+        <Avatar apelido={nome} tamanho={52} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg">{nome}</h2>
+            <Badge estado={estado} />
+          </div>
+          {card?.occupation && <p className="text-sm text-suave">{card.occupation}</p>}
+          {card && (
+            <p className="text-xs text-suave">
+              {card.areas.map((a) => AREAS_PRO[a as keyof typeof AREAS_PRO] ?? a).join(" · ")}
+            </p>
+          )}
         </div>
-      )}
+        <MenuMais aoEscolher={setPainel} />
+      </header>
+      <Linha atual={atual} parada={i.state === "recusada"} />
+      <blockquote className="rounded-xl bg-superficie px-4 py-3 text-sm break-words">
+        <span className="mb-1 block text-xs font-semibold text-suave">
+          {souRemetente ? "Sua mensagem" : "Mensagem dela"}
+        </span>
+        {i.message}
+      </blockquote>
+
+      {/* Etapa atual: só a ação dela fica aberta */}
+      {i.state === "pendente" &&
+        (souRemetente ? (
+          <p className="text-sm text-suave">Aguardando o aceite. Contatos só aparecem depois dele.</p>
+        ) : (
+          <div className="flex flex-wrap gap-3">
+            <Botao carregando={busy} onClick={() => rpc("mvp_respond", { invite: i.id, accept: true }, "Convite aceito. Agora combinem um horário.")}>
+              Aceitar convite
+            </Botao>
+            <Botao variante="secundario" disabled={busy} onClick={() => rpc("mvp_respond", { invite: i.id, accept: false }, "Convite recusado.")}>
+              Agora não
+            </Botao>
+          </div>
+        ))}
+      {i.state === "recusada" && <p className="text-sm text-suave">Este convite foi recusado.</p>}
+
       {i.state === "aceita" && (
         <>
-          <div>
-            <h3 className="font-semibold">escolham como conversar</h3>
-            <p className="text-sm text-suave">
-              Somente os canais autorizados pela outra participante aparecem
-              aqui. não há envio automático nem chat interno.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {contacts?.linkedin && (
-                <a
-                  className="text-destaque underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href={contacts.linkedin}
-                >
-                  LinkedIn
-                </a>
-              )}
-              {contacts?.whatsapp && (
-                <a
-                  className="text-destaque underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href={`https://wa.me/${contacts.whatsapp.replace(/\D/g, "")}`}
-                >
-                  WhatsApp
-                </a>
-              )}
-              {contacts?.email && (
-                <a
-                  className="text-destaque underline"
-                  href={`mailto:${contacts.email}`}
-                >
-                  E-mail
-                </a>
-              )}
-              {contacts?.meet && (
-                <a
-                  className="text-destaque underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href={contacts.meet}
-                >
-                  Google Meet
-                </a>
-              )}
-            </div>
-            {contacts &&
-              !contacts.linkedin &&
-              !contacts.whatsapp &&
-              !contacts.email &&
-              !contacts.meet && (
-                <p className="mt-3">
-                  A outra participante ainda não disponibilizou um contato. você
-                  pode atualizar os seus em meu perfil.
-                </p>
-              )}
-          </div>
-          <details className="rounded-xl bg-superficie p-4">
-            <summary className="cursor-pointer font-semibold">
-              Combinar uma chamada
-            </summary>
-            <p className="my-3">
-              Períodos em comum (horário de Brasília):{" "}
-              {contacts?.common_slots?.map(slotsLabel).join(", ") ||
-                "nenhum período em comum informado"}
-              . combinem o horário exato pelos contatos autorizados e confirmem
-              a mesma proposta aqui. uma das participantes pode criar um Meet e
-              salvar o link em meu perfil.
-            </p>
-            <CampoTexto
-              rotulo="Horário combinado"
-              ajuda="Informe data, hora e fuso, por exemplo 20/11 às 15h, Brasília. não cria evento automaticamente."
-              maxLength={120}
-              value={proposal}
-              onChange={(e) => setProposal(e.target.value)}
+          <Contatos c={contatos} />
+          {atual === 2 && (
+            <Agendar
+              invite={i}
+              eu={eu}
+              propostas={propostas}
+              slots={contatos?.common_slots?.length ? contatos.common_slots : meusSlots}
+              busy={busy}
+              rpc={rpc}
             />
-            <Botao
-              variante="secundario"
-              disabled={busy || !proposal.trim()}
-              onClick={() => rpc("mvp_schedule", { invite: i.id, proposal })}
-            >
-              Confirmar minha proposta
-            </Botao>
-            <p className="mt-3">
-              Proposta de quem convidou: {i.sender_time || "aguardando"}
-            </p>
-            <p>proposta de quem aceitou: {i.recipient_time || "aguardando"}</p>
-            {i.sender_time && i.sender_time === i.recipient_time && (
-              <p className="font-semibold">
-                As duas confirmaram o mesmo horário.
+          )}
+          {horario && atual < 5 && (
+            <div className="space-y-3 rounded-2xl border-2 border-destaque p-4">
+              <p className="flex items-center gap-2 font-semibold">
+                <IconeCalendario /> {formatarHorario(horario)} <span className="text-sm font-normal text-suave">(Brasília)</span>
               </p>
-            )}
-          </details>
-          <fieldset className="space-y-4 rounded-xl bg-superficie p-5">
-            <legend className="font-semibold">como foi a conversa?</legend>
+              <div className="flex flex-wrap gap-3">
+                {sala ? (
+                  <a href={sala} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-xl bg-destaque px-5 font-semibold text-sobre-destaque">
+                    <IconeVideo /> Entrar na chamada
+                  </a>
+                ) : (
+                  <p className="text-sm text-suave">Combinem o link pelo contato liberado.</p>
+                )}
+                <a href={linkGoogleAgenda(horario, titulo, sala)} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-destaque px-5 font-semibold text-destaque">
+                  <IconeCalendario /> Adicionar à agenda
+                </a>
+                <button type="button" onClick={() => baixarIcs(horario, titulo, sala, i.id)} className="text-sm font-semibold text-destaque underline underline-offset-4">
+                  Baixar .ics
+                </button>
+              </div>
+            </div>
+          )}
+          {(atual === 4 || avaliar) && !feedback ? (
+            <Avaliacao invite={i.id} busy={busy} rpc={rpc} />
+          ) : (
+            !feedback && (
+              <button type="button" className="text-sm font-semibold text-destaque underline underline-offset-4" onClick={() => setAvaliar(true)}>
+                Já conversaram? Avaliar a conversa
+              </button>
+            )
+          )}
+          {feedback && (
             <p className="text-sm text-suave">
-              Cada participante responde por si. não gravamos mensagens nem
-              chamadas.
+              {feedback.happened ? `Sua avaliação: ${feedback.utility} de 5. Obrigada!` : "Você registrou que a conversa não aconteceu."}
             </p>
-            <label className="block">
-              A conversa aconteceu?
-              <select
-                className="ml-3 rounded-lg border border-campo bg-fundo p-2"
-                value={happened}
-                onChange={(e) => setHappened(e.target.value)}
-              >
-                <option value="">escolha</option>
-                <option value="sim">sim</option>
-                <option value="nao">não</option>
-              </select>
-            </label>
-            {happened === "sim" && (
-              <>
-                <label className="block">
-                  De 1 a 5, quanto contribuiu para o objetivo profissional?
-                  <select
-                    className="ml-3 rounded-lg border border-campo bg-fundo p-2"
-                    value={utility}
-                    onChange={(e) => setUtility(e.target.value)}
-                  >
-                    <option value="">escolha</option>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <option key={n}>{n}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  Principal resultado da troca
-                  <select
-                    className="ml-3 rounded-lg border border-campo bg-fundo p-2"
-                    value={outcome}
-                    onChange={(e) => setOutcome(e.target.value)}
-                  >
-                    {Object.entries({
-                      clareza: "mais clareza",
-                      preparo: "preparo para uma oportunidade",
-                      feedback: "feedback recebido",
-                      contato: "novo contato profissional",
-                      outro: "outro resultado",
-                    }).map(([k, v]) => (
-                      <option key={k} value={k}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
-            )}
-            <Botao
-              carregando={busy}
-              disabled={!happened || (happened === "sim" && !utility)}
-              onClick={() =>
-                rpc("mvp_feedback", {
-                  invite: i.id,
-                  happened: happened === "sim",
-                  utility: happened === "sim" ? Number(utility) : null,
-                  outcome: happened === "sim" ? outcome : "nao_aconteceu",
-                })
-              }
-            >
-              Salvar minha avaliação
-            </Botao>
-          </fieldset>
+          )}
         </>
       )}
-      <div className="flex gap-5">
-        <Botao
-          variante="discreto"
-          onClick={() => setConfirmBlock(!confirmBlock)}
-        >
-          Bloquear participante
-        </Botao>
-        <Botao variante="discreto" onClick={() => setReport(!report)}>
-          Denunciar
-        </Botao>
-      </div>
-      {confirmBlock && (
-        <div>
-          <p>
-            O bloqueio interrompe novos convites e o acesso aos contatos.
-            contatos já vistos não podem ser recuperados.
-          </p>
-          <Botao variante="perigo" carregando={busy} onClick={block}>
-            Confirmar bloqueio
-          </Botao>
+
+      {painel === "bloquear" && (
+        <div className="space-y-3 rounded-2xl border border-erro p-4">
+          <p className="text-sm">O bloqueio encerra convites e esconde os contatos. Não dá para desfazer por aqui.</p>
+          <div className="flex gap-3">
+            <Botao
+              variante="perigo"
+              carregando={busy}
+              onClick={async () => {
+                setBusy(true);
+                const { error } = await supabase.from("conversation_blocks").insert({ owner_id: eu, blocked_id: outra });
+                setBusy(false);
+                if (error) toast(mensagemAmigavel(error), "erro");
+                else {
+                  toast("Participante bloqueada.");
+                  await reload();
+                }
+              }}
+            >
+              Confirmar bloqueio
+            </Botao>
+            <Botao variante="discreto" onClick={() => setPainel("")}>Cancelar</Botao>
+          </div>
         </div>
       )}
-      {report && (
-        <div>
-          <CampoTexto
-            rotulo="Motivo da denúncia (somente a curadoria lê)"
-            minLength={5}
-            maxLength={800}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-          <Botao
-            variante="secundario"
-            disabled={busy || reason.trim().length < 5}
-            onClick={() => rpc("mvp_report", { target: other, reason })}
-          >
-            Enviar denúncia
-          </Botao>
-        </div>
-      )}
+      {painel === "denunciar" && <Denuncia alvo={outra} busy={busy} rpc={rpc} fechar={() => setPainel("")} />}
     </article>
+  );
+}
+
+function MenuMais({ aoEscolher }: { aoEscolher: (v: "bloquear" | "denunciar") => void }) {
+  const [aberto, setAberto] = useState(false);
+  const caixaRef = useRef<HTMLDivElement>(null);
+  const itens = useRef<(HTMLButtonElement | null)[]>([]);
+  useEffect(() => {
+    if (!aberto) return;
+    itens.current[0]?.focus();
+    const fora = (e: MouseEvent) => {
+      if (!caixaRef.current?.contains(e.target as Node)) setAberto(false);
+    };
+    document.addEventListener("mousedown", fora);
+    return () => document.removeEventListener("mousedown", fora);
+  }, [aberto]);
+  function teclas(e: KeyboardEvent) {
+    const idx = itens.current.findIndex((b) => b === document.activeElement);
+    if (e.key === "Escape") setAberto(false);
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      itens.current[(idx + (e.key === "ArrowDown" ? 1 : -1) + 2) % 2]?.focus();
+    }
+  }
+  return (
+    <div ref={caixaRef} className="relative" onKeyDown={teclas}>
+      <button
+        type="button"
+        aria-label="Mais opções"
+        aria-haspopup="menu"
+        aria-expanded={aberto}
+        onClick={() => setAberto(!aberto)}
+        className="flex h-11 w-11 items-center justify-center rounded-xl text-suave hover:bg-superficie"
+      >
+        <IconeMais />
+      </button>
+      {aberto && (
+        <div role="menu" className="absolute right-0 z-10 mt-1 w-44 overflow-hidden rounded-xl border border-linha bg-fundo shadow-lg">
+          {(["bloquear", "denunciar"] as const).map((v, n) => (
+            <button
+              key={v}
+              ref={(el) => {
+                itens.current[n] = el;
+              }}
+              role="menuitem"
+              type="button"
+              className="block w-full px-4 py-3 text-left text-sm hover:bg-superficie focus:bg-superficie"
+              onClick={() => {
+                setAberto(false);
+                aoEscolher(v);
+              }}
+            >
+              {v === "bloquear" ? "Bloquear" : "Denunciar"}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Contatos({ c }: { c: ProContacts | null }) {
+  if (!c) return null;
+  const itens = [
+    c.linkedin && { href: c.linkedin, rotulo: "LinkedIn", Icone: IconeLinkedin, ext: true },
+    c.whatsapp && { href: `https://wa.me/${c.whatsapp.replace(/\D/g, "")}`, rotulo: "WhatsApp", Icone: IconeWhatsapp, ext: true },
+    c.email && { href: `mailto:${c.email}`, rotulo: "E-mail", Icone: IconeEmail, ext: false },
+  ].filter(Boolean) as { href: string; rotulo: string; Icone: typeof IconeEmail; ext: boolean }[];
+  return (
+    <div>
+      <p className={rotuloCampo}>Contatos liberados</p>
+      {itens.length ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {itens.map(({ href, rotulo, Icone, ext }) => (
+            <a
+              key={rotulo}
+              href={href}
+              {...(ext ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-campo px-4 text-sm font-semibold hover:border-destaque"
+            >
+              <Icone /> {rotulo}
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-1 text-sm text-suave">Ela ainda não liberou um contato.</p>
+      )}
+    </div>
+  );
+}
+
+function Agendar({
+  invite: i,
+  eu,
+  propostas,
+  slots,
+  busy,
+  rpc,
+}: {
+  invite: ProInvite;
+  eu: string;
+  propostas: ProProposal[];
+  slots: string[];
+  busy: boolean;
+  rpc: (n: string, a: Record<string, unknown>, ok: string) => Promise<boolean>;
+}) {
+  const dela = propostas.filter((p) => p.autora !== eu && new Date(p.inicio).getTime() > Date.now());
+  const minhas = propostas.filter((p) => p.autora === eu);
+  const [editar, setEditar] = useState(false);
+  const sugestoes = sugerirHorarios(slots);
+  const [linhas, setLinhas] = useState(() =>
+    (sugestoes.length ? sugestoes : [new Date(Date.now() + 2 * 86400_000).toISOString()]).map((iso) => {
+      const b = new Date(new Date(iso).getTime() - 3 * 3600_000).toISOString();
+      return { data: b.slice(0, 10), hora: b.slice(11, 16) };
+    }),
+  );
+  const proponho = editar || (!minhas.length && !dela.length);
+  return (
+    <section className="space-y-3 rounded-2xl bg-superficie p-4" aria-label="Combinar horário">
+      {dela.length > 0 && (
+        <div className="space-y-2">
+          <p className={rotuloCampo}>Escolha um dos horários que ela propôs</p>
+          <div className="flex flex-wrap gap-2">
+            {dela.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                disabled={busy}
+                onClick={() => rpc("mvp_confirm_time", { proposal: p.id }, "Horário confirmado.")}
+                className="chip"
+              >
+                {formatarHorario(p.inicio)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {minhas.length > 0 && !editar && (
+        <div className="text-sm">
+          <p>
+            Você propôs: {minhas.map((p) => formatarHorario(p.inicio)).join(" · ")}. Aguardando ela escolher.
+          </p>
+          <button type="button" className="mt-1 font-semibold text-destaque underline underline-offset-4" onClick={() => setEditar(true)}>
+            Mudar horários
+          </button>
+        </div>
+      )}
+      {!proponho && !minhas.length && (
+        <button type="button" className="text-sm font-semibold text-destaque underline underline-offset-4" onClick={() => setEditar(true)}>
+          Nenhum serve? Propor outros
+        </button>
+      )}
+      {proponho && (
+        <form
+          className="space-y-3"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const ok = await rpc(
+              "mvp_propose_times",
+              { invite: i.id, horarios: linhas.filter((l) => l.data && l.hora).map((l) => isoBrasilia(l.data, l.hora)) },
+              "Horários enviados.",
+            );
+            if (ok) setEditar(false);
+          }}
+        >
+          <p className={rotuloCampo}>Proponha até 3 horários (Brasília)</p>
+          {linhas.map((l, n) => (
+            <div key={n} className="grid grid-cols-[1fr_7rem_auto] items-start gap-2">
+              <input
+                aria-label={`Data ${n + 1}`}
+                type="date"
+                required
+                min={hojeBrasilia()}
+                max={limiteBrasilia()}
+                value={l.data}
+                onChange={(e) => setLinhas(linhas.map((x, k) => (k === n ? { ...x, data: e.target.value } : x)))}
+                className={`${caixa} h-12`}
+              />
+              <input
+                aria-label={`Hora ${n + 1}`}
+                type="time"
+                required
+                step={900}
+                value={l.hora}
+                onChange={(e) => setLinhas(linhas.map((x, k) => (k === n ? { ...x, hora: e.target.value } : x)))}
+                className={`${caixa} h-12`}
+              />
+              <button
+                type="button"
+                aria-label={`Remover horário ${n + 1}`}
+                disabled={linhas.length === 1}
+                onClick={() => setLinhas(linhas.filter((_, k) => k !== n))}
+                className="h-12 w-10 rounded-xl text-suave hover:text-erro disabled:opacity-30"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <div className="flex flex-wrap items-center gap-3">
+            <Botao type="submit" carregando={busy}>Enviar horários</Botao>
+            {linhas.length < 3 && (
+              <button
+                type="button"
+                className="text-sm font-semibold text-destaque underline underline-offset-4"
+                onClick={() => setLinhas([...linhas, { ...linhas[linhas.length - 1] }])}
+              >
+                Adicionar horário
+              </button>
+            )}
+          </div>
+          {sugestoes.length > 0 && <p className="text-xs text-suave">Sugeridos a partir dos períodos em comum.</p>}
+        </form>
+      )}
+    </section>
+  );
+}
+
+function Avaliacao({
+  invite,
+  busy,
+  rpc,
+}: {
+  invite: string;
+  busy: boolean;
+  rpc: (n: string, a: Record<string, unknown>, ok: string) => Promise<boolean>;
+}) {
+  const [aconteceu, setAconteceu] = useState<"" | "sim" | "nao">("");
+  const [nota, setNota] = useState<number | null>(null);
+  const [resultado, setResultado] = useState<string>("");
+  return (
+    <section className="space-y-4 rounded-2xl bg-superficie p-4" aria-label="Avaliar a conversa">
+      <EscolhaChips
+        nome={`aconteceu-${invite}`}
+        rotulo="A conversa aconteceu?"
+        valor={aconteceu}
+        aoMudar={setAconteceu}
+        opcoes={[
+          { valor: "sim", rotulo: "Sim" },
+          { valor: "nao", rotulo: "Não" },
+        ]}
+      />
+      {aconteceu === "sim" && (
+        <>
+          <Nota1a5 rotulo="Quanto ajudou no seu objetivo?" valor={nota} aoMudar={setNota} />
+          <EscolhaChips
+            nome={`resultado-${invite}`}
+            rotulo="O que você levou da conversa?"
+            valor={resultado}
+            aoMudar={setResultado}
+            opcoes={[
+              { valor: "clareza", rotulo: "Mais clareza" },
+              { valor: "preparo", rotulo: "Preparo" },
+              { valor: "feedback", rotulo: "Feedback" },
+              { valor: "contato", rotulo: "Novo contato" },
+              { valor: "outro", rotulo: "Outro" },
+            ]}
+          />
+        </>
+      )}
+      <Botao
+        carregando={busy}
+        disabled={!aconteceu || (aconteceu === "sim" && (!nota || !resultado))}
+        onClick={() =>
+          rpc(
+            "mvp_feedback",
+            {
+              invite,
+              happened: aconteceu === "sim",
+              utility: aconteceu === "sim" ? nota : null,
+              outcome: aconteceu === "sim" ? resultado : "nao_aconteceu",
+            },
+            "Avaliação salva. Obrigada!",
+          )
+        }
+      >
+        Salvar avaliação
+      </Botao>
+    </section>
+  );
+}
+
+function Denuncia({
+  alvo,
+  busy,
+  rpc,
+  fechar,
+}: {
+  alvo: string;
+  busy: boolean;
+  rpc: (n: string, a: Record<string, unknown>, ok: string) => Promise<boolean>;
+  fechar: () => void;
+}) {
+  const [motivo, setMotivo] = useState("");
+  return (
+    <div className="space-y-3 rounded-2xl border border-linha p-4">
+      <CampoArea
+        rotulo="O que aconteceu?"
+        ajuda="Só a curadoria lê."
+        minLength={5}
+        maxLength={800}
+        rows={3}
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+      />
+      <div className="flex gap-3">
+        <Botao
+          variante="secundario"
+          disabled={busy || motivo.trim().length < 5}
+          onClick={async () => {
+            if (await rpc("mvp_report", { target: alvo, reason: motivo }, "Denúncia enviada à curadoria.")) fechar();
+          }}
+        >
+          Enviar denúncia
+        </Botao>
+        <Botao variante="discreto" onClick={fechar}>Cancelar</Botao>
+      </div>
+    </div>
   );
 }

@@ -2,6 +2,13 @@
 import { createRequire } from "node:module";
 import assert from "node:assert/strict";
 const { chromium } = createRequire(import.meta.url)("playwright");
+import { existsSync } from "node:fs";
+// usa CHROMIUM_PATH, o Chromium do sistema ou o do Playwright, o que existir
+function chromiumPath() {
+  for (const p of [process.env.CHROMIUM_PATH, "/usr/bin/chromium", "/opt/pw-browsers/chromium"])
+    if (p && existsSync(p)) return p;
+  return undefined;
+}
 const base = process.env.TEST_BASE_URL || "http://localhost:5173";
 const project = new URL(
   process.env.VITE_SUPABASE_URL || "http://localhost",
@@ -10,7 +17,7 @@ const uid = "10000000-0000-0000-0000-000000000001",
   target = "10000000-0000-0000-0000-000000000002";
 const browser = await chromium.launch({
   headless: true,
-  executablePath: "/usr/bin/chromium",
+  executablePath: chromiumPath(),
   args: ["--no-sandbox"],
 });
 try {

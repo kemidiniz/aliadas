@@ -16,21 +16,21 @@ export function SenhaPerfil() {
     e.preventDefault();
     if (password.length < 8 || password !== confirmation)
       return setMessage(
-        "use pelo menos oito caracteres e confirme a mesma senha.",
+        "Use pelo menos oito caracteres e confirme a mesma senha.",
       );
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (error)
       setMessage(
-        "não foi possível salvar a senha. peça um novo código e tente novamente.",
+        "Não foi possível salvar a senha. Peça um novo código e tente novamente.",
       );
     else {
       sessionStorage.removeItem(CHAVE_NOVA_SENHA);
       setRecovery(false);
       setPassword("");
       setConfirmation("");
-      setMessage("senha atualizada.");
+      setMessage("Senha atualizada.");
     }
   }
   return (
@@ -40,11 +40,11 @@ export function SenhaPerfil() {
         className="my-6 rounded-2xl border border-linha p-5"
       >
         <summary className="cursor-pointer font-semibold">
-          {recovery ? "criar uma senha nova" : "senha de acesso (opcional)"}
+          {recovery ? "Criar uma senha nova" : "Senha de acesso (opcional)"}
         </summary>
         <form className="mt-5 space-y-4" onSubmit={save}>
           <CampoTexto
-            rotulo="nova senha"
+            rotulo="Nova senha"
             type="password"
             autoComplete="new-password"
             required
@@ -53,7 +53,7 @@ export function SenhaPerfil() {
             onChange={(e) => setPassword(e.target.value)}
           />
           <CampoTexto
-            rotulo="confirmar nova senha"
+            rotulo="Confirmar nova senha"
             type="password"
             autoComplete="new-password"
             required
@@ -62,7 +62,7 @@ export function SenhaPerfil() {
             onChange={(e) => setConfirmation(e.target.value)}
           />
           <Botao type="submit" carregando={busy}>
-            salvar senha
+            Salvar senha
           </Botao>
         </form>
       </details>

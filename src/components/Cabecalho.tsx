@@ -12,7 +12,7 @@ function BotaoTema() {
     <button
       type="button"
       onClick={alternar}
-      aria-label={escuro ? "usar tema claro" : "usar tema escuro"}
+      aria-label={escuro ? "Usar tema claro" : "Usar tema escuro"}
       aria-pressed={escuro}
       className="inline-flex h-11 w-11 items-center justify-center rounded-full border-2 border-campo text-destaque hover:border-destaque"
     >
@@ -44,8 +44,8 @@ export function Cabecalho() {
   const links = session
     ? [
         { to: "/", rotulo: "Início" },
-        { to: "/minhas-conversas", rotulo: "Minhas conversas" },
-        { to: "/meu-perfil", rotulo: "Meu perfil" },
+        { to: "/minhas-conversas", rotulo: "Conversas" },
+        { to: "/meu-perfil", rotulo: "Perfil" },
       ]
     : [
         { to: "/#como-funciona", rotulo: "Como funciona" },
@@ -66,11 +66,11 @@ export function Cabecalho() {
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-destaque focus:px-4 focus:py-2 focus:text-sobre-destaque"
       >
-        pular para o conteúdo
+        Pular para o conteúdo
       </a>
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-4">
         <Logo />
-        <nav aria-label="principal" className="hidden lg:block">
+        <nav aria-label="Principal" className="hidden lg:block">
           <ul className="flex items-center gap-1">
             {links.map((l) => (
               <li key={l.to}>
@@ -110,7 +110,7 @@ export function Cabecalho() {
         {aberto && (
           <motion.nav
             id="menu-celular"
-            aria-label="principal"
+            aria-label="Principal"
             className="overflow-hidden border-t border-linha lg:hidden"
             initial={reduzir ? { opacity: 0 } : { height: 0, opacity: 0 }}
             animate={reduzir ? { opacity: 1 } : { height: "auto", opacity: 1 }}

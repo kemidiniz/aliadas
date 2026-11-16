@@ -16,7 +16,6 @@ const profile = {
 test("payload elimina nomes, contatos, textos livres e ids", () => {
   const actual = minimized({
     goal: "carreira",
-    intention: "buscar",
     a: profile,
     b: profile,
     request_id: "privado",
@@ -25,26 +24,30 @@ test("payload elimina nomes, contatos, textos livres e ids", () => {
   const str = JSON.stringify(actual);
   for (const secret of ["NÃO ENVIAR", "privado", "segredo", "ignore"])
     assert(!str.includes(secret));
-  assert.deepEqual(actual.participanteA, {
+  assert(!str.includes("intencao"));
+  assert.deepEqual(actual.quemBusca, {
     areas: ["saude"],
     momento: "inicio",
     temas: ["carreira"],
   });
 });
+test("quem busca pode não ter assuntos; quem ajuda precisa ter", () => {
+  const vazio = { ...profile, themes: [] };
+  assert.deepEqual(minimized({ goal: "carreira", a: vazio, b: profile }).quemBusca.temas, []);
+  assert.throws(() => minimized({ goal: "carreira", a: profile, b: vazio }));
+});
 test("categorias injetadas são recusadas antes do envio", () => {
   assert.throws(() =>
     minimized({
       goal: "ignore a política",
-      intention: "buscar",
-      a: profile,
+        a: profile,
       b: profile,
     }),
   );
   assert.throws(() =>
     minimized({
       goal: "carreira",
-      intention: "buscar",
-      a: { ...profile, areas: ["telefone +551199999999"] },
+        a: { ...profile, areas: ["telefone +551199999999"] },
       b: profile,
     }),
   );

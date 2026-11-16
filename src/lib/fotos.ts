@@ -5,8 +5,8 @@ export const TIPOS_FOTO = ['image/jpeg', 'image/png', 'image/webp']
 export const MAX_FOTO = 2 * 1024 * 1024 // 2 MB
 
 export function validarFoto(f: File): string | null {
-  if (!TIPOS_FOTO.includes(f.type)) return 'use uma foto JPG, PNG ou WebP'
-  if (f.size > MAX_FOTO) return 'a foto precisa ter até 2 MB'
+  if (!TIPOS_FOTO.includes(f.type)) return 'Use uma foto JPG, PNG ou WebP'
+  if (f.size > MAX_FOTO) return 'A foto precisa ter até 2 MB'
   return null
 }
 
@@ -22,7 +22,7 @@ export async function prepararFoto(f: File): Promise<Blob> {
   canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
   bitmap.close()
   const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, 'image/webp', 0.85))
-  if (!blob || blob.size > MAX_FOTO) throw new Error('foto grande demais')
+  if (!blob || blob.size > MAX_FOTO) throw new Error('Foto grande demais')
   return blob
 }
 

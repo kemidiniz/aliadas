@@ -12,8 +12,8 @@ import { PAGINAS_DO_SITE } from '../lib/tipos'
 type Caminho = 'avaliacao' | 'problema'
 
 const CAMINHOS: { valor: Caminho; rotulo: string; detalhe: string }[] = [
-  { valor: 'avaliacao', rotulo: 'avaliar o site', detalhe: 'conta como foi usar a aliadas' },
-  { valor: 'problema', rotulo: 'relatar um problema', detalhe: 'algo quebrou ou ficou confuso' },
+  { valor: 'avaliacao', rotulo: 'Avaliar o site', detalhe: 'Conta como foi usar a aliadas' },
+  { valor: 'problema', rotulo: 'Relatar um problema', detalhe: 'Algo quebrou ou ficou confuso' },
 ]
 
 const vazio = {
@@ -45,27 +45,27 @@ export default function FeedbackPagina() {
     for (const k of Object.keys(dados)) if (dados[k] === '') dados[k] = null
     // sem .select(): quem envia não tem (nem precisa ter) permissão de leitura
     const { error } = await supabase.from('feedback').insert(dados)
-    setMsgErro(error ? mensagemAmigavel(error, 'não conseguimos enviar agora. tente de novo em instantes.') : '')
+    setMsgErro(error ? mensagemAmigavel(error, 'Não conseguimos enviar agora. Tente de novo em instantes.') : '')
     setEstado(error ? 'erro' : 'ok')
   }
 
   if (estado === 'ok') {
     return (
-      <Pagina titulo="feedback">
-        <Titulo>recebemos!</Titulo>
-        <p className="text-xl">obrigada por construir a aliadas com a gente.</p>
+      <Pagina titulo="Feedback">
+        <Titulo>Recebemos!</Titulo>
+        <p className="text-xl">Obrigada por construir a aliadas com a gente.</p>
         <div className="mt-8">
-          <Botao variante="secundario" onClick={() => { setF(vazio); setCaminho(''); setEstado('idle') }}>enviar outro</Botao>
+          <Botao variante="secundario" onClick={() => { setF(vazio); setCaminho(''); setEstado('idle') }}>Enviar outro</Botao>
         </div>
       </Pagina>
     )
   }
 
   return (
-    <Pagina titulo="feedback">
-      <Titulo sub="nossa comunidade pode evoluir com a sua opinião">feedback</Titulo>
+    <Pagina titulo="Feedback">
+      <Titulo sub="Nossa comunidade pode evoluir com a sua opinião">Feedback</Titulo>
       <form onSubmit={enviar} noValidate className="space-y-8">
-        <Escolha nome="caminho" rotulo="o que você quer fazer?" valor={caminho} aoMudar={(v) => { setCaminho(v); setErros({}) }} opcoes={CAMINHOS} />
+        <Escolha nome="caminho" rotulo="O que você quer fazer?" valor={caminho} aoMudar={(v) => { setCaminho(v); setErros({}) }} opcoes={CAMINHOS} />
 
         <AnimatePresence mode="wait">
           {caminho && (
@@ -80,7 +80,7 @@ export default function FeedbackPagina() {
               {caminho === 'avaliacao' && (
                 <>
                   <fieldset>
-                    <legend className="mb-3 font-titulo text-lg font-semibold">foi fácil usar a aliadas?</legend>
+                    <legend className="mb-3 font-titulo text-lg font-semibold">Foi fácil usar a aliadas?</legend>
                     <div className="flex gap-2">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <label key={n} className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border-2 font-titulo font-bold ${f.nota_facilidade === n ? 'border-destaque bg-destaque text-sobre-destaque' : 'border-campo text-texto hover:border-destaque'} focus-within:outline focus-within:outline-3 focus-within:outline-offset-3`}>
@@ -94,21 +94,21 @@ export default function FeedbackPagina() {
                   </fieldset>
                   <Escolha
                     nome="encontrou"
-                    rotulo="você conseguiu encontrar suas aliadas?"
+                    rotulo="Você conseguiu encontrar suas aliadas?"
                     valor={f.encontrou_aliadas}
                     aoMudar={(v) => muda('encontrou_aliadas', v)}
                     erro={erros.encontrou_aliadas}
-                    opcoes={[{ valor: 'sim', rotulo: 'sim' }, { valor: 'em_parte', rotulo: 'em parte' }, { valor: 'nao', rotulo: 'não' }]}
+                    opcoes={[{ valor: 'sim', rotulo: 'Sim' }, { valor: 'em_parte', rotulo: 'Em parte' }, { valor: 'nao', rotulo: 'Não' }]}
                   />
-                  <CampoArea rotulo="o que você mudaria? (opcional)" rows={3} maxLength={LIMITES.feedbackCurto} value={f.mudaria} onChange={(e) => muda('mudaria', e.target.value)} erro={erros.mudaria} />
+                  <CampoArea rotulo="O que você mudaria? (opcional)" rows={3} maxLength={LIMITES.feedbackCurto} value={f.mudaria} onChange={(e) => muda('mudaria', e.target.value)} erro={erros.mudaria} />
                 </>
               )}
 
               {caminho === 'problema' && (
                 <>
-                  <CampoArea rotulo="o que aconteceu?" rows={4} maxLength={LIMITES.problema} value={f.problema_descricao} onChange={(e) => muda('problema_descricao', e.target.value)} erro={erros.problema_descricao} />
+                  <CampoArea rotulo="O que aconteceu?" rows={4} maxLength={LIMITES.problema} value={f.problema_descricao} onChange={(e) => muda('problema_descricao', e.target.value)} erro={erros.problema_descricao} />
                   <div className="space-y-2">
-                    <label htmlFor="pagina" className="block font-titulo text-lg font-semibold">em que página?</label>
+                    <label htmlFor="pagina" className="block font-titulo text-lg font-semibold">Em que página?</label>
                     <select
                       id="pagina"
                       value={f.problema_pagina}
@@ -116,7 +116,7 @@ export default function FeedbackPagina() {
                       className="w-full rounded-xl border-2 border-campo bg-fundo px-4 py-3 text-texto focus:border-destaque"
                       aria-describedby="pagina-erro"
                     >
-                      <option value="">escolha</option>
+                      <option value="">Escolha</option>
                       {PAGINAS_DO_SITE.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
                     <p id="pagina-erro" className="text-sm text-erro" aria-live="polite">{erros.problema_pagina}</p>
@@ -125,8 +125,8 @@ export default function FeedbackPagina() {
               )}
 
               <CampoTexto
-                rotulo="seu e-mail (opcional)"
-                ajuda="se quiser resposta."
+                rotulo="Seu e-mail (opcional)"
+                ajuda="Se quiser resposta."
                 type="email"
                 autoComplete="email"
                 value={f.email}
@@ -134,7 +134,7 @@ export default function FeedbackPagina() {
                 erro={erros.email}
               />
               {estado === 'erro' && <Aviso tipo="erro">{msgErro}</Aviso>}
-              <Botao type="submit" carregando={estado === 'enviando'}>enviar</Botao>
+              <Botao type="submit" carregando={estado === 'enviando'}>Enviar</Botao>
             </motion.div>
           )}
         </AnimatePresence>

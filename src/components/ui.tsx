@@ -25,7 +25,7 @@ const tons: Record<TomSelo, string> = {
 
 export function Selo({ children, tom = 'neutro' }: { children: ReactNode; tom?: TomSelo }) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-titulo text-xs font-semibold lowercase ${tons[tom]}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-titulo text-xs font-semibold ${tons[tom]}`}>
       {children}
     </span>
   )
@@ -68,7 +68,7 @@ export function Abas<T extends string>({
             role="tab"
             aria-selected={ativa}
             onClick={() => aoMudar(a.id)}
-            className={`relative min-h-11 flex-1 whitespace-nowrap rounded-full px-4 font-titulo text-sm font-semibold lowercase sm:text-base ${
+            className={`relative min-h-11 flex-1 whitespace-nowrap rounded-full px-4 font-titulo text-sm font-semibold sm:text-base ${
               ativa ? 'text-sobre-destaque' : 'text-texto hover:text-destaque'
             }`}
           >
@@ -117,7 +117,7 @@ export function Acao({ href, children, externo = false }: { href: string; childr
     <a
       href={href}
       {...(externo ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border-2 border-destaque px-5 font-titulo font-semibold lowercase text-destaque transition-colors hover:bg-destaque hover:text-sobre-destaque"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border-2 border-destaque px-5 font-titulo font-semibold text-destaque transition-colors hover:bg-destaque hover:text-sobre-destaque"
     >
       {children}
     </a>
@@ -132,4 +132,47 @@ export function tempoRelativo(iso: string) {
   const d = Math.floor(s / 86400)
   if (d < 30) return `há ${d} ${d === 1 ? 'dia' : 'dias'}`
   return new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })
+}
+
+// Estado de uma conversa
+export type EstadoConversa =
+  | "pendente"
+  | "aceita"
+  | "horario"
+  | "realizada"
+  | "recusada";
+const BADGE: Record<EstadoConversa, [string, string]> = {
+  pendente: ["Pendente", "border border-campo text-texto"],
+  aceita: ["Aceita", "bg-superficie text-destaque ring-1 ring-destaque"],
+  horario: ["Horário confirmado", "bg-destaque text-sobre-destaque"],
+  realizada: ["Realizada", "bg-coral text-vinho-noite"],
+  recusada: ["Recusada", "border border-linha text-suave"],
+};
+export function Badge({ estado }: { estado: EstadoConversa }) {
+  const [t, c] = BADGE[estado];
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${c}`}
+    >
+      {t}
+    </span>
+  );
+}
+
+export function Skeleton({ className = "h-5 w-full" }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`block animate-pulse rounded-lg bg-superficie ${className}`}
+    />
+  );
+}
+export function CartaoCarregando() {
+  return (
+    <div role="status" aria-label="Carregando" className="space-y-3 rounded-3xl border border-linha p-6">
+      <Skeleton className="h-6 w-1/3" />
+      <Skeleton className="h-4 w-2/3" />
+      <Skeleton className="h-4 w-1/2" />
+    </div>
+  );
 }

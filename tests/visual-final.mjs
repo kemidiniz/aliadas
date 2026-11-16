@@ -2,12 +2,19 @@ import { createRequire } from "node:module";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 const { chromium } = createRequire(import.meta.url)("playwright");
+import { existsSync } from "node:fs";
+// usa CHROMIUM_PATH, o Chromium do sistema ou o do Playwright, o que existir
+function chromiumPath() {
+  for (const p of [process.env.CHROMIUM_PATH, "/usr/bin/chromium", "/opt/pw-browsers/chromium"])
+    if (p && existsSync(p)) return p;
+  return undefined;
+}
 const base = process.env.TEST_BASE_URL || "http://localhost:5173";
 const artifacts = process.env.VISUAL_OUTPUT || "/workspace/aliadas-review";
 await mkdir(artifacts, { recursive: true });
 const b = await chromium.launch({
   headless: true,
-  executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
+  executablePath: chromiumPath(),
   args: ["--no-sandbox"],
 });
 function luminance(hex) {

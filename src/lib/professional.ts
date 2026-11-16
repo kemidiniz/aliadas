@@ -1,41 +1,38 @@
 export const AREAS_PRO = {
-  tecnologia: "tecnologia",
-  educacao: "educação",
-  saude: "saúde",
-  negocios: "negócios e gestão",
-  comunicacao: "comunicação",
-  artes: "artes e criação",
-  ciencias: "ciências",
-  direito: "direito",
-  engenharia: "engenharia",
-  servicos: "serviços",
-  outras: "outras áreas",
+  tecnologia: "Tecnologia",
+  educacao: "Educação",
+  saude: "Saúde",
+  negocios: "Negócios e gestão",
+  comunicacao: "Comunicação",
+  artes: "Artes e criação",
+  ciencias: "Ciências",
+  direito: "Direito",
+  engenharia: "Engenharia",
+  servicos: "Serviços",
+  outras: "Outras áreas",
 };
+// Objetivos de conversa (mesmas chaves do banco)
 export const GOALS_PRO = {
-  situacao: "conversar sobre uma situação profissional",
-  entrevista: "preparar uma entrevista de emprego",
-  apresentacao: "treinar uma apresentação profissional",
-  portfolio: "receber feedback sobre um portfólio",
-  carreira: "trocar dicas e conselhos de carreira",
-  rede: "ampliar a rede de contatos",
-  projeto: "receber uma opinião sobre um projeto",
-  outro: "outro objetivo profissional",
+  situacao: "Uma situação no trabalho",
+  entrevista: "Preparar uma entrevista",
+  apresentacao: "Treinar uma apresentação",
+  portfolio: "Feedback de portfólio",
+  carreira: "Dicas de carreira",
+  rede: "Ampliar a rede de contatos",
+  projeto: "Opinião sobre um projeto",
+  outro: "Outro objetivo profissional",
 };
 export const MOMENTS_PRO = {
-  estudante: "estudando ou em formação",
-  inicio: "começando a carreira",
-  transicao: "em transição de carreira",
-  experiente: "com experiência profissional",
+  estudante: "Estudando ou em formação",
+  inicio: "Começando a carreira",
+  transicao: "Em transição de carreira",
+  experiente: "Com experiência profissional",
 };
+// Canais de contato liberados após o aceite (a sala de chamada é um campo à parte)
 export const CHANNELS_PRO = {
   linkedin: "LinkedIn",
   whatsapp: "WhatsApp",
-  email: "e-mail",
-  meet: "Google Meet",
-};
-export const INTENTIONS_PRO = {
-  buscar: "busco uma troca",
-  compartilhar: "quero compartilhar",
+  email: "E-mail",
 };
 export const DAYS_PRO = [
   "segunda",
@@ -55,8 +52,8 @@ export type ProProfile = {
   occupation: string;
   moment: string;
   areas: string[];
-  themes: string[];
-  intentions: string[];
+  can_help: string[];
+  want_talk: string[];
   channels: string[];
   slots: string[];
   ai_consent: boolean;
@@ -85,7 +82,8 @@ export type ProRequest = {
   questions: string[];
   draft: string | null;
   goal: string;
-  intention: string;
+  description: string | null;
+  created_at: string;
 };
 export type ProInvite = {
   id: string;
@@ -94,6 +92,14 @@ export type ProInvite = {
   recipient_id: string;
   message: string;
   state: string;
-  sender_time: string | null;
-  recipient_time: string | null;
+  created_at: string;
+  responded_at: string | null;
+  horario_confirmado: string | null;
 };
+export type ProProposal = {
+  id: string;
+  invite_id: string;
+  autora: string;
+  inicio: string;
+};
+export const label = (map: Record<string, string>, k: string) => map[k] ?? k;

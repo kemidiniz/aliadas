@@ -3,9 +3,9 @@ import { Pagina, Titulo } from '../components/Pagina'
 
 export default function NaoEncontrada() {
   return (
-    <Pagina titulo="página não encontrada">
-      <Titulo sub="esse endereço não existe (ou mudou de lugar).">página não encontrada</Titulo>
-      <BotaoLink to="/">voltar para o início</BotaoLink>
+    <Pagina titulo="Página não encontrada">
+      <Titulo sub="Esse endereço não existe (ou mudou de lugar).">Página não encontrada</Titulo>
+      <BotaoLink to="/">Voltar para o início</BotaoLink>
     </Pagina>
   )
 }

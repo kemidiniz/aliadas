@@ -9,7 +9,7 @@ export function Aviso({ tipo = 'info', children }: { tipo?: 'info' | 'erro' | 'o
   )
 }
 
-export function Carregando({ texto = 'carregando…' }: { texto?: string }) {
+export function Carregando({ texto = 'Carregando…' }: { texto?: string }) {
   return (
     <p role="status" className="py-10 text-center text-suave">
       <span className="mr-2 inline-block h-3 w-3 animate-pulse rounded-full bg-coral align-middle" aria-hidden />

@@ -20,7 +20,6 @@ const server = http.createServer(async (req, res) => {
       : {
           job_id: "10000000-0000-0000-0000-000000000001",
           goal: "carreira",
-          intention: "buscar",
           a: { areas: ["saude"], moment: "inicio", themes: ["carreira"] },
           b: { areas: ["saude"], moment: "experiente", themes: ["carreira"] },
         };

@@ -56,7 +56,24 @@
   --color-logo: var(--logo-resto);
   --color-erro: var(--erro);
 
-  --font-titulo: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* títulos (h1/h2): troque só esta linha para mudar a fonte de destaque */
+  --font-titulo: "Quicksand", ui-sans-serif, system-ui, sans-serif;
+
+  /* Escala tipográfica: 5 tamanhos */
+  --text-pequeno: 0.875rem;
+  --text-corpo: 1rem;
+  --text-destaque: 1.25rem;
+  --text-titulo: 1.75rem;
+  --text-display: clamp(2.25rem, 5vw, 3.5rem);
+  /* as classes do Tailwind apontam para a mesma escala */
+  --text-xs: var(--text-pequeno);
+  --text-sm: var(--text-pequeno);
+  --text-base: var(--text-corpo);
+  --text-lg: var(--text-destaque);
+  --text-xl: var(--text-destaque);
+  --text-2xl: var(--text-titulo);
+  --text-3xl: var(--text-titulo);
+  --text-4xl: var(--text-display);
   --font-texto: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -76,12 +93,9 @@ body {
 }
 
 h1,
-h2,
-h3,
-h4,
-nav,
-.minusculas {
+h2 {
   font-family: var(--font-titulo);
+  font-weight: 700;
 }
 
 /* foco visível e consistente em tudo que é interativo */
@@ -120,11 +134,11 @@ h4 {
   text-wrap: balance;
 }
 h2 {
-  font-size: clamp(1.65rem, 3vw, 2.2rem);
-  font-weight: 650;
+  font-size: var(--text-titulo);
 }
-h3 {
-  font-size: 1.125rem;
+h3,
+h4 {
+  font-size: var(--text-destaque);
   font-weight: 600;
 }
 p {
@@ -154,7 +168,7 @@ a {
 }
 .eyebrow {
   color: var(--destaque);
-  font-size: 0.75rem;
+  font-size: var(--text-pequeno);
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -167,14 +181,14 @@ a {
   align-items: center;
 }
 .landing-hero h1 {
-  font-size: clamp(2.5rem, 5.2vw, 4.25rem);
-  font-weight: 650;
-  letter-spacing: -0.055em;
+  font-size: var(--text-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 1.06;
   color: var(--destaque);
 }
 .hero-description {
-  font-size: 1.125rem;
+  font-size: var(--text-destaque);
   color: var(--texto-suave);
   margin-top: 1.5rem;
   max-width: 44rem;
@@ -192,7 +206,7 @@ a {
 }
 .art-label,
 .art-caption {
-  font-size: 0.75rem;
+  font-size: var(--text-pequeno);
   color: var(--texto-suave);
 }
 .art-label {
@@ -214,7 +228,7 @@ a {
   margin-top: 1.5rem;
   max-width: 48rem;
   color: var(--texto-suave);
-  font-size: 1.0625rem;
+  font-size: var(--text-corpo);
 }
 .editorial-copy p + p {
   margin-top: 1rem;
@@ -229,29 +243,31 @@ a {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.75rem;
-  font-size: 3.5rem;
-  font-weight: 600;
-  letter-spacing: -0.055em;
+  font-size: var(--text-display);
+  font-family: var(--font-titulo);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   color: var(--destaque);
   line-height: 1.1;
   margin-bottom: 1.25rem;
 }
 .stat-number span {
-  font-size: 0.875rem;
+  font-size: var(--text-pequeno);
+  font-family: var(--font-texto);
   letter-spacing: 0;
   color: var(--texto-suave);
 }
 .source-link {
   display: inline-block;
   margin-top: 1rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-pequeno);
   text-decoration: underline;
   text-underline-offset: 4px;
   color: var(--destaque);
 }
 .source-context {
   margin-top: 0.75rem;
-  font-size: 0.75rem;
+  font-size: var(--text-pequeno);
   color: var(--texto-suave);
 }
 .text-link {
@@ -267,7 +283,7 @@ a {
 }
 .step-number {
   display: block;
-  font-size: 0.8125rem;
+  font-size: var(--text-pequeno);
   color: var(--destaque);
   margin-bottom: 1rem;
   font-weight: 600;
@@ -279,7 +295,7 @@ a {
   border-left: 3px solid var(--destaque);
 }
 .privacy-strip h2 {
-  font-size: 1.25rem;
+  font-size: var(--text-destaque);
   margin-bottom: 0.75rem;
 }
 .final-call {
@@ -336,7 +352,7 @@ a {
 .section-count {
   display: inline-block;
   margin-left: 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--text-pequeno);
   font-weight: 400;
   color: var(--texto-suave);
 }
@@ -346,3 +362,41 @@ a {
     margin: 0.5rem 0 0 1rem;
   }
 }
+
+/* Chips: seleção em pílulas (teclado: Tab + Espaço) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border-radius: 999px;
+  border: 2px solid var(--borda-campo);
+  font-size: var(--text-corpo);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+.chip:hover {
+  border-color: var(--destaque);
+}
+.chip:has(input:focus-visible) {
+  outline: 3px solid var(--foco);
+  outline-offset: 2px;
+}
+.chip-marcado {
+  background: var(--destaque);
+  border-color: var(--destaque);
+  color: var(--sobre-destaque);
+}
+.chip-marca {
+  font-weight: 700;
+  width: 1rem;
+  text-align: center;
+}
+button.chip:disabled {
+  opacity: 0.5;
+}
+
+.faq summary { list-style: none; }
+.faq summary::-webkit-details-marker { display: none; }

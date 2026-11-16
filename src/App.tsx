@@ -3,6 +3,9 @@ import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Cabecalho } from "./components/Cabecalho";
 import { Rodape } from "./components/Rodape";
+import { NavInferior } from "./components/NavInferior";
+import { ToastProvider } from "./components/Toast";
+import { useAuth } from "./lib/auth";
 import { Protegida } from "./components/Protegida";
 import { Aviso, Carregando } from "./components/Aviso";
 import { supabaseConfigurado } from "./lib/supabase";
@@ -22,6 +25,7 @@ import NaoEncontrada from "./pages/NaoEncontrada";
 
 export function App() {
   const local = useLocation();
+  const { session } = useAuth();
   useEffect(() => {
     if (local.hash) {
       requestAnimationFrame(() =>
@@ -33,7 +37,8 @@ export function App() {
   }, [local.pathname, local.hash]);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <ToastProvider>
+    <div className={`flex min-h-dvh flex-col ${session ? "pb-16 sm:pb-0" : ""}`}>
       <Cabecalho />
       {!supabaseConfigurado && (
         <div className="mx-auto mt-4 w-full max-w-5xl px-5">
@@ -108,6 +113,8 @@ export function App() {
         </Suspense>
       </main>
       <Rodape />
+      <NavInferior />
     </div>
+    </ToastProvider>
   );
 }

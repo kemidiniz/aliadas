@@ -4,14 +4,14 @@
 \set u3 '10000000-0000-0000-0000-000000000003'
 insert into auth.users(id,email) values(:'u1','um@exemplo.invalid'),(:'u2','dois@exemplo.invalid'),(:'u3','tres@exemplo.invalid');
 set role anon;
-select tst.bloqueia($$select public.mvp_create_request('buscar','carreira','')$$,'visitante não cria solicitação');
+select tst.bloqueia($$select public.mvp_create_request('carreira','')$$,'visitante não cria solicitação');
 select tst.bloqueia($$select * from public.professional_contacts$$,'visitante não lê contatos profissionais');
 select tst.bloqueia($$select public.mvp_claim_job(gen_random_uuid())$$,'visitante não aciona IA');
 reset role;
 set role authenticated; select set_config('request.jwt.claim.sub', :'u1', false);
 select public.mvp_save_profile('{"name":"pessoa um","occupation":"formação em saúde","moment":"inicio","areas":["saude"],"themes":["carreira"],"intentions":["buscar"],"channels":["email"],"slots":["1_tarde"],"ai_consent":false}', '{}', true);
 select tst.ok((select email is null from public.professional_contacts where profile_id=auth.uid()),'e-mail de login não foi copiado como contato');
-select tst.bloqueia($$select public.mvp_create_request('buscar','carreira','')$$,'perfil pendente não cria solicitação');
+select tst.bloqueia($$select public.mvp_create_request('carreira','')$$,'perfil pendente não cria solicitação');
 select tst.bloqueia($$update public.professional_profiles set ai_consent=true$$,'edição profissional direta bloqueada');
 select tst.bloqueia($$select public.mvp_finish_job(gen_random_uuid(),'{}','fake',0,0,null)$$,'usuária não forja saída de IA');
 select tst.bloqueia($$select public.mvp_metrics()$$,'participante não lê métricas administrativas');
@@ -22,7 +22,7 @@ select public.mvp_save_profile('{"name":"pessoa tres","occupation":"profissional
 reset role;
 update public.profiles set status='aprovado' where id in(:'u1',:'u2',:'u3');
 set role authenticated; select set_config('request.jwt.claim.sub', :'u1', false);
-select public.mvp_create_request('buscar','carreira','texto privado que não vai para a IA') as request \gset
+select public.mvp_create_request('carreira','texto privado que não vai para a IA') as request \gset
 select tst.ok((select candidate_id=:'u2' and mode='basica' from public.conversation_requests where id=:'request'),'seleção determinística encontra uma candidata complementar');
 select tst.ok(jsonb_array_length(public.mvp_cards())=1,'cartão mínimo disponível para a dona da recomendação');
 select tst.ok((select count(*) from public.professional_contacts where profile_id=:'u2')=0,'não lê contatos conhecendo o UUID');
@@ -47,7 +47,20 @@ select set_config('request.jwt.claim.sub', :'u1', false);
 select tst.ok(public.mvp_shared_contacts(:'invite')->>'email'='compartilhar@exemplo.invalid','aceite libera apenas e-mail preenchido e autorizado');
 select tst.ok(public.mvp_shared_contacts(:'invite')->>'whatsapp' is null,'whatsapp preenchido mas não autorizado permanece oculto');
 select tst.ok(public.mvp_shared_contacts(:'invite')->'common_slots'='["1_tarde"]'::jsonb,'calcula períodos em comum deterministicamente');
-select public.mvp_schedule(:'invite','20/11, 15h, Brasília');
+select tst.bloqueia(format('select public.mvp_schedule(%L,''amanhã'')', :'invite'),'proposta em texto livre não é mais oferecida');
+select tst.bloqueia(format('select public.mvp_propose_times(%L,array[now()+interval ''20 days''])', :'invite'),'horário além de 14 dias é rejeitado');
+select tst.bloqueia(format('select public.mvp_propose_times(%L,array[now()+interval ''1 day'',now()+interval ''2 days'',now()+interval ''3 days'',now()+interval ''4 days''])', :'invite'),'no máximo três horários');
+select public.mvp_propose_times(:'invite',array[now()+interval '1 day',now()+interval '2 days']);
+select tst.ok((select count(*) from public.conversation_time_proposals where invite_id=:'invite')=2,'participante lê as próprias propostas');
+select id as proposta from public.conversation_time_proposals where invite_id=:'invite' order by inicio limit 1 \gset
+select tst.bloqueia(format('select public.mvp_confirm_time(%L)', :'proposta'),'autora não confirma a própria proposta');
+select set_config('request.jwt.claim.sub', :'u3', false);
+select tst.ok((select count(*) from public.conversation_time_proposals)=0,'terceira pessoa não lê horários');
+select tst.bloqueia(format('select public.mvp_confirm_time(%L)', :'proposta'),'terceira pessoa não confirma horário');
+select set_config('request.jwt.claim.sub', :'u2', false);
+select public.mvp_confirm_time(:'proposta');
+select tst.ok((select horario_confirmado is not null and confirmado_em is not null from public.conversation_invites where id=:'invite'),'a outra participante confirma um horário');
+select set_config('request.jwt.claim.sub', :'u1', false);
 select public.mvp_feedback(:'invite',true,5::smallint,'clareza');
 select tst.bloqueia(format('select public.mvp_feedback(%L,false,5::smallint,''clareza'')', :'invite'),'feedback incoerente é rejeitado');
 select set_config('request.jwt.claim.sub', :'u2', false);
@@ -57,10 +70,10 @@ reset role;
 select tst.ok((select count(*) from public.conversation_feedback where invite_id=:'invite')=2,'respostas independentes foram preservadas');
 -- Nova tentativa sem par disponível; sem inventar resultado de IA.
 set role authenticated;select set_config('request.jwt.claim.sub', :'u1', false);
-select public.mvp_create_request('buscar','carreira','') as second_request \gset
+select public.mvp_create_request('carreira','') as second_request \gset
 select tst.ok((select state='sem_candidata' from public.conversation_requests where id=:'second_request'),'não sugere novamente par com conexão ativa');
-select public.mvp_create_request('buscar','projeto','');
-select tst.bloqueia($$select public.mvp_create_request('buscar','carreira','')$$,'quarta solicitação em 24h bloqueada');
+select public.mvp_create_request('projeto','');
+select tst.bloqueia($$select public.mvp_create_request('carreira','')$$,'quarta solicitação em 24h bloqueada');
 insert into public.conversation_blocks(owner_id,blocked_id) values(:'u1',:'u2');
 select tst.bloqueia(format('select public.mvp_shared_contacts(%L)', :'invite'),'bloqueio revoga contatos após aceite');
 select tst.ok((select count(*) from public.conversation_invites where id=:'invite')=0,'bloqueio oculta conversa');
@@ -77,10 +90,11 @@ select tst.ok((select count(*) from public.conversation_feedback where happened 
 -- NÃO é uma execução real de IA e não serve como evidência do projeto final.
 delete from public.conversation_blocks where owner_id=:'u1' and blocked_id=:'u2';
 update public.professional_profiles set ai_consent=true where profile_id=:'u1';
-insert into public.conversation_jobs(request_id) values(:'request') returning id as job \gset
+insert into public.conversation_jobs(request_id,candidate_id) values(:'request',:'u2') returning id as job \gset
 set role service_role;
 select public.mvp_claim_job(:'request') as payload \gset
 select tst.ok(:'payload'::jsonb->>'goal'='carreira','worker recebe objetivo categórico');
+select tst.ok(not (:'payload'::jsonb ? 'intention') and :'payload'::jsonb->'b'->'themes'='["carreira"]'::jsonb,'worker recebe só o objetivo e os assuntos permitidos');
 select tst.ok(not (:'payload'::jsonb ? 'description') and not (:'payload'::jsonb->'a' ? 'occupation'),'worker não recebe descrição ou ocupação livre');
 select tst.ok(public.mvp_claim_job(:'request') is null,'claim idempotente não duplica execução');
 select tst.bloqueia(format('select public.mvp_finish_job(%L,%L,''teste-local'',10,20,null)', :'job', '{"explanation":"teste","questions":[],"draft":"teste"}'),'worker rejeita estrutura incompleta');
@@ -97,7 +111,7 @@ select vault.create_secret('https://exemplo.invalid/functions/v1/conversa-ia','m
 select vault.create_secret('segredo-apenas-do-teste-local','mvp_worker_secret');
 update public.professional_profiles set ai_consent=true where profile_id=:'u3';
 set role authenticated;select set_config('request.jwt.claim.sub', :'u3', false);
-select public.mvp_create_request('buscar','carreira','não enviar esta descrição') as queued \gset
+select public.mvp_create_request('carreira','não enviar esta descrição') as queued \gset
 reset role;
 select tst.ok((select count(*) from public.conversation_jobs where request_id=:'queued' and state='pendente')=1,'solicitação com ambos consentindo enfileira automaticamente');
 select tst.ok((select count(*) from net.chamadas where body=jsonb_build_object('request_id',:'queued'::uuid))=1,'gatilho envia somente id da solicitação ao worker');
@@ -120,4 +134,33 @@ select public.mvp_metrics() as metrics \gset
 select tst.ok((:'metrics'::jsonb->>'accepted')::integer=2 and (:'metrics'::jsonb->>'confirmed')::integer=1,'aceite sem feedback não é confirmado como conversa realizada');
 select tst.ok((:'metrics'::jsonb->>'useful')::integer=1 and (:'metrics'::jsonb->>'responses')::integer=2,'utilidade e respostas não são duplicadas por convite');
 select tst.ok((:'metrics'::jsonb->>'conflicting')::integer=1 and (:'metrics'::jsonb->>'average')::numeric=5,'divergência entre participantes fica visível e média usa notas válidas');
+reset role;
+-- 016/017: sala fixa, perfil com duas listas e "ver outra sugestão".
+reset role;
+select tst.ok(public.mvp_room_valid('https://meet.jit.si/aliadas-teste') and public.mvp_room_valid('https://us02web.zoom.us/j/123') and not public.mvp_room_valid('http://meet.google.com/abc-defg-hij') and not public.mvp_room_valid('https://exemplo.invalid/sala'),'sala aceita só https de provedores conhecidos');
+select tst.ok((select can_help='{carreira}' and want_talk='{}' from public.professional_profiles where profile_id=:'u2'),'conversão: quem compartilhava pode ajudar com os temas');
+\set u4 '10000000-0000-0000-0000-000000000004'
+\set u5 '10000000-0000-0000-0000-000000000005'
+insert into auth.users(id,email) values(:'u4','quatro@exemplo.invalid'),(:'u5','cinco@exemplo.invalid');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'u4', false);
+select public.mvp_save_profile('{"name":"pessoa quatro","occupation":"designer","moment":"experiente","areas":["artes"],"can_help":["portfolio"],"want_talk":[],"channels":["email"],"slots":[],"ai_consent":false}', '{"meet":"https://meet.jit.si/sala-quatro"}', true);
+select tst.ok((select intentions='{compartilhar}' and themes='{portfolio}' from public.professional_profiles where profile_id=auth.uid()),'listas novas derivam intenções e temas antigos');
+select tst.bloqueia($$select public.mvp_save_profile('{"name":"x y","occupation":"designer","moment":"inicio","areas":["artes"],"can_help":[],"want_talk":[],"channels":["email"],"slots":[]}','{}',true)$$,'perfil precisa de ao menos um assunto');
+select tst.bloqueia($$select public.mvp_save_profile('{"name":"x y","occupation":"designer","moment":"inicio","areas":["artes"],"can_help":["portfolio"],"channels":["email"],"slots":[]}','{"meet":"https://exemplo.invalid/sala"}',true)$$,'sala de provedor desconhecido é rejeitada');
+select set_config('request.jwt.claim.sub', :'u5', false);
+select public.mvp_save_profile('{"name":"pessoa cinco","occupation":"ilustradora","moment":"transicao","areas":["artes"],"can_help":["portfolio"],"want_talk":["carreira"],"channels":["email"],"slots":[],"ai_consent":false}', '{}', true);
+reset role;
+update public.profiles set status='aprovado' where id in(:'u4',:'u5');
+set role authenticated;select set_config('request.jwt.claim.sub', :'u2', false);
+select public.mvp_create_request('portfolio','') as busca \gset
+select candidate_id as primeira from public.conversation_requests where id=:'busca' \gset
+select tst.ok(:'primeira' in (:'u4',:'u5'),'busca encontra quem pode ajudar com o objetivo');
+select public.mvp_next_suggestion(:'busca') as segunda \gset
+select tst.ok(:'segunda' in (:'u4',:'u5') and :'segunda'<>:'primeira','ver outra sugestão não repete a anterior');
+select tst.ok(public.mvp_next_suggestion(:'busca') is null,'sem mais compatíveis, não inventa sugestão');
+select tst.ok((select count(*) from public.conversation_requests where owner_id=auth.uid() and created_at>now()-interval '24 hours')=1,'ver outra sugestão não consome o limite de buscas');
+select set_config('request.jwt.claim.sub', :'u3', false);
+select tst.bloqueia(format('select public.mvp_next_suggestion(%L)', :'busca'),'terceira pessoa não troca sugestão alheia');
+select tst.bloqueia($$select * from public.conversation_suggestions$$,'histórico de sugestões não é legível por participantes');
 reset role;
