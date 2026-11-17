@@ -26,9 +26,10 @@ type Dados = {
   habilidades: string[];
   channels: string[];
   ai_consent: boolean;
+  ai_consent_version: string;
   available: boolean;
 };
-const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], habilidades: [], channels: [], ai_consent: false, available: true };
+const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], habilidades: [], channels: [], ai_consent: false, ai_consent_version: "habilidades-v1", available: true };
 
 function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
   const e: Record<string, string> = {};
@@ -89,7 +90,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       if (pr.error || co.error || info.error) { toast("Não foi possível carregar seu perfil. Atualize a página.", "erro"); return; }
       const p = pr.data as ProProfile | null;
       const salvo = {
-        d: p ? { nome: (info.data?.apelido ?? ""), situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels, ai_consent: p.ai_consent, available: p.available } : { ...vazio, nome: (info.data?.apelido ?? "") },
+        d: p ? { nome: (info.data?.apelido ?? ""), situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels, ai_consent: p.ai_consent && p.ai_consent_version === "habilidades-v1", ai_consent_version: "habilidades-v1", available: p.available } : { ...vazio, nome: (info.data?.apelido ?? "") },
         c: (co.data as ProContacts) ?? { linkedin: "", whatsapp: "", email: "", meet: null, nome_completo: "" },
         termos: Boolean(p),
       };
@@ -100,7 +101,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
         const r = raw ? JSON.parse(raw) : null;
         // Só os campos do formulário. Senhas e credenciais nunca entram no rascunho.
         if (r?.d && typeof r.d.nome === "string" && Array.isArray(r.d.interesses) && Array.isArray(r.d.can_help) && Array.isArray(r.d.channels) && r.c && typeof r.termos === "boolean") {
-          restaurado = { d: { ...salvo.d, ...r.d }, c: { ...salvo.c, ...r.c }, termos: r.termos };
+          restaurado = { d: { ...salvo.d, ...r.d, ai_consent_version: "habilidades-v1", ai_consent: r.d.ai_consent === true && r.d.ai_consent_version === "habilidades-v1" }, c: { ...salvo.c, ...r.c }, termos: r.termos };
           setRecuperado(JSON.stringify(restaurado) !== JSON.stringify(salvo));
         }
       } catch { sessionStorage.removeItem(chaveRascunhoPerfil(uid)); }
@@ -164,6 +165,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           habilidades: d.habilidades,
           channels: d.channels,
           ai_consent: d.ai_consent,
+          ai_consent_version: "habilidades-v1",
           available: d.available,
         },
         // Disponibilidade histórica é preservada; os contatos seguem as permissões atuais.

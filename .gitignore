@@ -26,3 +26,9 @@ supabase/functions/**/.env
 .vscode/*
 !.vscode/extensions.json
 prints/
+
+# Resultados humanos e consumo local: manter fora do repositório público.
+validacao/avaliacao-rodada-*.csv
+validacao/saidas-rodada-*.csv
+validacao/resultado.md
+validacao/consumo-validacao.json

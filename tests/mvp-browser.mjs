@@ -390,8 +390,10 @@ try {
   assert.equal(await p.getByRole("link", { name: "Pedir outra indicação" }).getAttribute("href"), "/");
   console.log("PASSOU: convite expirado aparece em Concluídas com 'Pedir outra indicação'");
 
+  professional.ai_consent=true;professional.ai_consent_version="legado";
   await p.goto(base + "/meu-perfil");
   await p.getByRole("heading", { name: "Meu perfil", exact: true }).waitFor();
+  assert(!(await p.getByRole("checkbox",{name:/Autorizo enviar ao Gemini/}).isChecked()),"consentimento legado não marca automaticamente a finalidade nova");
   await p.getByText("de 5 seções completas").waitFor();
   assert.equal(await p.getByText("Minhas buscas").count(), 0, "sem Minhas buscas no perfil");
   assert.deepEqual(

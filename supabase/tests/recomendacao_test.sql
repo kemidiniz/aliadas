@@ -6,11 +6,11 @@ reset role;
 \set h4 '20000000-0000-0000-0000-000000000004'
 insert into auth.users(id,email) values(:'h1','h1@exemplo.invalid'),(:'h2','h2@exemplo.invalid'),(:'h3','h3@exemplo.invalid'),(:'h4','h4@exemplo.invalid');
 set role authenticated;select set_config('request.jwt.claim.sub', :'h1', false);
-select public.mvp_save_profile('{"name":"busca local","situacao":"estudo","area_principal":"tecnologia","interesses":["tecnologia"],"habilidades":[],"can_help":[],"channels":["meet"],"ai_consent":true}', '{}', true);
+select public.mvp_save_profile('{"name":"busca local","situacao":"estudo","area_principal":"tecnologia","interesses":["tecnologia"],"habilidades":[],"can_help":[],"channels":["meet"],"ai_consent":true,"ai_consent_version":"habilidades-v1"}', '{}', true);
 select set_config('request.jwt.claim.sub', :'h2', false);
-select public.mvp_save_profile('{"name":"ajuda local dois","situacao":"trabalho","area_principal":"negocios","interesses":["negocios"],"habilidades":["entrevistas","curriculo_linkedin"],"can_help":[],"channels":["meet"],"ai_consent":true}', '{}', true);
+select public.mvp_save_profile('{"name":"ajuda local dois","situacao":"trabalho","area_principal":"negocios","interesses":["negocios"],"habilidades":["entrevistas","curriculo_linkedin"],"can_help":[],"channels":["meet"],"ai_consent":true,"ai_consent_version":"habilidades-v1"}', '{}', true);
 select set_config('request.jwt.claim.sub', :'h3', false);
-select public.mvp_save_profile('{"name":"ajuda local tres","situacao":"trabalho","area_principal":"saude","interesses":["saude"],"habilidades":["entrevistas"],"can_help":[],"channels":["meet"],"ai_consent":true}', '{}', true);
+select public.mvp_save_profile('{"name":"ajuda local tres","situacao":"trabalho","area_principal":"saude","interesses":["saude"],"habilidades":["entrevistas"],"can_help":[],"channels":["meet"],"ai_consent":true,"ai_consent_version":"habilidades-v1"}', '{}', true);
 select set_config('request.jwt.claim.sub', :'h4', false);
 select public.mvp_save_profile('{"name":"sem consentimento","situacao":"trabalho","area_principal":"direito","interesses":["direito"],"habilidades":["entrevistas"],"can_help":[],"channels":["meet"],"ai_consent":false}', '{}', true);
 reset role;
@@ -78,11 +78,11 @@ do $$declare uid uuid;k integer;begin
  uid:=('20000000-0000-0000-0000-'||lpad(k::text,12,'0'))::uuid;
  insert into auth.users(id,email) values(uid,'carga-local-'||k||'@exemplo.invalid');
  perform set_config('request.jwt.claim.sub',uid::text,false);
- perform public.mvp_save_profile('{"name":"pool local","situacao":"trabalho","area_principal":"saude","interesses":["saude"],"habilidades":["entrevistas"],"can_help":[],"channels":["meet"],"ai_consent":true}', '{}',true);
+ perform public.mvp_save_profile('{"name":"pool local","situacao":"trabalho","area_principal":"saude","interesses":["saude"],"habilidades":["entrevistas"],"can_help":[],"channels":["meet"],"ai_consent":true,"ai_consent_version":"habilidades-v1"}', '{}',true);
  update public.profiles set status='aprovado' where id=uid;
  end loop;
 end;$$;
-update public.professional_profiles set ai_consent=true where profile_id=:'h4';
+update public.professional_profiles set ai_consent=true,ai_consent_version='habilidades-v1' where profile_id=:'h4';
 insert into public.conversation_jobs(request_id,state,started_at,finished_at,model) select :'hr','concluida',now(),now(),'carga-stub-local' from generate_series(1,30);
 set role authenticated;select set_config('request.jwt.claim.sub', :'h4', false);
 select public.mvp_create_request('entrevista','') as quotar \gset

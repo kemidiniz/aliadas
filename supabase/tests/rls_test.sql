@@ -154,4 +154,5 @@ select tst.ok(not exists (select 1 from public.profiles where id = :eve), 'perfi
 \ir painel_pendencias_test.sql
 \ir contexto_privado_test.sql
 \ir convite_revisado_test.sql
+\ir consentimento_explicito_test.sql
 \echo 'TODOS OS TESTES DE RLS PASSARAM'

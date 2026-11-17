@@ -73,6 +73,7 @@ export type ProProfile = {
   channels: string[];
   slots: string[];
   ai_consent: boolean;
+  ai_consent_version?: string;
   available: boolean;
 };
 export type ProContacts = {
