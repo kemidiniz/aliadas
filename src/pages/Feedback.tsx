@@ -51,9 +51,9 @@ export default function FeedbackPagina() {
 
   if (estado === 'ok') {
     return (
-      <Pagina titulo="Feedback">
+      <Pagina titulo="Feedback" largura="texto">
         <Titulo>Recebemos!</Titulo>
-        <p className="text-xl">Obrigada por construir a aliadas com a gente.</p>
+        <p className="text-suave">Obrigada por construir a aliadas com a gente.</p>
         <div className="mt-8">
           <Botao variante="secundario" onClick={() => { setF(vazio); setCaminho(''); setEstado('idle') }}>Enviar outro</Botao>
         </div>
@@ -62,7 +62,7 @@ export default function FeedbackPagina() {
   }
 
   return (
-    <Pagina titulo="Feedback">
+    <Pagina titulo="Feedback" largura="texto">
       <Titulo sub="Nossa comunidade pode evoluir com a sua opinião">Feedback</Titulo>
       <form onSubmit={enviar} noValidate className="space-y-8">
         <Escolha nome="caminho" rotulo="O que você quer fazer?" valor={caminho} aoMudar={(v) => { setCaminho(v); setErros({}) }} opcoes={CAMINHOS} />
@@ -94,7 +94,7 @@ export default function FeedbackPagina() {
                   </fieldset>
                   <Escolha
                     nome="encontrou"
-                    rotulo="Você conseguiu encontrar suas aliadas?"
+                    rotulo="Você conseguiu marcar uma conversa?"
                     valor={f.encontrou_aliadas}
                     aoMudar={(v) => muda('encontrou_aliadas', v)}
                     erro={erros.encontrou_aliadas}
@@ -126,7 +126,7 @@ export default function FeedbackPagina() {
 
               <CampoTexto
                 rotulo="Seu e-mail (opcional)"
-                ajuda="Se quiser resposta."
+                ajuda="Opcional. Usamos só para responder esta mensagem."
                 type="email"
                 autoComplete="email"
                 value={f.email}

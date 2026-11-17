@@ -6,7 +6,7 @@ const h2 = 'mt-10 scroll-mt-24 text-2xl font-bold text-destaque'
 
 export function TermoDeConduta() {
   return (
-    <Pagina titulo="Termos de uso">
+    <Pagina titulo="Termos de uso" largura="texto">
       <Titulo>Termos de uso</Titulo>
       <p className={p}>A aliadas é para mulheres cis e trans e pessoas não binárias de todas as áreas. Para ficar bom para todo mundo, combinamos:</p>
       <ul className="mt-4 list-disc space-y-2 pl-6 text-lg">
@@ -24,7 +24,7 @@ export function TermoDeConduta() {
 
 export function Privacidade() {
   return (
-    <Pagina titulo="Privacidade">
+    <Pagina titulo="Privacidade" largura="texto">
       <Titulo>Privacidade</Titulo>
       <p className={p}>Guardamos só o necessário, e você manda nos seus dados (LGPD).</p>
       <h2 className={h2}>O que guardamos</h2>
@@ -41,6 +41,8 @@ export function Privacidade() {
       <p className={p}>Só quando as duas autorizam, o Gemini (Google) recebe o objetivo e categorias de áreas, momento e assuntos para sugerir uma justificativa, duas perguntas e um rascunho de mensagem. Nunca enviamos nomes, contatos, links, ocupação ou o contexto que você escreve.</p>
       <p className={p}>Usamos o plano gratuito do Gemini. Nos termos desse plano, o Google pode usar o conteúdo enviado para melhorar seus modelos. Por isso enviamos só categorias. Você pode retirar a autorização no seu perfil a qualquer momento; sem ela, a indicação continua, sem texto gerado.</p>
       <p className={p}>Nada é enviado automaticamente à outra participante: você revisa e decide se manda o convite.</p>
+      <h2 className={h2}>Feedback</h2>
+      <p className={p}>O e-mail que você informa no formulário de feedback é opcional e usado só para responder a sua mensagem. Ele passa pelo Make, que avisa a curadoria, e pelo Gmail, de onde sai a resposta.</p>
       <h2 className={h2}>Seus direitos</h2>
       <p className={p}>Você pode editar, pausar ou excluir tudo quando quiser em <Link to="/meu-perfil#conta" className="text-destaque underline underline-offset-4">Meu perfil</Link>. Excluir apaga perfil, foto, contatos, consentimentos e conversas. O registro de uso da IA fica só como contagem, sem o conteúdo.</p>
     </Pagina>

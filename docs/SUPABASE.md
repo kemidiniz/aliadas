@@ -137,6 +137,8 @@ Não existe tela para dar esse papel, de propósito: só quem tem acesso ao pain
 
 ## 9. webhooks para a sua automação (Make)
 
+> **Desatualizado (17/11).** Os 3 caminhos abaixo foram substituídos por um só (feedback novo). Veja `docs/AUTOMACAO-FEEDBACK.md`.
+
 A migration `20261114000007_avisos_para_o_make.sql` já cria os gatilhos. Não crie webhooks duplicados pelo painel: isso pode enviar e-mails duas vezes.
 
 No Make, use **Webhooks → Custom webhook**. As URLs ficam no Vault do Supabase, nunca no frontend nem no Git:

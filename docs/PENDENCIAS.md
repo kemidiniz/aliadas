@@ -30,7 +30,8 @@ Fluxo principal: entrar (código por e-mail ou senha) → cadastro em 8 telas �
 
 Marque conforme for fazendo.
 
-### 2.1 Make: feedback sem IA ✅ (feito)
+### 2.1 Make: feedback sem IA
+> **Desatualizado (17/11).** O cenário passou a ter um caminho só (feedback novo). Veja `docs/AUTOMACAO-FEEDBACK.md`.
 O cenário **aliadas · automações** está ligado e testado: feedback novo → e-mail HTML para a curadora + resposta automática para quem deixou e-mail. Resposta pessoal da curadora e aviso de perfil novo também passam por ele.
 - [ ] Em `/curadoria` → aba feedback, **descartar** os feedbacks de teste.
 

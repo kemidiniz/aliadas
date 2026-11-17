@@ -83,12 +83,11 @@ export type Feedback = {
 // sugestões de áreas; quem quiser pode escrever outra
 
 export const PAGINAS_DO_SITE = [
-  'home',
-  'entrar',
-  'cadastro',
-  'minhas aliadas',
-  'conexões',
-  'minha conta',
-  'feedback',
-  'outra',
+  'Início',
+  'Conversas',
+  'Perfil',
+  'Entrar',
+  'Quem somos',
+  'Feedback',
+  'Outra',
 ] as const

@@ -199,3 +199,13 @@ select public.mvp_create_request('rede','') as sobrecarga \gset
 select tst.ok((select candidate_id=:'d2' from public.conversation_requests where id=:'sobrecarga'),'quem tem 2 convites pendentes não é escolhida');
 select tst.ok(public.mvp_next_suggestion(:'sobrecarga') is null,'ver outra sugestão não repete e não traz quem está sobrecarregada');
 reset role;
+-- 019: feedback novo avisa o Make uma única vez, só com {tabela, evento, id}.
+select vault.create_secret('https://exemplo.invalid/webhook-feedback','make_feedback_novo_url');
+set role anon;
+insert into public.feedback (tipo, nota_facilidade, encontrou_aliadas, email) values ('avaliacao', 5, 'sim', 'pessoa@exemplo.invalid');
+reset role;
+select id as fb from public.feedback where email='pessoa@exemplo.invalid' \gset
+select tst.ok((select count(*) from net.chamadas where url='https://exemplo.invalid/webhook-feedback')=1,'feedback novo dispara um único aviso ao Make');
+select tst.ok((select body=jsonb_build_object('tabela','feedback','evento','insert','id',:'fb'::uuid) from net.chamadas where url='https://exemplo.invalid/webhook-feedback'),'aviso leva só tabela, evento e id, sem e-mail nem texto');
+update public.feedback set status='aprovado' where id=:'fb';
+select tst.ok((select count(*) from net.chamadas where url like '%exemplo.invalid/webhook%')=1,'aprovar resposta não dispara caminho antigo');
