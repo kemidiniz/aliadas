@@ -123,7 +123,7 @@ try {
   await pastaLanding(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B3"}`,{recursive:true});
   for(const width of [390,1440]) { await g.setViewportSize({width,height:1000}); await g.evaluate(()=>scrollTo(0,0)); await g.waitForTimeout(200);await g.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B3"}/landing-${width}.png`,fullPage:true}); }
 
-  await g.getByRole("link", { name: "Sobre a aliadas" }).first().click();
+  await g.getByRole("link", { name: "Sobre nós" }).first().click();
   await g.waitForURL(base + "/sobre");
   await g.getByRole("heading", { name: "Uma conversa pode abrir novos caminhos." }).waitFor();
   assert.equal(await g.title(), "aliadas · Uma conversa pode abrir novos caminhos.");

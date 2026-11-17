@@ -87,7 +87,7 @@ export const PAGINAS_DO_SITE = [
   'Alianças',
   'Perfil',
   'Entrar',
-  'Sobre a aliadas',
+  'Sobre nós',
   'Ajuda e feedback',
   'Painel',
   'Outra',

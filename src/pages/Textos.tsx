@@ -6,9 +6,9 @@ export function TermosEPrivacidade() {
  return <Pagina titulo="Termos e privacidade"><Leitura>
   <Titulo>Termos e privacidade</Titulo>
   <nav aria-label="Índice desta página" className="mb-8 flex flex-wrap gap-x-5 gap-y-3 text-sm">
-   <a href="#sobre" className="text-link">Sobre a aliadas</a><a href="#termos" className="text-link">Termos de uso</a><a href="#privacidade" className="text-link">Privacidade</a>
+   <a href="#sobre" className="text-link">Sobre nós</a><a href="#termos" className="text-link">Termos de uso</a><a href="#privacidade" className="text-link">Privacidade</a>
   </nav>
-  <section id="sobre" className="scroll-mt-24"><h2 className="text-2xl text-destaque">Sobre a aliadas</h2>
+  <section id="sobre" className="scroll-mt-24"><h2 className="text-2xl text-destaque">Sobre nós</h2>
    <p className={p}>A aliadas nasceu na formação em IA Aplicada da {"{reprograma}"}, criada por Kemily Diniz. A {"{reprograma}"} não administra nem patrocina a plataforma.</p>
   </section>
   <section id="termos" className="mt-10 scroll-mt-24"><h2 className="text-2xl text-destaque">Termos de uso</h2>

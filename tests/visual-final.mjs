@@ -86,7 +86,7 @@ try {
       );
       assert.equal(await p.locator(".stat-number").count(), 2);
       // "Quem somos" fica no rodapé (saiu do menu de visitantes)
-      await p.getByRole("navigation", { name: "Rodapé" }).getByRole("link", { name: "Sobre a aliadas" }).click();
+      await p.getByRole("navigation", { name: "Rodapé" }).getByRole("link", { name: "Sobre nós" }).click();
       await p.waitForURL("**/sobre");
       await p.getByRole("heading", { name: "Uma conversa pode abrir novos caminhos.", exact: true }).waitFor();
       await p.goto(base);
