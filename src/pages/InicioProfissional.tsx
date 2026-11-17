@@ -248,7 +248,7 @@ export default function InicioProfissional() {
             )}
             {esperando.length > 0 && (
               <div className="mt-4">
-                <BotaoLink to="/minhas-conversas" variante="secundario">Responder</BotaoLink>
+                <BotaoLink to="/minhas-aliancas" variante="secundario">Responder</BotaoLink>
               </div>
             )}
           </section>
@@ -286,7 +286,7 @@ function Indicacao({
     const { error } = await supabase.rpc("mvp_invite", { request: r.id, message: msg });
     setBusy("");
     if (error) return toast(mensagemAmigavel(error), "erro");
-    toast("Convite enviado. Você acompanha em Conversas.");
+    toast("Convite enviado. Você acompanha em Alianças.");
     await depois();
   }
   async function outra() {

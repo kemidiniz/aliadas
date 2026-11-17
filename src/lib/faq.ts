@@ -39,7 +39,7 @@ export const FAQ_AJUDA = [
   },
   {
     q: "Como bloqueio ou denuncio alguém?",
-    a: "Em Conversas, toque no menu ⋯ do cartão da pessoa e escolha Bloquear ou Denunciar. O bloqueio esconde os contatos, e a denúncia vai só para as embaixadoras.",
+    a: "Em Alianças, toque no menu ⋯ do cartão da pessoa e escolha Bloquear ou Denunciar. O bloqueio esconde os contatos, e a denúncia vai só para as embaixadoras.",
   },
   {
     q: "Como excluo minha conta?",

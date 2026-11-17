@@ -84,7 +84,7 @@ export type Feedback = {
 
 export const PAGINAS_DO_SITE = [
   'Início',
-  'Conversas',
+  'Alianças',
   'Perfil',
   'Entrar',
   'Quem somos',

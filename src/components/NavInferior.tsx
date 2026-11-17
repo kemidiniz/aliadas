@@ -21,7 +21,7 @@ export function NavInferior() {
   if (!session) return null;
   const itens = [
     { to: "/", rotulo: "Início", Icone: IconeInicio, n: 0 },
-    { to: "/minhas-conversas", rotulo: "Conversas", Icone: IconeConversas, n: pendentes },
+    { to: "/minhas-aliancas", rotulo: "Alianças", Icone: IconeConversas, n: pendentes },
     { to: "/meu-perfil", rotulo: "Perfil", Icone: IconePerfil, n: 0 },
     ...(curadora ? [{ to: "/painel", rotulo: "Painel", Icone: IconePainel, n: 0 }] : []),
   ];

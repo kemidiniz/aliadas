@@ -74,20 +74,20 @@ export default function ConversasProfissionais() {
   const visiveis = (invites ?? []).filter((x) => grupo(x, eu, feedback) === aba);
 
   return (
-    <Pagina titulo="Minhas conversas">
-      <Titulo sub="Convites, contatos e avaliações em um só lugar.">Minhas conversas</Titulo>
+    <Pagina titulo="Minhas alianças">
+      <Titulo sub="Convites, contatos e avaliações em um só lugar.">Minhas alianças</Titulo>
       {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
       {!invites ? (
         <CartaoCarregando />
       ) : !invites.length ? (
-        <Vazio titulo="Nenhuma conversa por aqui ainda.">
+        <Vazio titulo="Nenhuma aliança por aqui ainda.">
           <p className="mb-5">Escolha um objetivo e receba uma indicação.</p>
           <BotaoLink to="/">Encontrar minha aliada</BotaoLink>
         </Vazio>
       ) : (
         <>
           <Abas
-            rotulo="Conversas"
+            rotulo="Alianças"
             atual={aba}
             aoMudar={setAba}
             abas={[

@@ -67,14 +67,15 @@ export function App() {
                 path="/minhas-aliadas"
                 element={<Navigate to="/" replace />}
               />
+              <Route path="/minhas-conversas" element={<Navigate to="/minhas-aliancas" replace />} />
               <Route path="/meu-pitch" element={<Navigate to="/" replace />} />
               <Route path="/forum" element={<Navigate to="/" replace />} />
               <Route
                 path="/conexoes"
-                element={<Navigate to="/minhas-conversas" replace />}
+                element={<Navigate to="/minhas-aliancas" replace />}
               />
               <Route
-                path="/minhas-conversas"
+                path="/minhas-aliancas"
                 element={
                   <Protegida>
                     <Conversas />

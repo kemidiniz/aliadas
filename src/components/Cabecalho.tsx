@@ -44,7 +44,7 @@ export function Cabecalho() {
   const links = session
     ? [
         { to: "/", rotulo: "Início" },
-        { to: "/minhas-conversas", rotulo: "Conversas" },
+        { to: "/minhas-aliancas", rotulo: "Alianças" },
         { to: "/meu-perfil", rotulo: "Perfil" },
         // só quem tem atribuição administrativa vê o Painel
         ...(curadora ? [{ to: "/painel", rotulo: "Painel" }] : []),

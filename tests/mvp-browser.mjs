@@ -280,11 +280,12 @@ try {
   assert.equal(calls.filter((x) => x.endpoint === "mvp_create_request").length, antes);
   console.log("PASSOU: ver outra sugestão usa a RPC própria e não cria nova busca");
   await p.getByRole("button", { name: "Enviar convite" }).click();
-  await p.getByText("Convite enviado. Você acompanha em Conversas.").waitFor();
+  await p.getByText("Convite enviado. Você acompanha em Alianças.").waitFor();
   assert.equal(calls.find((x) => x.endpoint === "mvp_invite").body.message, "minha mensagem revisada de teste");
   console.log("PASSOU: convite só com a mensagem revisada");
 
   await p.goto(base + "/minhas-conversas");
+  await p.waitForURL(base + "/minhas-aliancas");
   await p.getByRole("tab", { name: /Enviados/, selected: true }).waitFor();
   await p.getByRole("link", { name: "E-mail", exact: true }).waitFor();
   await p.getByText(/Quer conversar sobre:\s*Dicas de carreira/).first().waitFor();
@@ -294,6 +295,10 @@ try {
   await p.getByText("Nome completo: Aliada de Teste Completa").waitFor();
   for (const fora of [/Entrar na chamada/, /Adicionar à agenda/, /Baixar \.ics/, /Proponha/, /Horário/])
     assert.equal(await p.getByText(fora).count(), 0, `sem ${fora}`);
+  await p.getByRole("heading", { name: "Minhas alianças", exact: true }).waitFor();
+  await p.goto(base + "/conexoes");
+  await p.waitForURL(base + "/minhas-aliancas");
+  console.log("PASSOU: rotas legadas redirecionam para Minhas alianças");
   console.log("PASSOU: depois do aceite, 4 passos, contatos e nome completo, sem agenda nem chamada");
   // menu ⋯ pelo teclado
   await p.getByRole("button", { name: "Mais opções" }).focus();
@@ -324,7 +329,7 @@ try {
   await p.getByRole("heading", { name: /Como foi sua conversa/ }).waitFor({ state: "detached" });
   console.log("PASSOU: cartão 'Como foi sua conversa' no Início e 'Lembrar depois'");
   invites = [{ ...invite, state: "expirado", horario_confirmado: null }];
-  await p.goto(base + "/minhas-conversas");
+  await p.goto(base + "/minhas-aliancas");
   await p.getByRole("tab", { name: /Concluídas/ }).click();
   await p.getByText("Expirou sem resposta.").waitFor();
   assert.equal(await p.getByRole("link", { name: "Pedir outra indicação" }).getAttribute("href"), "/");
@@ -560,7 +565,7 @@ try {
     for (const theme of ["light", "dark"]) {
       await p.emulateMedia({ colorScheme: theme });
       await p.setViewportSize({ width, height: 1000 });
-      for (const path of ["/", "/minhas-conversas", "/meu-perfil"]) {
+      for (const path of ["/", "/minhas-aliancas", "/meu-perfil"]) {
         await p.goto(base + path);
         await p.getByRole("heading", { level: 1 }).waitFor();
         assert.equal(
