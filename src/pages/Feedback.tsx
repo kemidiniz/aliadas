@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Aviso } from '../components/Aviso'
 import { Botao } from '../components/Botao'
 import { CampoArea, CampoTexto, Escolha } from '../components/Campo'
-import { Pagina, Titulo } from '../components/Pagina'
+import { Pagina, Titulo, Leitura } from '../components/Pagina'
 import { errosPorCampo, feedbackAvaliacao, feedbackDuvida, feedbackProblema, LIMITES } from '../lib/esquemas'
 import { FAQ_AJUDA } from '../lib/faq'
 import { mensagemAmigavel } from '../lib/erros'
@@ -54,18 +54,21 @@ export default function FeedbackPagina() {
 
   if (estado === 'ok') {
     return (
-      <Pagina titulo="Ajuda e feedback" largura="texto">
+      <Pagina titulo="Ajuda e feedback">
+      <Leitura>
         <Titulo>Recebemos!</Titulo>
         <p className="text-suave">Obrigada por construir a aliadas com a gente.</p>
         <div className="mt-8">
           <Botao variante="secundario" onClick={() => { setF(vazio); setCaminho(''); setEstado('idle') }}>Enviar outro</Botao>
         </div>
-      </Pagina>
+      </Leitura>
+    </Pagina>
     )
   }
 
   return (
-    <Pagina titulo="Ajuda e feedback" largura="texto">
+    <Pagina titulo="Ajuda e feedback">
+      <Leitura>
       <Titulo sub="Respostas rápidas e um jeito de falar com a gente.">Ajuda e feedback</Titulo>
       <section aria-labelledby="faq-ajuda" className="mb-12">
         <h2 id="faq-ajuda" className="text-xl">Perguntas frequentes</h2>
@@ -161,6 +164,7 @@ export default function FeedbackPagina() {
           )}
         </AnimatePresence>
       </form>
+    </Leitura>
     </Pagina>
   )
 }

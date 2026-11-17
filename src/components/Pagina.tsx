@@ -1,26 +1,19 @@
 import { useEffect, type ReactNode } from "react";
 
 // Container e hierarquia compartilhados; conteúdo legível desde o primeiro frame.
-// Larguras por tipo de tela: texto (leitura), form (formulários) e app (painéis).
-const LARGURAS = { texto: "max-w-[720px]", form: "max-w-[960px]", app: "max-w-[1200px]" };
-export function Pagina({
-  titulo,
-  children,
-  largura = "app",
-}: {
-  titulo: string;
-  children: ReactNode;
-  largura?: keyof typeof LARGURAS;
-}) {
+// Um container só para o site inteiro, igual ao do cabeçalho e do rodapé:
+// o título de toda página começa alinhado ao logo.
+export const CONTAINER = "mx-auto w-full max-w-[1200px] px-5 sm:px-8";
+export function Pagina({ titulo, children }: { titulo: string; children: ReactNode }) {
   useEffect(() => {
     document.title = titulo === "aliadas" ? "aliadas" : `${titulo} · aliadas`;
   }, [titulo]);
-  return (
-    <div className={`mx-auto w-full ${LARGURAS[largura]} px-5 py-8 sm:py-10`}>
-      <div className="w-full">{children}</div>
-    </div>
-  );
+  return <div className={`${CONTAINER} py-8 sm:py-10`}>{children}</div>;
 }
+
+// Largura de leitura dentro do container, alinhada à esquerda (sem centralizar)
+export const Leitura = ({ children }: { children: ReactNode }) => <div className="max-w-[720px]">{children}</div>;
+export const Formulario = ({ children }: { children: ReactNode }) => <div className="max-w-[760px]">{children}</div>;
 
 export function Titulo({
   children,

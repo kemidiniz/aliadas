@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
-import { Pagina, Titulo } from '../components/Pagina'
+import { Pagina, Titulo, Leitura } from '../components/Pagina'
 
 const p = 'mt-4'
 const h2 = 'mt-10 scroll-mt-24 text-2xl font-bold text-destaque'
 
 export function TermoDeConduta() {
   return (
-    <Pagina titulo="Termos de uso" largura="texto">
+    <Pagina titulo="Termos de uso">
+      <Leitura>
       <Titulo>Termos de uso</Titulo>
       <p className={p}>A aliadas é para mulheres cis e trans e pessoas não binárias de todas as áreas. Para ficar bom para todo mundo, combinamos:</p>
       <ul className="mt-4 list-disc space-y-2 pl-6">
@@ -18,13 +19,15 @@ export function TermoDeConduta() {
         <li>Não compartilhe dados sensíveis nem informações confidenciais de empresas. A plataforma facilita conversas profissionais; não oferece terapia nem mentoria formal.</li>
       </ul>
       <p className={p}>Quem descumprir pode ter o perfil pausado ou removido pela curadoria. Viu algo errado? Use "Denunciar" no menu da conversa.</p>
+    </Leitura>
     </Pagina>
   )
 }
 
 export function Privacidade() {
   return (
-    <Pagina titulo="Privacidade" largura="texto">
+    <Pagina titulo="Privacidade">
+      <Leitura>
       <Titulo>Privacidade</Titulo>
       <p className={p}>Guardamos só o necessário, e você manda nos seus dados (LGPD).</p>
       <h2 className={h2}>O que guardamos</h2>
@@ -44,6 +47,7 @@ export function Privacidade() {
       <p className={p}>O e-mail que você informa no formulário de feedback é opcional e usado só para responder a sua mensagem. Ele passa pelo Make, que avisa a curadoria, e pelo Gmail, de onde sai a resposta.</p>
       <h2 className={h2}>Seus direitos</h2>
       <p className={p}>Você pode editar, pausar ou excluir tudo quando quiser em <Link to="/meu-perfil#conta" className="text-destaque underline underline-offset-4">Meu perfil</Link>. Excluir apaga perfil, foto, contatos, consentimentos e conversas. O registro de uso da IA fica só como contagem, sem o conteúdo.</p>
+    </Leitura>
     </Pagina>
   )
 }

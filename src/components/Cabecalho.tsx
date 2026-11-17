@@ -70,7 +70,7 @@ export function Cabecalho() {
       >
         Pular para o conteúdo
       </a>
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-5 py-4">
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-5 sm:px-8 py-4">
         <Logo />
         <nav aria-label="Principal" className="hidden lg:block">
           <ul className="flex items-center gap-1">

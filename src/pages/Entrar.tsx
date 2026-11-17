@@ -4,12 +4,15 @@ import { Navigate } from "react-router-dom";
 import { Aviso, Carregando } from "../components/Aviso";
 import { Botao } from "../components/Botao";
 import { CampoTexto } from "../components/Campo";
-import { Pagina, Titulo } from "../components/Pagina";
+import { Pagina, Titulo, Formulario } from "../components/Pagina";
 import { CHAVE_NOVA_SENHA, useAuth } from "../lib/auth";
 import { emailSchema } from "../lib/esquemas";
 import { supabase } from "../lib/supabase";
 
 type Modo = "codigo" | "senha" | "recuperar";
+
+// Duas versões para a titular escolher: formulário só à esquerda (false) ou com uma frase à direita (true)
+const DUAS_COLUNAS = false;
 
 export default function Entrar() {
   const { session, perfil, curadora, carregando } = useAuth();
@@ -138,7 +141,9 @@ export default function Entrar() {
   );
 
   return (
-    <Pagina titulo="Entrar" largura="form">
+    <Pagina titulo="Entrar">
+      <div className={DUAS_COLUNAS ? "lg:grid lg:grid-cols-[minmax(0,480px)_1fr] lg:items-start lg:gap-16" : ""}>
+      <Formulario>
       <Titulo
         sub={
           modo === "recuperar"
@@ -276,6 +281,14 @@ export default function Entrar() {
           )}
         </motion.div>
       </AnimatePresence>
+    </Formulario>
+      {DUAS_COLUNAS && (
+        <aside aria-hidden className="mt-12 hidden rounded-3xl bg-superficie p-10 lg:mt-0 lg:block">
+          <p className="font-titulo text-3xl font-bold text-destaque">Uma conversa pode abrir novos caminhos.</p>
+          <p className="mt-4 text-suave">Não é apenas mentoria, é aliança.</p>
+        </aside>
+      )}
+      </div>
     </Pagina>
   );
 }

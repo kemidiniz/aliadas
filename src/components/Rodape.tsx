@@ -4,7 +4,7 @@ import { Logo } from "./Logo";
 export function Rodape() {
   return (
     <footer className="mt-16 border-t border-linha">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 sm:px-8 py-10 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Logo tamanho="text-xl" />
           <p className="mt-3 max-w-xs text-xs text-suave">
@@ -47,7 +47,7 @@ export function Rodape() {
         </nav>
       </div>
       <div className="border-t border-linha">
-        <p className="mx-auto max-w-[1200px] px-5 py-4 text-xs text-suave">
+        <p className="mx-auto max-w-[1200px] px-5 py-4 text-xs text-suave sm:px-8">
           © 2026 Kemily Diniz. Todos os direitos reservados.
         </p>
       </div>

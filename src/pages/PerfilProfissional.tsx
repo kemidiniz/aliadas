@@ -2,7 +2,7 @@ import { CHAVE_NOVA_SENHA, useAuth } from "../lib/auth";
 import { SenhaPerfil } from "../components/SenhaPerfil";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Pagina, Titulo } from "../components/Pagina";
+import { CONTAINER, Formulario, Pagina, Titulo } from "../components/Pagina";
 import { Caixinha, CampoArquivo, CampoSelect, CampoTexto, MultiEscolha } from "../components/Campo";
 import { Botao } from "../components/Botao";
 import { MinhasBuscas } from "../components/MinhasBuscas";
@@ -99,7 +99,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
 
   if (carregando)
     return (
-      <Pagina titulo="Meu perfil" largura="form">
+      <Pagina titulo="Meu perfil">
         <CartaoCarregando />
       </Pagina>
     );
@@ -230,7 +230,8 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   // Primeiro acesso: uma tela só
   if (novo)
     return (
-      <Pagina titulo="Criar perfil" largura="form">
+      <Pagina titulo="Criar perfil">
+        <Formulario>
         <Titulo sub="Leva menos de dois minutos. O resto você completa quando precisar.">Boas-vindas à aliadas</Titulo>
         <form onSubmit={salvar} className="space-y-6" noValidate>
           {campos.nome}
@@ -244,19 +245,22 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           </div>
           <Botao type="submit" carregando={busy}>Entrar na aliadas</Botao>
         </form>
+        </Formulario>
       </Pagina>
     );
 
   // Completar só quando precisar
   if (completar)
     return (
-      <Pagina titulo="Falta pouco" largura="form">
+      <Pagina titulo="Falta pouco">
+        <Formulario>
         <Titulo sub="Só mais isto para encontrarmos alguém para você.">Falta pouco para sua primeira conversa</Titulo>
         <form onSubmit={salvar} className="space-y-8" noValidate>
           {campos.interesses}
           {campos.contatos}
           <Botao type="submit" carregando={busy}>Salvar e continuar</Botao>
         </form>
+        </Formulario>
       </Pagina>
     );
 
@@ -317,12 +321,13 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   const feitas = secoes.filter((s) => s.completa).length;
 
   return (
-    <Pagina titulo="Meu perfil" largura="form">
+    <Pagina titulo="Meu perfil">
       <Titulo sub="Um perfil, muitas conversas possíveis.">Meu perfil</Titulo>
       {recuperacao && <SenhaPerfil />}
-      <div className="lg:grid lg:grid-cols-[180px_minmax(0,1fr)] lg:gap-8">
+      {/* índice (200px) + formulário (até 760px), ocupando o container */}
+      <div className="lg:grid lg:grid-cols-[200px_minmax(0,760px)] lg:gap-8">
         <nav aria-label="Seções do perfil" className="hidden lg:block">
-          <ul className="sticky top-24 space-y-1 text-sm">
+          <ul className="sticky top-24 -ml-3 space-y-1 text-sm">
             {[...secoes, { id: "buscas", titulo: "Minhas buscas" }, { id: "conta", titulo: "Conta" }].map((s) => (
               <li key={s.id}>
                 <a href={`#${s.id}`} className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-superficie">
@@ -366,11 +371,14 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           </section>
           {/* barra de salvar no mesmo container "form" (960px) da página */}
           <div className="fixed inset-x-0 bottom-16 z-30 border-t border-linha bg-fundo/95 backdrop-blur sm:bottom-0">
-            <div className="mx-auto flex max-w-[960px] items-center justify-between gap-4 px-5 py-3">
-              <p className="text-sm text-suave" aria-live="polite">
-                {feitas} de {secoes.length} seções completas
-              </p>
-              <Botao type="submit" carregando={busy}>Salvar</Botao>
+            <div className={`${CONTAINER} py-3 lg:grid lg:grid-cols-[200px_minmax(0,760px)] lg:gap-8`}>
+              <span className="hidden lg:block" aria-hidden />
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-suave" aria-live="polite">
+                  {feitas} de {secoes.length} seções completas
+                </p>
+                <Botao type="submit" carregando={busy}>Salvar</Botao>
+              </div>
             </div>
           </div>
         </form>

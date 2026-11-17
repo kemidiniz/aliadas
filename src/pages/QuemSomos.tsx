@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Pagina, Titulo } from "../components/Pagina";
+import { Pagina, Titulo, Leitura } from "../components/Pagina";
 import { FONTE_LINKEDIN } from "../lib/fontes";
 
 // Texto opcional da titular. Enquanto for null, o bloco não aparece.
@@ -17,7 +17,8 @@ export default function QuemSomos() {
   const h2 = "mt-10 text-destaque";
   const p = "mt-3 text-suave";
   return (
-    <Pagina titulo="Quem somos" largura="texto">
+    <Pagina titulo="Quem somos">
+      <Leitura>
       <Titulo>Quem somos</Titulo>
       <h2 className={h2.replace("mt-10 ", "")}>O problema</h2>
       <p className={p}>
@@ -64,6 +65,7 @@ export default function QuemSomos() {
           <p className={p}>{POR_QUE_CRIEI}</p>
         </>
       )}
+    </Leitura>
     </Pagina>
   );
 }
