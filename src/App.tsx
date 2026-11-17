@@ -115,7 +115,8 @@ export function App() {
                 element={<Navigate to="/" replace />}
               />
               <Route path="/quem-somos" element={<QuemSomos />} />
-              <Route path="/feedback" element={<FeedbackPagina />} />
+              <Route path="/ajuda" element={<FeedbackPagina />} />
+              <Route path="/feedback" element={<Navigate to="/ajuda" replace />} />
               <Route path="/termo-de-conduta" element={<TermoDeConduta />} />
               <Route path="/privacidade" element={<Privacidade />} />
               <Route path="*" element={<NaoEncontrada />} />

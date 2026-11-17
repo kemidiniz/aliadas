@@ -44,3 +44,7 @@ select name from vault.secrets where name = 'make_feedback_novo_url';
 ```
 
 Sem esse segredo, o site continua funcionando e o feedback é gravado, só não há aviso.
+
+## Tipo "duvida" (migration 027)
+
+A página /ajuda ganhou "Tirar uma dúvida": o texto vai na coluna `mensagem` e o e-mail é obrigatório. O aviso ao Make continua o mesmo (só tabela, evento e id). Até a titular atualizar o cenário, o e-mail para a curadoria chega sem o texto da dúvida; a mensagem aparece na aba Feedback do Painel. A curadoria marca "Respondido" no Painel depois de responder pelo Gmail.

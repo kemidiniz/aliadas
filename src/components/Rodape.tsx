@@ -17,9 +17,9 @@ export function Rodape() {
             <li>
               <Link
                 className="text-destaque underline underline-offset-4"
-                to="/feedback"
+                to="/ajuda"
               >
-                Feedback
+                Ajuda e feedback
               </Link>
             </li>
             <li>

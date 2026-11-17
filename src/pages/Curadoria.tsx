@@ -7,8 +7,9 @@ import { Aviso, Carregando } from "../components/Aviso";
 import { mensagemAmigavel } from "../lib/erros";
 import { AREAS_PRO, MOMENTS_PRO, GOALS_PRO } from "../lib/professional";
 import IndicadoresMvp from "./IndicadoresMvp";
+import FeedbackPainel from "./FeedbackPainel";
 import Embaixadoras from "./Embaixadoras";
-type Tab = "painel" | "perfis" | "denuncias" | "embaixadoras";
+type Tab = "painel" | "feedback" | "perfis" | "denuncias" | "embaixadoras";
 export default function Curadoria() {
   const { adminAccess, recarregar } = useAuth();
   const [tab, setTab] = useState<Tab>("painel");
@@ -21,7 +22,7 @@ export default function Curadoria() {
   }, [tab]);
   const tabs: { id: Tab; label: string }[] = [];
   if (adminAccess.principal || adminAccess.legacy)
-    tabs.push({ id: "painel", label: "Painel" });
+    tabs.push({ id: "painel", label: "Painel" }, { id: "feedback", label: "Feedback" });
   if (adminAccess.review_profiles) tabs.push({ id: "perfis", label: "Perfis" });
   if (adminAccess.handle_reports)
     tabs.push({ id: "denuncias", label: "Denúncias" });
@@ -79,6 +80,7 @@ export default function Curadoria() {
         {active === "perfis" && <Profiles />}
         {active === "denuncias" && <Reports />}
         {active === "painel" && <IndicadoresMvp />}
+        {active === "feedback" && <FeedbackPainel />}
         {active === "embaixadoras" && <Embaixadoras />}
         {!active && <Aviso>Nenhuma atribuição administrativa ativa.</Aviso>}
       </section>

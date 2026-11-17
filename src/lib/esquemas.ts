@@ -77,6 +77,12 @@ export const feedbackProblema = z.object({
   email: emailOpcional,
 })
 
+export const feedbackDuvida = z.object({
+  tipo: z.literal('duvida'),
+  mensagem: texto(3, 1000, 'Escreva sua dúvida'),
+  email: z.string().trim().max(254).email('Para te responder, informe um e-mail válido'),
+})
+
 export const programaSchema = z.object({
   nome: texto(2, 120, 'Nome obrigatório'),
   organizacao: z.string().trim().max(120),

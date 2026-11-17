@@ -388,6 +388,9 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           <section id="conta" aria-labelledby="t-conta" className="scroll-mt-24 space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
             <h2 id="t-conta" className="text-xl">Conta</h2>
             {!recuperacao && <SenhaPerfil />}
+            <p className="text-sm">
+              Precisa de ajuda? <Link to="/ajuda" className="text-link">Ajuda e feedback</Link>
+            </p>
             <div className="flex flex-wrap gap-3">
               <Botao type="button" variante="secundario" onClick={() => sair()}>Sair da conta</Botao>
               <Botao type="button" variante="perigo" onClick={() => setExcluir(true)}>Excluir minha conta</Botao>

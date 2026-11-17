@@ -2,6 +2,7 @@ import { BotaoLink } from "../components/Botao";
 import { Pagina } from "../components/Pagina";
 import { Link } from "react-router-dom";
 import { FONTE_LINKEDIN as LINKEDIN, FONTE_WEF as WEF } from "../lib/fontes";
+import { FAQ } from "../lib/faq";
 function Arrow() {
   return (
     <svg
@@ -18,28 +19,6 @@ function Arrow() {
     </svg>
   );
 }
-const FAQ = [
-  {
-    q: "A IA vê meus dados?",
-    a: "Só se você autorizar, e mesmo assim ela recebe apenas categorias: áreas, momento e objetivos. Nunca nome, contatos ou textos livres.",
-  },
-  {
-    q: "Quando meus contatos aparecem?",
-    a: "Só depois que as duas aceitam a conversa. Você escolhe quais canais mostrar.",
-  },
-  {
-    q: "A aliadas é mentoria?",
-    a: "Não é apenas mentoria. Na mentoria, alguém com mais experiência guia alguém com menos. Aqui, qualquer mulher pode apoiar outra, em qualquer momento da carreira: com escuta, uma dica ou um contato.",
-  },
-  {
-    q: "E se não houver ninguém compatível?",
-    a: "A gente avisa, sem inventar uma indicação. Você pode tentar outro objetivo ou voltar em alguns dias.",
-  },
-  {
-    q: "A indicação garante a conversa?",
-    a: "Não. Você revisa a mensagem e a conversa só acontece se as duas aceitarem.",
-  },
-];
 export default function LandingInstitucional() {
   return (
     <Pagina titulo="aliadas">

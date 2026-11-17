@@ -88,6 +88,7 @@ export const PAGINAS_DO_SITE = [
   'Perfil',
   'Entrar',
   'Quem somos',
-  'Feedback',
+  'Ajuda e feedback',
+  'Painel',
   'Outra',
 ] as const

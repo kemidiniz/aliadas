@@ -112,6 +112,17 @@ try {
   await g.waitForURL(base + "/quem-somos");
   await g.getByRole("heading", { level: 2, name: "Como funciona" }).waitFor();
   assert.equal(await g.title(), "Quem somos · aliadas");
+  await g.goto(base + "/feedback");
+  await g.waitForURL(base + "/ajuda");
+  await g.getByRole("heading", { level: 1, name: "Ajuda e feedback" }).waitFor();
+  await g.getByText("Como excluo minha conta?").click();
+  await g.getByText(/seção Conta, toque em Excluir minha conta/).waitFor();
+  await g.getByText("Tirar uma dúvida").click();
+  await g.getByRole("textbox", { name: "Sua dúvida" }).fill("Como funciona a indicação?");
+  await g.getByRole("button", { name: "Enviar", exact: true }).click();
+  await g.getByText("Para te responder, informe um e-mail válido").waitFor();
+  assert.equal(await g.getByRole("link", { name: "Ajuda e feedback" }).count(), 1, "link no rodapé");
+  console.log("PASSOU: /ajuda com perguntas frequentes; dúvida exige e-mail; /feedback redireciona");
   await g.goto(base + "/forum");
   await g.waitForURL(base + "/");
   console.log("PASSOU: início público, três itens e fórum fora da jornada");

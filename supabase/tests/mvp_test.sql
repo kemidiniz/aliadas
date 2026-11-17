@@ -370,3 +370,24 @@ select public.mvp_metrics() as painel2 \gset
 select tst.ok(:'painel2'::jsonb ?& array['expired_invites','conversations_happened','useful_rate','top_marks','feedback_requests_pending'],'painel traz os indicadores da avaliação');
 select tst.ok((:'painel2'::jsonb->>'expired_invites')::int>=1 and (:'painel2'::jsonb->'top_marks'->>'escuta')::int>=2,'expirados e marcas vêm de dados reais');
 reset role;
+-- 027: dúvida no feedback e métricas só para o painel.
+set role anon;
+select tst.bloqueia($$insert into public.feedback (tipo, mensagem) values ('duvida','Como funciona a indicação?')$$,'dúvida exige e-mail');
+insert into public.feedback (tipo, mensagem, email) values ('duvida','Como funciona a indicação?','duvida@exemplo.invalid');
+select tst.ok(true,'anônimo envia dúvida com e-mail');
+select tst.bloqueia($$select * from public.feedback$$,'anônimo só insere, não lê');
+select tst.bloqueia($$select public.mvp_feedback_metrics(current_date)$$,'anônimo não chama as métricas do feedback');
+reset role;
+set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
+select tst.ok((select count(*) from public.feedback)=0,'usuária comum não lê feedback');
+select tst.bloqueia($$select public.mvp_feedback_metrics(current_date)$$,'usuária comum não chama as métricas do feedback');
+update public.feedback set status='respondido';
+reset role;
+select tst.ok((select status='novo' from public.feedback where tipo='duvida'),'usuária comum não marca como respondido');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :cur, false);
+select public.mvp_feedback_metrics(current_date) as fbm \gset
+select tst.ok((:'fbm'::jsonb->'por_tipo'->>'duvida')::int=1 and (:'fbm'::jsonb->>'novos')::int>=1,'métricas do mês por tipo e status');
+update public.feedback set status='respondido' where tipo='duvida';
+select tst.ok((select count(*) from public.feedback where tipo='duvida' and status='respondido')=1,'curadoria marca como respondido');
+reset role;

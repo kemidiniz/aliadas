@@ -4,14 +4,16 @@ import { Aviso } from '../components/Aviso'
 import { Botao } from '../components/Botao'
 import { CampoArea, CampoTexto, Escolha } from '../components/Campo'
 import { Pagina, Titulo } from '../components/Pagina'
-import { errosPorCampo, feedbackAvaliacao, feedbackProblema, LIMITES } from '../lib/esquemas'
+import { errosPorCampo, feedbackAvaliacao, feedbackDuvida, feedbackProblema, LIMITES } from '../lib/esquemas'
+import { FAQ_AJUDA } from '../lib/faq'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
 import { PAGINAS_DO_SITE } from '../lib/tipos'
 
-type Caminho = 'avaliacao' | 'problema'
+type Caminho = 'duvida' | 'avaliacao' | 'problema'
 
 const CAMINHOS: { valor: Caminho; rotulo: string; detalhe: string }[] = [
+  { valor: 'duvida', rotulo: 'Tirar uma dúvida', detalhe: 'Respondemos em até 2 dias úteis.' },
   { valor: 'avaliacao', rotulo: 'Avaliar o site', detalhe: 'Conta como foi usar a aliadas' },
   { valor: 'problema', rotulo: 'Relatar um problema', detalhe: 'Algo quebrou ou ficou confuso' },
 ]
@@ -22,6 +24,7 @@ const vazio = {
   mudaria: '',
   problema_descricao: '',
   problema_pagina: '',
+  mensagem: '',
   email: '',
 }
 
@@ -36,7 +39,7 @@ export default function FeedbackPagina() {
   async function enviar(e: FormEvent) {
     e.preventDefault()
     if (!caminho) return
-    const esquema = caminho === 'avaliacao' ? feedbackAvaliacao : feedbackProblema
+    const esquema = caminho === 'avaliacao' ? feedbackAvaliacao : caminho === 'duvida' ? feedbackDuvida : feedbackProblema
     const r = esquema.safeParse({ ...f, tipo: caminho, nota_facilidade: f.nota_facilidade || undefined })
     if (!r.success) return setErros(errosPorCampo(r.error))
     setErros({})
@@ -51,7 +54,7 @@ export default function FeedbackPagina() {
 
   if (estado === 'ok') {
     return (
-      <Pagina titulo="Feedback" largura="texto">
+      <Pagina titulo="Ajuda e feedback" largura="texto">
         <Titulo>Recebemos!</Titulo>
         <p className="text-suave">Obrigada por construir a aliadas com a gente.</p>
         <div className="mt-8">
@@ -62,8 +65,23 @@ export default function FeedbackPagina() {
   }
 
   return (
-    <Pagina titulo="Feedback" largura="texto">
-      <Titulo sub="Nossa comunidade pode evoluir com a sua opinião">Feedback</Titulo>
+    <Pagina titulo="Ajuda e feedback" largura="texto">
+      <Titulo sub="Respostas rápidas e um jeito de falar com a gente.">Ajuda e feedback</Titulo>
+      <section aria-labelledby="faq-ajuda" className="mb-12">
+        <h2 id="faq-ajuda" className="text-xl">Perguntas frequentes</h2>
+        <div className="mt-4 divide-y divide-linha border-y border-linha">
+          {FAQ_AJUDA.map((x) => (
+            <details key={x.q} className="faq group">
+              <summary className="flex min-h-14 cursor-pointer items-center justify-between gap-4 py-4 font-semibold">
+                {x.q}
+                <span aria-hidden className="text-xl text-destaque transition-transform duration-200 group-open:rotate-45">+</span>
+              </summary>
+              <p className="pb-5 text-suave">{x.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+      <h2 className="mb-6 text-xl">Não achou? Fale com a gente</h2>
       <form onSubmit={enviar} noValidate className="space-y-8">
         <Escolha nome="caminho" rotulo="O que você quer fazer?" valor={caminho} aoMudar={(v) => { setCaminho(v); setErros({}) }} opcoes={CAMINHOS} />
 
@@ -104,6 +122,10 @@ export default function FeedbackPagina() {
                 </>
               )}
 
+              {caminho === 'duvida' && (
+                <CampoArea rotulo="Sua dúvida" ajuda="Respondemos em até 2 dias úteis." rows={4} maxLength={1000} value={f.mensagem} onChange={(e) => muda('mensagem', e.target.value)} erro={erros.mensagem} />
+              )}
+
               {caminho === 'problema' && (
                 <>
                   <CampoArea rotulo="O que aconteceu?" rows={4} maxLength={LIMITES.problema} value={f.problema_descricao} onChange={(e) => muda('problema_descricao', e.target.value)} erro={erros.problema_descricao} />
@@ -125,8 +147,8 @@ export default function FeedbackPagina() {
               )}
 
               <CampoTexto
-                rotulo="Seu e-mail (opcional)"
-                ajuda="Opcional. Usamos só para responder esta mensagem."
+                rotulo={caminho === 'duvida' ? 'Seu e-mail' : 'Seu e-mail (opcional)'}
+                ajuda={caminho === 'duvida' ? 'Para te responder.' : 'Opcional. Usamos só para responder esta mensagem.'}
                 type="email"
                 autoComplete="email"
                 value={f.email}
