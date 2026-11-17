@@ -101,8 +101,8 @@ Testes locais: build/TypeScript, SQL/RLS, contratos de IA, worker Deno sem rede 
 | Requisito | Implementado | Comprovado | Pendente | Próxima ação |
 |---|---|---|---|---|
 | Banco com RLS e contatos após aceite | Sim | Testes locais de autorização | Revisão pós-publicação | Conferir políticas remotas |
-| Automação por gatilho | Sim | Trigger/pg_net stub local | Três execuções reais | Registrar objetivos reais com consentimento |
-| IA por habilidades | Sim | Esquema, minimização e rejeição locais | Resposta real da nova função | Executar objetivo real com consentimento |
+| Automação por gatilho | Sim | Três jobs reais concluídos, ver EVIDENCIAS-IA.md | Demonstração pela interface com participantes | Registrar próximos testes reais |
+| IA por habilidades | Sim | Três respostas reais, modelo, tokens e habilidades gravados | Qualidade avaliada por humanas | Vinte casos e duas rodadas |
 | Revisão humana antes do convite | Sim | Navegador simulado | Teste com participantes | Revisar e enviar pelo site |
 | 20 casos e três avaliadoras | Instrumentos prontos | Script testado com stub | Preenchimento/avaliação reais | Preencher pool/casos e convidar avaliadoras |
 | Duas rodadas e comparação IA × regra | Sim | Consolidação local | Resultados reais | Avaliar, ajustar SYSTEM_V2, repetir |

@@ -42,3 +42,12 @@ Do Início ao convite: escrever o objetivo, analisar (1), confirmar/encontrar (2
 `test:rls` verifica primeiro o contrato histórico até 036 e depois aplica 037–039 para os testes do contrato vigente. As verificações antigas não são apresentadas como validação da nova finalidade. Testes de navegador usam Auth/API simulados; testes de worker e instrumentos usam stub local. Isso não comprova vinte casos reais, três avaliadoras, duas rodadas ou três execuções reais do gatilho.
 
 As próximas gerações reais exigem consentimento da participante no site. Na consulta anterior à publicação: 11 perfis, três com habilidades, dois pedidos legados e zero jobs; a conta principal estava sem consentimento atualizado de IA. Não foi alterado esse consentimento administrativamente.
+
+
+## Publicação e evidências
+
+Migrations 037, 038 e 039 aplicadas em transações, com backup privado prévio; conversa-ia republicada. Teste real autorizado pela titular: três gerações concluídas e uma falha anterior de modelo preservada. Modelo configurado pelo alias gemini-flash-lite-latest, com versão real gemini-3.5-flash-lite gravada. Ver [evidências da IA](EVIDENCIAS-IA.md). Nenhuma escolha de habilidade ou convite foi confirmada em nome da participante.
+
+Verificações: build e TypeScript; 315 checks SQL (276 do contrato histórico e 39 do vigente); 12 testes Node da IA; worker Deno local autenticado sem rede externa; navegador em 375/390/768/1440, claro e escuro; administração por permissões; CSV das duas rodadas com stub; links internos. Capturas em 390/1440, com rodapé também em 360.
+
+Security Advisor: nenhum alerta ERROR na consulta; 62 avisos de funções SECURITY DEFINER executáveis por autenticadas (incluem RPCs necessárias com validação interna e funções legadas), cinco informações de RLS sem policy e aviso de proteção de senhas vazadas. Não equivale a afirmar que todo aviso foi eliminado. Funções novas têm search_path fixo, permissões mínimas e verificações de conta/dona/papel; negativas foram testadas. Funções legadas continuam para revisão específica, sem revogação em massa. Proteção de senhas vazadas permanece uma configuração pendente.
