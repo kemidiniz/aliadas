@@ -1,6 +1,5 @@
 import { BotaoLink } from "../components/Botao";
 import { Pagina } from "../components/Pagina";
-import { Link } from "react-router-dom";
 import { FONTE_LINKEDIN as LINKEDIN, FONTE_WEF as WEF } from "../lib/fontes";
 import { FAQ } from "../lib/faq";
 function Arrow() {
@@ -19,6 +18,9 @@ function Arrow() {
     </svg>
   );
 }
+// O conceito abre o "Como funciona"; no hero ele é opcional (para não repetir)
+const CONCEITO_NO_HERO = false;
+
 export default function LandingInstitucional() {
   return (
     <Pagina titulo="aliadas">
@@ -26,7 +28,8 @@ export default function LandingInstitucional() {
         <div>
           <p className="eyebrow">Conexões entre mulheres</p>
           <h1 id="hero-title">Uma conversa pode abrir novos caminhos.</h1>
-          <p className="conceito">Não é apenas mentoria, é aliança.</p>
+          {/* duas versões para a titular escolher: com ou sem o conceito no hero */}
+          {CONCEITO_NO_HERO && <p className="conceito">Não é apenas mentoria, é aliança.</p>}
           <p className="hero-description">
             Encontre uma mulher para conversar sobre o próximo passo da sua
             carreira e compartilhe o que você já sabe.
@@ -90,19 +93,6 @@ export default function LandingInstitucional() {
           </article>
         </div>
       </section>
-      <section id="quem-somos" className="institutional-section scroll-mt-28" aria-labelledby="about-title">
-        <p className="eyebrow">Quem somos</p>
-        <h2 id="about-title">Uma iniciativa de impacto social.</h2>
-        <div className="editorial-copy">
-          <p>
-            Criada na formação em IA Aplicada da {"{reprograma}"}, para tornar
-            conexões profissionais mais simples e intencionais.
-          </p>
-        </div>
-        <Link to="/quem-somos" className="text-link mt-5 inline-block">
-          Conheça a aliadas →
-        </Link>
-      </section>
       <section className="institutional-section" aria-labelledby="audience-title">
         <p className="eyebrow">Para quem é</p>
         <h2 id="audience-title">Duas formas de participar.</h2>
@@ -127,7 +117,14 @@ export default function LandingInstitucional() {
       </section>
       <section id="como-funciona" className="institutional-section scroll-mt-28" aria-labelledby="solution-title">
         <p className="eyebrow">Como funciona</p>
-        <h2 id="solution-title">Três passos até a conversa.</h2>
+        <h2 id="solution-title">Não é apenas mentoria, é aliança.</h2>
+        <div className="editorial-copy">
+          <p>
+            Na mentoria, alguém com mais experiência guia alguém com menos.
+            Aqui, qualquer mulher pode apoiar outra, em qualquer momento da
+            carreira, lado a lado.
+          </p>
+        </div>
         <ol className="steps-list">
           {["Escolha o objetivo.", "Receba uma indicação.", "Depois do aceite, conversem por onde preferirem."].map((passo, i) => (
             <li key={passo}>

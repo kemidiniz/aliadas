@@ -104,10 +104,13 @@ try {
       .first()
       .getByRole("link")
       .count(),
-    3,
+    2,
+    "menu de visitantes: Como funciona e Entrar",
   );
+  assert.equal(await g.locator('a[href="/#quem-somos"]').count(), 0, "nenhum link para /#quem-somos");
+  assert.equal(await g.getByText(/Criada na formação em IA Aplicada/).count(), 0, "frase da reprograma só em Quem somos");
+  await g.getByText("© 2026 Kemily Diniz", { exact: true }).waitFor();
   assert.equal(await g.locator('a[href="/forum"]').count(), 0);
-  await g.getByText("© 2026 Kemily Diniz. Todos os direitos reservados.").waitFor();
   await g.getByRole("link", { name: "Quem somos" }).first().click();
   await g.waitForURL(base + "/quem-somos");
   await g.getByRole("heading", { level: 2, name: "Como funciona" }).waitFor();

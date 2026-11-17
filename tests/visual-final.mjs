@@ -85,23 +85,10 @@ try {
         1,
       );
       assert.equal(await p.locator(".stat-number").count(), 2);
-      if (width < 1024) {
-        await p.getByRole("button", { name: /menu/i }).click();
-        await p
-          .getByRole("navigation", { name: "principal" })
-          .last()
-          .getByRole("link", { name: "Quem somos" })
-          .click();
-      } else
-        await p
-          .getByRole("navigation", { name: "principal" })
-          .first()
-          .getByRole("link", { name: "Quem somos" })
-          .click();
-      await p.waitForURL("**/#quem-somos");
-      await p
-        .getByRole("heading", { name: "Quem somos?", exact: true })
-        .waitFor();
+      // "Quem somos" fica no rodapé (saiu do menu de visitantes)
+      await p.getByRole("navigation", { name: "Rodapé" }).getByRole("link", { name: "Quem somos" }).click();
+      await p.waitForURL("**/quem-somos");
+      await p.getByRole("heading", { name: "Quem somos", exact: true }).waitFor();
       await p.goto(base);
       await p
         .getByRole("heading", {
