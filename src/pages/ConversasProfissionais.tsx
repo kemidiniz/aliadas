@@ -17,6 +17,7 @@ import { mensagemAmigavel } from "../lib/erros";
 import {
   AREAS_PRO,
   GOALS_PRO,
+  SITUACAO_PRO,
   type ProCard,
   type ProContacts,
   type ProInvite,
@@ -73,7 +74,7 @@ export default function ConversasProfissionais() {
 
   return (
     <Pagina titulo="Minhas conversas">
-      <Titulo sub="Convites, horários e avaliações em um só lugar.">Minhas conversas</Titulo>
+      <Titulo sub="Convites, contatos e avaliações em um só lugar.">Minhas conversas</Titulo>
       {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
       {!invites ? (
         <CartaoCarregando />
@@ -214,10 +215,9 @@ function Conversa({
             <h2 className="text-lg">{nome}</h2>
             <Badge estado={estado} />
           </div>
-          {card?.occupation && <p className="text-sm text-suave">{card.occupation}</p>}
           {card && (
-            <p className="text-xs text-suave">
-              {card.areas.map((a) => AREAS_PRO[a as keyof typeof AREAS_PRO] ?? a).join(" · ")}
+            <p className="text-sm text-suave">
+              {[SITUACAO_PRO[card.situacao as keyof typeof SITUACAO_PRO], AREAS_PRO[(card.area_principal ?? card.areas[0]) as keyof typeof AREAS_PRO]].filter(Boolean).join(" · ")}
             </p>
           )}
         </div>
