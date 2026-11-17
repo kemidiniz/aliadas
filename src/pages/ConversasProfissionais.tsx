@@ -6,6 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { Abas, Badge, CartaoCarregando, Vazio, type EstadoConversa } from "../components/ui";
 import {
   IconeEmail,
+  IconeConversas,
   IconeLinkedin,
   IconeMais,
   IconeWhatsapp,
@@ -377,6 +378,7 @@ function Contatos({ c }: { c: ProContacts | null }) {
   const itens = [
     c.linkedin && { href: c.linkedin, rotulo: "LinkedIn", Icone: IconeLinkedin, ext: true },
     c.whatsapp && { href: `https://wa.me/${c.whatsapp.replace(/\D/g, "")}`, rotulo: "WhatsApp", Icone: IconeWhatsapp, ext: true },
+    c.meet && { href:c.meet,rotulo:"Google Meet",Icone:IconeConversas,ext:true },
     c.email && { href: `mailto:${c.email}`, rotulo: "E-mail", Icone: IconeEmail, ext: false },
   ].filter(Boolean) as { href: string; rotulo: string; Icone: typeof IconeEmail; ext: boolean }[];
   return (

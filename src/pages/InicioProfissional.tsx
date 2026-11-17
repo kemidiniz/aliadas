@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ConviteRecebido } from "../components/ConviteRecebido";
 import { useConversationJob } from "../lib/useConversationJob";
 import { conversationStatus } from "../lib/conversationStatus";
 import LandingInstitucional from "./LandingInstitucional";
@@ -234,13 +235,7 @@ export default function InicioProfissional() {
             {esperando.length ? (
               <ul className="mt-3 space-y-2">
                 {esperando.slice(0, 3).map((x) => (
-                  <li key={x.id} className="flex items-center gap-3">
-                    <Avatar apelido={nomeDe(x.sender_id)} tamanho={36} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{nomeDe(x.sender_id)}</span>
-                      {x.goal && <span className="block truncate text-xs text-suave">{GOALS_PRO[x.goal as keyof typeof GOALS_PRO]}</span>}
-                    </span>
-                  </li>
+                  <li key={x.id}><ConviteRecebido convite={x} nome={nomeDe(x.sender_id)} depois={load}/></li>
                 ))}
               </ul>
             ) : (
@@ -248,7 +243,7 @@ export default function InicioProfissional() {
             )}
             {esperando.length > 0 && (
               <div className="mt-4">
-                <BotaoLink to="/minhas-aliancas" variante="secundario">Responder</BotaoLink>
+                <BotaoLink to="/minhas-aliancas" variante="secundario">Ver minhas alianças</BotaoLink>
               </div>
             )}
           </section>

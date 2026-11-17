@@ -217,6 +217,8 @@ try {
       savedProfile = body;
       data = null;
     }
+    if (endpoint === "mvp_invite_context") data = {description:"Apoio profissional de teste",habilidades:["networking"]};
+    if (endpoint === "mvp_respond") {invites=invites.map(i=>i.id===body.invite?{...i,state:body.accept?"aceita":"recusada"}:i);data=null;}
     if (endpoint === "mvp_shared_contacts")
       data = {
         email: "autorizado@exemplo.invalid",
@@ -336,6 +338,27 @@ try {
   assert.equal(calls.filter((x) => x.endpoint === "mvp_feedback_later").at(-1).body.pedido, pedidos[0]?.id ?? "50000000-0000-0000-0000-000000000001");
   await p.getByRole("heading", { name: /Como foi sua conversa/ }).waitFor({ state: "detached" });
   console.log("PASSOU: cartão 'Como foi sua conversa' no Início e 'Lembrar depois'");
+  // Convite recebido: revisão e resposta diretamente no Início, sem contato antecipado.
+  invites=[{...invite,sender_id:other,recipient_id:uid,state:"pendente"}];
+  await p.goto(base+"/");
+  await p.getByRole("button",{name:"Aceitar convite",exact:true}).waitFor();
+  const contatosAntes=calls.filter(c=>c.endpoint==="mvp_shared_contacts").length;
+  await p.getByText("Ver mensagem",{exact:true}).click();
+  await p.getByText("mensagem de teste autorizada",{exact:true}).waitFor();
+  await p.getByText("Apoio profissional de teste",{exact:true}).waitFor();
+  assert.equal(calls.filter(c=>c.endpoint==="mvp_shared_contacts").length,contatosAntes);
+  const { mkdir: pastaConvites }=await import("node:fs/promises");
+  await pastaConvites(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B5"}`,{recursive:true});
+  for(const width of [390,1440]) {await p.setViewportSize({width,height:1000});await p.evaluate(()=>scrollTo(0,0));await p.waitForTimeout(200);await p.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B5"}/convite-${width}.png`,fullPage:true});}
+  await p.getByRole("button",{name:"Aceitar convite",exact:true}).click();
+  await p.getByText("Convite aceito. Os contatos já aparecem no cartão.",{exact:true}).waitFor();
+  assert.equal(calls.filter(c=>c.endpoint==="mvp_respond").at(-1).body.accept,true);
+  invites=[{...invite,sender_id:other,recipient_id:uid,state:"pendente"}];
+  await p.goto(base+"/");
+  await p.getByRole("button",{name:"Agora não",exact:true}).click();
+  await p.getByText("Convite recusado.",{exact:true}).waitFor();
+  assert.equal(calls.filter(c=>c.endpoint==="mvp_respond").at(-1).body.accept,false);
+  console.log("PASSOU: convite recebido é revisado, aceito ou recusado no Início sem contatos antecipados");
   invites = [{ ...invite, state: "expirado", horario_confirmado: null }];
   await p.goto(base + "/minhas-aliancas");
   await p.getByRole("tab", { name: /Concluídas/ }).click();
@@ -394,7 +417,7 @@ try {
   assert.equal(savedProfile.c.email, "contato@exemplo.invalid");
   assert.notEqual(savedProfile.c.email, session.user.email);
   assert.deepEqual(savedProfile.p.can_help, ["entrevista"]);
-  assert(!("meet" in savedProfile.c), "sala não é enviada");
+  assert.equal(savedProfile.c.meet,"", "Meet não autorizado é limpo ao salvar");
   console.log("PASSOU: perfil com seções abertas, erro ao lado do campo, sem sala nem grade e sem consentimento automático de IA");
   await p.getByRole("heading", { name: "Como você pode ajudar" }).waitFor();
   for (const fora of ["Quero conversar sobre", "Como você quer participar agora?"])

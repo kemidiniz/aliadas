@@ -43,6 +43,7 @@ export const CHANNELS_PRO = {
   linkedin: "LinkedIn",
   whatsapp: "WhatsApp",
   email: "E-mail",
+  meet: "Google Meet",
 };
 export const DAYS_PRO = [
   "segunda",
@@ -134,6 +135,6 @@ export const label = (map: Record<string, string>, k: string) => map[k] ?? k;
 // Perfil completo para buscar e ser indicada (mesma regra de mvp_pode_buscar + assuntos)
 export function perfilCompleto(p: ProProfile | null) {
   if (!p) return false;
-  return Boolean(p.situacao && p.area_principal) && p.interesses.length > 0 && p.channels.some((c) => c !== "meet");
+  return Boolean(p.situacao && p.area_principal) && p.interesses.length > 0 && p.channels.some((c) => c in CHANNELS_PRO);
 }
 
