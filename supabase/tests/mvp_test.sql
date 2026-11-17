@@ -286,3 +286,29 @@ select set_config('request.jwt.claim.sub', :'e2', false);
 select public.mvp_save_profile('{"name":"ajuda dois","situacao":"trabalho","area_principal":"saude","interesses":["saude"],"can_help":["apresentacao"],"want_talk":[],"channels":["email"]}', '{"email":"e2@exemplo.invalid"}', true);
 select tst.ok((select nome_completo='Ajuda Dois da Silva' from public.professional_contacts where profile_id=auth.uid()) and (select slots='{5_noite}' from public.professional_profiles where profile_id=auth.uid()),'salvar sem os campos antigos não apaga nome, sala nem horários');
 reset role;
+-- 023: objetivo no convite; texto só para "Outro" e nunca na IA.
+\set f1 '10000000-0000-0000-0000-000000000031'
+\set f2 '10000000-0000-0000-0000-000000000032'
+insert into auth.users(id,email) values(:'f1','f1@exemplo.invalid'),(:'f2','f2@exemplo.invalid');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'f1', false);
+select public.mvp_save_profile('{"name":"pede outro","situacao":"estudo","area_principal":"ciencias","interesses":[],"can_help":[],"want_talk":["outro"],"channels":["whatsapp"],"ai_consent":true}', '{"whatsapp":"+5511988887777"}', true);
+select set_config('request.jwt.claim.sub', :'f2', false);
+select public.mvp_save_profile('{"name":"ajuda outro","situacao":"trabalho","area_principal":"ciencias","interesses":["ciencias"],"can_help":["outro","projeto"],"want_talk":[],"channels":["whatsapp"],"ai_consent":true}', '{"whatsapp":"+5511977776666"}', true);
+reset role;
+update public.profiles set status='aprovado' where id in(:'f1',:'f2');
+set role authenticated;select set_config('request.jwt.claim.sub', :'f1', false);
+select tst.bloqueia($$select public.mvp_create_request('outro','')$$,'"Outro" exige o texto do objetivo');
+select tst.bloqueia($$select public.mvp_create_request('outro','fale comigo em teste@exemplo.invalid')$$,'texto de "Outro" recusa contatos');
+select tst.bloqueia(format('select public.mvp_create_request(%L,%L)','outro',repeat('a',201)),'texto de "Outro" tem até 200 caracteres');
+select public.mvp_create_request('projeto','este texto some') as sem_texto \gset
+select tst.ok((select description is null from public.conversation_requests where id=:'sem_texto'),'outros objetivos não guardam contexto');
+select public.mvp_create_request('outro','Montar um grupo de estudos de estatística') as com_texto \gset
+select public.mvp_invite(:'com_texto','oi! topa conversar?') as convite_outro \gset
+select set_config('request.jwt.claim.sub', :'f2', false);
+select tst.ok((select goal='outro' and goal_text='Montar um grupo de estudos de estatística' from public.conversation_invites where id=:'convite_outro'),'quem recebe vê o objetivo e o texto de "Outro"');
+reset role;
+set role service_role;
+select public.mvp_claim_job(:'com_texto') as job_outro \gset
+reset role;
+select tst.ok(:'job_outro' is null or position('estatística' in :'job_outro')=0,'texto de "Outro" nunca vai para a IA');

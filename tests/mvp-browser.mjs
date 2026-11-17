@@ -66,6 +66,8 @@ const invite = {
   created_at: new Date().toISOString(),
   responded_at: new Date().toISOString(),
   horario_confirmado: null,
+  goal: "carreira",
+  goal_text: null,
 };
 let proposals = [];
 let hasProfessional = true;
@@ -210,15 +212,21 @@ try {
   await p.goto(base);
   await p.getByRole("heading", { level: 1, name: /Olá/ }).waitFor();
   // "Quero conversar sobre" só pré-seleciona o objetivo
-  assert(await p.getByRole("radio", { name: "Dicas de carreira" }).isChecked());
+  const objetivo = p.getByRole("combobox", { name: "Qual é o objetivo da sua próxima conversa?" });
+  assert.equal(await objetivo.inputValue(), "carreira", "primeiro 'quero conversar sobre' vem pré-selecionado");
+  assert.equal(await p.getByRole("textbox", { name: "Qual é o objetivo?" }).count(), 0, "sem campo de contexto fora de 'Outro'");
+  await objetivo.selectOption("outro");
+  await p.getByRole("textbox", { name: "Qual é o objetivo?" }).waitFor();
+  await objetivo.selectOption("carreira");
   await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).click();
-  await p.getByRole("heading", { name: "Suas buscas" }).waitFor();
+  await p.getByRole("heading", { name: "Sua indicação" }).waitFor();
+  assert.equal(await p.getByText("Próximas conversas").count(), 0, "Início sem histórico nem agenda");
   await p.getByText("aliada de teste", { exact: true }).waitFor();
   assert(!calls.some((x) => x.endpoint === "mvp_invite"));
   assert.equal(await p.getByText("Sugerido pela IA", { exact: true }).count(), 0, "modo básico sem selo de IA");
   assert.deepEqual(calls.find((x) => x.endpoint === "mvp_create_request").body, { goal: "carreira", description: "" });
   assert.equal(await p.getByRole("button", { name: /atualizar resultado/i }).count(), 0);
-  console.log("PASSOU: objetivo da conversa em chips, busca em cartão e sem convite automático");
+  console.log("PASSOU: objetivo em menu suspenso, texto só para Outro, Início sem histórico e sem convite automático");
   await p.getByRole("textbox", { name: "Sua mensagem" }).fill("minha mensagem revisada de teste");
   await p.getByText("Preparando a conversa com IA", { exact: true }).waitFor();
   requests = [
@@ -249,6 +257,7 @@ try {
   await p.goto(base + "/minhas-conversas");
   await p.getByRole("tab", { name: /Enviados/, selected: true }).waitFor();
   await p.getByRole("link", { name: "E-mail", exact: true }).waitFor();
+  await p.getByText(/Quer conversar sobre:\s*Dicas de carreira/).first().waitFor();
   assert.equal(await p.getByRole("link", { name: "WhatsApp", exact: true }).count(), 0);
   await p.locator('[aria-current="step"]').getByText("Horário").waitFor();
   await p.getByText("Proponha até 3 horários (Brasília)").waitFor();

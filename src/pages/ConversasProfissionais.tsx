@@ -27,6 +27,7 @@ import {
 } from "../lib/agenda";
 import {
   AREAS_PRO,
+  GOALS_PRO,
   type ProCard,
   type ProContacts,
   type ProInvite,
@@ -258,6 +259,13 @@ function Conversa({
         <MenuMais aoEscolher={setPainel} />
       </header>
       <Linha atual={atual} parada={i.state === "recusada" || i.state === "expirado"} />
+      {i.goal && (
+        <p className="text-sm">
+          <span className="font-semibold">Quer conversar sobre:</span>{" "}
+          {GOALS_PRO[i.goal as keyof typeof GOALS_PRO] ?? i.goal}
+          {i.goal === "outro" && i.goal_text && <span className="block text-suave">{i.goal_text}</span>}
+        </p>
+      )}
       <blockquote className="rounded-xl bg-superficie px-4 py-3 text-sm break-words">
         <span className="mb-1 block text-xs font-semibold text-suave">
           {souRemetente ? "Sua mensagem" : "Mensagem dela"}

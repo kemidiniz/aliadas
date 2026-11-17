@@ -12,6 +12,7 @@ import {
   MultiEscolha,
 } from "../components/Campo";
 import { Botao } from "../components/Botao";
+import { MinhasBuscas } from "../components/MinhasBuscas";
 import { CartaoCarregando } from "../components/ui";
 import { useToast } from "../components/Toast";
 import { supabase } from "../lib/supabase";
@@ -379,10 +380,10 @@ export default function PerfilProfissional() {
       <div className="lg:grid lg:grid-cols-[220px_minmax(0,700px)] lg:gap-10">
         <nav aria-label="Seções do perfil" className="hidden lg:block">
           <ul className="sticky top-24 space-y-1 text-sm">
-            {[...SECOES, { id: "conta", titulo: "Conta" }].map((s) => (
+            {[...SECOES, { id: "buscas", titulo: "Minhas buscas" }, { id: "conta", titulo: "Conta" }].map((s) => (
               <li key={s.id}>
                 <a href={`#${s.id}`} className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-superficie">
-                  <span aria-hidden className={`h-2 w-2 rounded-full ${s.id === "conta" ? "bg-linha" : completa[s.id] ? "bg-destaque" : "border border-campo"}`} />
+                  <span aria-hidden className={`h-2 w-2 rounded-full ${s.id === "conta" || s.id === "buscas" ? "bg-linha" : completa[s.id] ? "bg-destaque" : "border border-campo"}`} />
                   {s.titulo}
                 </a>
               </li>
@@ -396,6 +397,10 @@ export default function PerfilProfissional() {
               {blocos[s.id]}
             </section>
           ))}
+          <section id="buscas" aria-labelledby="t-buscas" className="scroll-mt-24 space-y-3 rounded-3xl border border-linha p-5 sm:p-6">
+            <h2 id="t-buscas" className="text-xl">Minhas buscas</h2>
+            <MinhasBuscas eu={session!.user.id} />
+          </section>
           <section id="conta" aria-labelledby="t-conta" className="scroll-mt-24 space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
             <h2 id="t-conta" className="text-xl">Conta</h2>
             {!recuperacao && <SenhaPerfil />}

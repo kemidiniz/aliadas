@@ -112,6 +112,8 @@ export type ProInvite = {
   created_at: string;
   responded_at: string | null;
   horario_confirmado: string | null;
+  goal?: string | null;
+  goal_text?: string | null;
 };
 export type ProProposal = {
   id: string;
