@@ -38,12 +38,14 @@ export function useConversationJob(
       const status = data as ConversationJobState;
       setJob(status);
       if (!["pendente", "executando"].includes(status.state)) {
-        if (status.mode === "generativa") await done.current();
+        if (status.mode === "ia") await done.current();
         return;
       }
       attempt++;
       if (attempt >= JOB_POLL_DELAYS.length) {
         setStalled(true);
+        await supabase.rpc("mvp_use_fallback", { request: requestId }).abortSignal(controller.signal);
+        if (active) await done.current();
         return;
       }
       timer = setTimeout(poll, JOB_POLL_DELAYS[attempt]);

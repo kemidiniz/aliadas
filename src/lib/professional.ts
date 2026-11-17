@@ -85,6 +85,7 @@ export type ProContacts = {
 export type ProCard = {
   id: string;
   name: string;
+  foto_path?: string | null;
   occupation: string | null;
   areas: string[];
   moment: string | null;
@@ -99,6 +100,9 @@ export type ProRequest = {
   candidate_id: string | null;
   state: string;
   mode: string;
+  habilidades_necessarias: string[];
+  habilidades_que_ajudam: string[];
+  next_count: number;
   explanation: string;
   questions: string[];
   draft: string | null;

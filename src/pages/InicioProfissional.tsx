@@ -5,7 +5,7 @@ import { conversationStatus } from "../lib/conversationStatus";
 import LandingInstitucional from "./LandingInstitucional";
 import { Pagina, Titulo } from "../components/Pagina";
 import { Botao, BotaoLink } from "../components/Botao";
-import { CampoArea, CampoSelect, CampoTexto } from "../components/Campo";
+import { CampoArea, CampoSelect } from "../components/Campo";
 import { Avatar } from "../components/Avatar";
 import { CartaoCarregando, Chips, Vazio } from "../components/ui";
 import { useToast } from "../components/Toast";
@@ -24,7 +24,8 @@ import {
   type ProRequest,
 } from "../lib/professional";
 
-const RASCUNHO = "Oi! Vi que você pode ajudar com isso e gostaria de conversar. Topa?";
+import { nomeHabilidade } from "../lib/habilidades";
+const modeloConvite = (r: ProRequest) => `Oi! Vi na aliadas que você pode ajudar com ${r.habilidades_que_ajudam?.length ? nomeHabilidade(r.habilidades_que_ajudam[0]) : "este objetivo profissional"}. Estou buscando apoio para ${GOALS_PRO[r.goal as keyof typeof GOALS_PRO] ?? "um objetivo profissional"}. Topa uma conversa?`;
 const OPCOES_OBJETIVO = Object.entries(GOALS_PRO).map(([valor, rotulo]) => ({ valor, rotulo }));
 
 export default function InicioProfissional() {
@@ -110,11 +111,11 @@ export default function InicioProfissional() {
     e?.preventDefault();
     // perfil incompleto: completa e volta para esta mesma busca
     if (!perfilCompleto(pro)) {
-      const q = new URLSearchParams({ buscar: g, ...(g === "outro" ? { outro: texto } : {}) });
+      const q = new URLSearchParams({ buscar: g, ...(texto ? { outro: texto } : {}) });
       return navegar(`/completar-perfil?${q}`);
     }
     setBusy("criar");
-    const { error } = await supabase.rpc("mvp_create_request", { goal: g, description: g === "outro" ? texto : "" });
+    const { error } = await supabase.rpc("mvp_create_request", { goal: g, description: texto });
     setBusy("");
     if (error) return toast(mensagemAmigavel(error), "erro");
     setOutro("");
@@ -173,16 +174,8 @@ export default function InicioProfissional() {
               opcoes={[{ valor: "", rotulo: "Escolha um objetivo" }, ...OPCOES_OBJETIVO]}
               onChange={(e) => setGoal(e.target.value)}
             />
-            {goal === "outro" && (
-              <CampoTexto
-                rotulo="Qual é o objetivo?"
-                ajuda="Não coloque nomes nem contatos."
-                maxLength={200}
-                required
-                value={outro}
-                onChange={(e) => setOutro(e.target.value)}
-              />
-            )}
+            <CampoArea rotulo="Em que você precisa de apoio?" ajuda="Conte em uma ou duas frases. Sem nomes nem contatos." maxLength={300} rows={3} required={goal === "outro"} value={outro} onChange={e => setOutro(e.target.value)} />
+            <p className="text-xs text-suave">Este texto vai para a IA só para encontrar quem pode ajudar. Tiramos e-mails e telefones antes de enviar.</p>
             <Botao type="submit" carregando={busy === "criar"} disabled={!pro.available || !goal || (goal === "outro" && !outro.trim())}>
               Encontrar minha aliada
             </Botao>
@@ -202,7 +195,7 @@ export default function InicioProfissional() {
             <section aria-labelledby="indicacao" className="space-y-4">
               <h2 id="indicacao" className="text-xl">Sua indicação</h2>
               <Indicacao
-                key={atual.id}
+                key={`${atual.id}:${atual.candidate_id}`}
                 r={atual}
                 card={cards.find((c) => c.id === atual.candidate_id)}
                 status={conversationStatus(job ? { ...job, has_candidate: Boolean(atual.candidate_id) } : null, false, stalled)}
@@ -281,11 +274,11 @@ function Indicacao({
   depois: (acompanhar?: string) => Promise<void>;
 }) {
   const toast = useToast();
-  const [msg, setMsg] = useState(r.draft ?? RASCUNHO);
+  const [msg, setMsg] = useState(modeloConvite(r));
   const editado = useRef(false);
   useEffect(() => {
-    if (!editado.current) setMsg(r.draft ?? RASCUNHO);
-  }, [r.draft, r.candidate_id]);
+    if (!editado.current) setMsg(modeloConvite(r));
+  }, [r.candidate_id, r.habilidades_que_ajudam?.join(",")]);
   const objetivo = r.goal === "outro" && r.description ? r.description : (GOALS_PRO[r.goal as keyof typeof GOALS_PRO] ?? r.goal);
 
   async function convidar() {
@@ -305,12 +298,13 @@ function Indicacao({
     await depois(r.id);
   }
 
+  if (status === "A IA está procurando quem pode ajudar…") return <article className="rounded-3xl border border-linha p-6" role="status"><p>{status}</p><p className="mt-2 text-sm text-suave">A indicação aparecerá aqui. Você revisa antes de enviar o convite.</p></article>;
   if (!card)
     return (
       <article className="rounded-3xl border border-linha p-5 sm:p-6">
         <p className="text-xs font-semibold text-suave">{objetivo}</p>
         <Vazio titulo="Ninguém compatível agora.">
-          A comunidade está crescendo. Tente de novo em alguns dias ou escolha outro objetivo.
+          Ninguém compatível agora. Tente outro objetivo ou volte em alguns dias.
         </Vazio>
       </article>
     );
@@ -318,7 +312,7 @@ function Indicacao({
     <article className="space-y-5 rounded-3xl border-2 border-destaque p-5 sm:p-6" aria-live="polite">
       <p className="text-xs font-semibold text-suave">{objetivo}</p>
       <header className="flex items-center gap-4">
-        <Avatar apelido={card.name} tamanho={56} />
+        <Avatar apelido={card.name} fotoPath={card.foto_path} tamanho={56} />
         <div className="min-w-0">
           <h3 className="text-lg">{card.name}</h3>
           <p className="text-sm text-suave">
@@ -333,30 +327,18 @@ function Indicacao({
           {card.marcas?.length ? ` · ${card.marcas.map((m) => MARCAS[m] ?? m).join(" · ")}` : ""}
         </p>
       )}
-      {r.mode === "generativa" && (
+      {r.mode === "ia" && (
         <span className="inline-flex rounded-full border border-campo px-3 py-1 text-xs font-semibold text-suave">
-          Sugerido pela IA
+          Recomendada pela IA
         </span>
       )}
-      <p>{r.explanation}</p>
-      {r.questions.length > 0 && (
-        <div className="rounded-2xl bg-superficie p-4">
-          <h4 className="mb-2 text-sm font-semibold">Duas perguntas para começar</h4>
-          <ol className="list-decimal space-y-1 pl-5">
-            {r.questions.map((q) => (
-              <li key={q}>{q}</li>
-            ))}
-          </ol>
-        </div>
-      )}
+      <Chips rotulo="Por que ela:" itens={(r.habilidades_que_ajudam ?? []).map(nomeHabilidade)} />
+      {!r.habilidades_que_ajudam?.length && <p className="text-sm text-suave">Ela informou que pode conversar sobre esse objetivo. As habilidades do perfil ainda serão atualizadas.</p>}
+      <p className="text-xs text-suave">Você precisa de: {(r.habilidades_necessarias ?? []).map(nomeHabilidade).join(" · ")}</p>
       {status && <p className="text-xs text-suave" role="status">{status}</p>}
       <CampoArea
         rotulo="Sua mensagem"
-        ajuda={
-          r.mode === "generativa"
-            ? "Revise antes de enviar. Você decide se manda."
-            : "Revise antes de enviar. Contatos só aparecem depois do aceite."
-        }
+        ajuda="Revise antes de enviar. Contatos só aparecem depois do aceite."
         maxLength={600}
         rows={3}
         value={msg}
@@ -370,7 +352,7 @@ function Indicacao({
           Enviar convite
         </Botao>
         <Botao variante="secundario" carregando={busy === `outra-${r.id}`} disabled={Boolean(busy)} onClick={outra}>
-          Ver outra sugestão
+          Ver outra indicação
         </Botao>
       </div>
     </article>

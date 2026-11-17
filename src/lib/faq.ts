@@ -2,7 +2,7 @@
 export const FAQ = [
   {
     q: "A IA vê meus dados?",
-    a: "Só se você autorizar, e mesmo assim ela recebe apenas categorias: o objetivo da conversa, situação, área e interesses. Nunca nome, contatos ou textos livres.",
+    a: "Só se você autorizar e, mesmo assim, ela recebe apenas categorias: objetivo, situação, área, interesses e habilidades, incluindo expressões profissionais extraídas do apoio. Nunca nome, contatos, foto ou ids reais. No plano gratuito, o Google pode usar os dados enviados para melhorar seus produtos. Consulte os detalhes em Termos e privacidade.",
   },
   {
     q: "Quando meus contatos aparecem?",

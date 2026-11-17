@@ -1,3 +1,4 @@
+import { MetricasHabilidades } from "../components/MetricasHabilidades";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Aviso, Carregando } from "../components/Aviso";
@@ -79,6 +80,7 @@ export default function IAAutomacoes() {
 
   return (
     <section className="space-y-10">
+      <MetricasHabilidades />
       <div>
         <h2 className="mb-3 text-xl">IA no mês</h2>
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

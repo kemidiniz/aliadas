@@ -23,7 +23,7 @@ reset role;
 update public.profiles set status='aprovado' where id in(:'u1',:'u2',:'u3');
 set role authenticated; select set_config('request.jwt.claim.sub', :'u1', false);
 select public.mvp_create_request('carreira','texto privado que não vai para a IA') as request \gset
-select tst.ok((select candidate_id=:'u2' and mode='basica' from public.conversation_requests where id=:'request'),'seleção determinística encontra uma candidata complementar');
+select tst.ok((select candidate_id=:'u2' and mode='regra' from public.conversation_requests where id=:'request'),'seleção determinística encontra uma candidata complementar');
 select tst.ok(jsonb_array_length(public.mvp_cards())=1,'cartão mínimo disponível para a dona da recomendação');
 select tst.ok((select count(*) from public.professional_contacts where profile_id=:'u2')=0,'não lê contatos conhecendo o UUID');
 select tst.bloqueia(format('select public.mvp_shared_contacts(%L)', :'request'),'não confunde pedido com aceite de convite');
@@ -75,44 +75,12 @@ select tst.ok(public.mvp_claim_job(:'second_request') is null,'worker não execu
 reset role;
 select tst.ok((select state='sem_consentimento' from public.conversation_jobs where request_id=:'second_request'),'worker registra impedimento sem dados pessoais');
 select tst.ok((select count(*) from public.conversation_feedback where happened and utility>=4)=1,'utilidade exige confirmação e nota 4 ou 5');
--- Contrato completo do worker com resposta sintética marcada como teste local.
--- NÃO é uma execução real de IA e não serve como evidência do projeto final.
-delete from public.conversation_blocks where owner_id=:'u1' and blocked_id=:'u2';
-update public.professional_profiles set ai_consent=true where profile_id=:'u1';
-insert into public.conversation_jobs(request_id,candidate_id) values(:'request',:'u2') returning id as job \gset
-set role service_role;
-select public.mvp_claim_job(:'request') as payload \gset
-select tst.ok(:'payload'::jsonb->>'goal'='carreira','worker recebe objetivo categórico');
-select tst.ok(not (:'payload'::jsonb ? 'intention') and :'payload'::jsonb->'b'->'themes'='["carreira"]'::jsonb,'worker recebe só o objetivo e os assuntos permitidos');
-select tst.ok(not (:'payload'::jsonb ? 'description') and not (:'payload'::jsonb->'a' ? 'occupation'),'worker não recebe descrição ou ocupação livre');
-select tst.ok(public.mvp_claim_job(:'request') is null,'claim idempotente não duplica execução');
-select tst.bloqueia(format('select public.mvp_finish_job(%L,%L,''teste-local'',10,20,null)', :'job', '{"explanation":"teste","questions":[],"draft":"teste"}'),'worker rejeita estrutura incompleta');
-select public.mvp_finish_job(:'job','{"explanation":"teste local, não gerado por IA","questions":["pergunta de teste um?","pergunta de teste dois?"],"draft":"rascunho de teste local"}','teste-local',10,20,null);
-reset role;
-select tst.ok((select mode='generativa' and jsonb_array_length(questions)=2 from public.conversation_requests where id=:'request'),'finalização válida grava resultado estruturado');
-select tst.ok((select state='concluida' and input_tokens=10 and output_tokens=20 from public.conversation_jobs where id=:'job'),'consumo informado fica no log de teste local');
-set role authenticated;select set_config('request.jwt.claim.sub', :'u3', false);
-select tst.ok((select count(*) from public.conversation_jobs)=0,'participante não lê logs de outras pessoas');
-select tst.bloqueia(format('select public.mvp_claim_job(%L)', :'request'),'participante não pode reclamar trabalho da fila');
-reset role;
--- Gatilho real local (pg_net substituído por stub, SEM chamada de rede).
+-- O contrato de recomendação por habilidades é testado em recomendacao_test.sql.
 select vault.create_secret('https://exemplo.invalid/functions/v1/conversa-ia','mvp_worker_url');
 select vault.create_secret('segredo-apenas-do-teste-local','mvp_worker_secret');
-update public.professional_profiles set ai_consent=true where profile_id=:'u3';
 set role authenticated;select set_config('request.jwt.claim.sub', :'u3', false);
 select public.mvp_create_request('carreira','não enviar esta descrição') as queued \gset
 reset role;
-select tst.ok((select count(*) from public.conversation_jobs where request_id=:'queued' and state='pendente')=1,'solicitação com ambos consentindo enfileira automaticamente');
-select tst.ok((select count(*) from net.chamadas where body=jsonb_build_object('request_id',:'queued'::uuid))=1,'gatilho envia somente id da solicitação ao worker');
-set role service_role;
-select public.mvp_claim_job(:'queued') as revoked_payload \gset
-reset role;
-update public.professional_profiles set ai_consent=false where profile_id=:'u3';
-set role service_role;
-select public.mvp_finish_job((:'revoked_payload'::jsonb->>'job_id')::uuid,'{"explanation":"teste","questions":["um?","dois?"],"draft":"teste"}','teste-local',1,2,null);
-reset role;
-select tst.ok((select mode='basica' from public.conversation_requests where id=:'queued'),'retirar consentimento durante a chamada impede publicar texto gerado');
-select tst.ok((select error_code='consentimento_revogado' from public.conversation_jobs where request_id=:'queued'),'revogação fica registrada sem conteúdo privado');
 -- Indicadores não transformam ausência de resposta em encontro.
 set role authenticated;select set_config('request.jwt.claim.sub', :'u3', false);
 select public.mvp_invite(:'queued','convite de teste para medir ausência de resposta') as unanswered_invite \gset
@@ -248,14 +216,14 @@ reset role;
 -- e3 tem área principal nos interesses de e1; e4 não. Empate nas regras antigas.
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'e3', false);
-select public.mvp_save_profile('{"name":"ajuda tres","situacao":"trabalho","area_principal":"artes","interesses":["engenharia"],"can_help":["apresentacao"],"want_talk":[],"channels":["email"],"slots":[]}', '{"email":"e3@exemplo.invalid"}', true);
+select public.mvp_save_profile('{"name":"ajuda tres","situacao":"trabalho","area_principal":"artes","interesses":["engenharia"],"habilidades":["apresentacoes"],"can_help":["apresentacao"],"want_talk":[],"channels":["email"],"slots":[]}', '{"email":"e3@exemplo.invalid"}', true);
 select set_config('request.jwt.claim.sub', :'e4', false);
 select public.mvp_save_profile('{"name":"ajuda quatro","situacao":"trabalho","area_principal":"engenharia","interesses":["engenharia"],"can_help":["apresentacao"],"want_talk":[],"channels":["email"],"slots":[]}', '{"email":"e4@exemplo.invalid"}', true);
 reset role;
 update public.profiles set status='aprovado' where id in(:'e3',:'e4');
 set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
 select public.mvp_next_suggestion(:'semhorario') as pontuada \gset
-select tst.ok(:'pontuada'=:'e3','pontuação escolhe quem tem a área de interesse de quem pede');
+select tst.ok(:'pontuada'=:'e3','plano B prioriza habilidades úteis em vez da área de formação');
 reset role;
 -- nome completo: só depois do aceite
 set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
@@ -288,19 +256,19 @@ reset role;
 update public.profiles set status='aprovado' where id in(:'f1',:'f2');
 set role authenticated;select set_config('request.jwt.claim.sub', :'f1', false);
 select tst.bloqueia($$select public.mvp_create_request('outro','')$$,'"Outro" exige o texto do objetivo');
-select tst.bloqueia($$select public.mvp_create_request('outro','fale comigo em teste@exemplo.invalid')$$,'texto de "Outro" recusa contatos');
-select tst.bloqueia(format('select public.mvp_create_request(%L,%L)','outro',repeat('a',201)),'texto de "Outro" tem até 200 caracteres');
+
+select tst.bloqueia(format('select public.mvp_create_request(%L,%L)','outro',repeat('a',301)),'texto de apoio tem até 300 caracteres');
 select public.mvp_create_request('projeto','este texto some') as sem_texto \gset
-select tst.ok((select description is null from public.conversation_requests where id=:'sem_texto'),'outros objetivos não guardam contexto');
+select tst.ok((select description='este texto some' from public.conversation_requests where id=:'sem_texto'),'todos os objetivos aceitam contexto opcional');
 select public.mvp_create_request('outro','Montar um grupo de estudos de estatística') as com_texto \gset
 select public.mvp_invite(:'com_texto','oi! topa conversar?') as convite_outro \gset
 select set_config('request.jwt.claim.sub', :'f2', false);
-select tst.ok((select goal='outro' and goal_text='Montar um grupo de estudos de estatística' from public.conversation_invites where id=:'convite_outro'),'quem recebe vê o objetivo e o texto de "Outro"');
+select tst.ok(public.mvp_invite_context(:'convite_outro')->>'description'='Montar um grupo de estudos de estatística','quem recebe lê apoio pela RPC autorizada, sem copiar o texto');
 reset role;
 set role service_role;
-select public.mvp_claim_job(:'com_texto') as job_outro \gset
+select coalesce(public.mvp_claim_job(:'com_texto')::text,'null') as job_outro \gset
 reset role;
-select tst.ok(:'job_outro' is null or position('estatística' in :'job_outro')=0,'texto de "Outro" nunca vai para a IA');
+select tst.ok(:'job_outro'='null','texto de "Outro" nunca vai para a IA');
 -- 024: cadastro em duas etapas.
 \set g1 '10000000-0000-0000-0000-000000000041'
 insert into auth.users(id,email) values(:'g1','g1@exemplo.invalid');
@@ -380,11 +348,4 @@ select tst.ok((:'fbm'::jsonb->'por_tipo'->>'duvida')::int=1 and (:'fbm'::jsonb->
 update public.feedback set status='respondido' where tipo='duvida';
 select tst.ok((select count(*) from public.feedback where tipo='duvida' and status='respondido')=1,'curadoria marca como respondido');
 reset role;
--- 029: entrada da IA sem "quero conversar sobre"; indicada precisa de assunto e perfil completo.
-update public.professional_profiles set ai_consent=true where profile_id in (:'g1',(select candidate_id from public.conversation_requests where id=:'completa'));
-update public.conversation_jobs set state='concluida' where request_id=:'completa';
-insert into public.conversation_jobs(request_id,candidate_id) select id,candidate_id from public.conversation_requests where id=:'completa';
-set role service_role;
-select coalesce(public.mvp_claim_job(:'completa')::text,'null') as job029 \gset
-reset role;
-select tst.ok(:'job029'<>'null' and not (:'job029'::jsonb->'a' ? 'themes') and (:'job029'::jsonb->'b' ? 'themes') and (:'job029'::jsonb->'a' ? 'interesses'),'a IA não recebe "quero conversar sobre" de quem pede');
+-- Contrato da IA atualizado: recomendacao_test.sql.

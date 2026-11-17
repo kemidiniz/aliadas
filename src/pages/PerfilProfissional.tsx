@@ -236,7 +236,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     ),
     ia: (
       <Caixinha marcado={d.ai_consent} aoMudar={(ai_consent) => set({ ai_consent })}>
-        Autorizo enviar só categorias (situação, áreas e objetivos) ao Gemini para sugerir perguntas e uma mensagem. Nunca nome, contatos ou textos livres.{" "}
+        Autorizo enviar ao Gemini só categorias (situação, área, interesses e habilidades) para recomendar conversas. Nunca nome, contatos ou foto.{" "}
         <Link to="/privacidade#ia" className="text-link">Saiba mais</Link>
       </Caixinha>
     ),

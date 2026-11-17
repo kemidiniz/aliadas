@@ -42,13 +42,13 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
     const resp = await fetch(geminiUrl(model), {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(14000),
       body: JSON.stringify(geminiBody(job)),
     });
     if (!resp.ok) throw Error(providerError(resp.status));
     const body = await resp.json();
     try {
-      const read = readGemini(body);
+      const read = readGemini(body, job);
       input = read.usage.input;
       output = read.usage.output;
       result = read.result;
@@ -73,6 +73,8 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
       "bloqueado_provedor",
       "saida_invalida",
       "categorias_invalidas",
+      "sem_consentimento",
+      "sem_candidatas",
     ];
     code =
       e instanceof SyntaxError

@@ -53,7 +53,10 @@ const request = {
   owner_id: uid,
   candidate_id: other,
   state: "pronta",
-  mode: "basica",
+  mode: "regra",
+  habilidades_necessarias: ["planejamento_carreira", "networking"],
+  habilidades_que_ajudam: ["networking"],
+  next_count: 0,
   explanation: "Ela pode ajudar com o objetivo que você escolheu.",
   questions: [],
   draft: null,
@@ -184,7 +187,7 @@ try {
     if (endpoint === "mvp_job_status")
       data = {
         state: jobState,
-        mode: requests[0]?.mode ?? "basica",
+        mode: requests[0]?.mode ?? "regra",
         has_candidate: true,
       };
     if (endpoint === "mvp_admin_access")
@@ -241,37 +244,35 @@ try {
   const objetivo = p.getByRole("combobox", { name: "Qual é o objetivo da sua próxima conversa?" });
   assert.equal(await objetivo.inputValue(), "", "começa em 'Escolha um objetivo'");
   assert(await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).isDisabled(), "sem objetivo, não busca");
-  assert.equal(await p.getByRole("textbox", { name: "Qual é o objetivo?" }).count(), 0, "sem campo de contexto fora de 'Outro'");
+  await p.getByRole("textbox", { name: "Em que você precisa de apoio?" }).waitFor();
   await objetivo.selectOption("outro");
-  await p.getByRole("textbox", { name: "Qual é o objetivo?" }).waitFor();
+  await p.getByRole("textbox", { name: "Em que você precisa de apoio?" }).waitFor();
   await objetivo.selectOption("carreira");
   await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).click();
   await p.getByRole("heading", { name: "Sua indicação" }).waitFor();
   assert.equal(await p.getByText("Próximas conversas").count(), 0, "Início sem histórico nem agenda");
-  await p.getByText("aliada de teste", { exact: true }).waitFor();
+  await p.getByText("A IA está procurando quem pode ajudar…", { exact: true }).waitFor();
   assert(!calls.some((x) => x.endpoint === "mvp_invite"));
-  assert.equal(await p.getByText("Sugerido pela IA", { exact: true }).count(), 0, "modo básico sem selo de IA");
+  assert.equal(await p.getByText("Recomendada pela IA", { exact: true }).count(), 0);
   assert.deepEqual(calls.find((x) => x.endpoint === "mvp_create_request").body, { goal: "carreira", description: "" });
-  assert.equal(await p.getByRole("button", { name: /atualizar resultado/i }).count(), 0);
-  console.log("PASSOU: objetivo em menu suspenso, texto só para Outro, Início sem histórico e sem convite automático");
-  await p.getByRole("textbox", { name: "Sua mensagem" }).fill("minha mensagem revisada de teste");
-  await p.getByText("Preparando a conversa com IA", { exact: true }).waitFor();
-  requests = [
-    {
-      ...request,
-      mode: "generativa",
-      questions: ["Pergunta de teste um?", "Pergunta de teste dois?"],
-      draft: "Rascunho gerado apenas no mock local",
-    },
-  ];
+  requests = [{ ...request, mode: "ia", questions: ["NÃO MOSTRAR PERGUNTA ANTIGA"], draft: "NÃO MOSTRAR RASCUNHO ANTIGO" }];
   jobState = "concluida";
-  await p.getByText("Pergunta de teste um?", { exact: true }).waitFor({ timeout: 15000 });
-  await p.getByText("Sugerido pela IA", { exact: true }).waitFor();
-  await p.getByText("Revise antes de enviar. Você decide se manda.").waitFor();
-  assert.equal(await p.getByRole("textbox", { name: "Sua mensagem" }).inputValue(), "minha mensagem revisada de teste");
-  console.log("PASSOU: resultado assíncrono aparece sozinho e preserva a mensagem editada (API simulada)");
+  await p.getByText("aliada de teste", { exact: true }).waitFor({ timeout: 15000 });
+  await p.getByText("Recomendada pela IA", { exact: true }).waitFor();
+  assert.equal(await p.getByText("NÃO MOSTRAR PERGUNTA ANTIGA").count(), 0);
+  assert.equal(await p.getByText("NÃO MOSTRAR RASCUNHO ANTIGO").count(), 0);
+  assert.match(await p.getByRole("textbox", { name: "Sua mensagem" }).inputValue(), /Vi na aliadas.*Networking/);
+  await p.getByText("Revise antes de enviar. Contatos só aparecem depois do aceite.").waitFor();
+  await p.getByRole("textbox", { name: "Sua mensagem" }).fill("minha mensagem revisada de teste");
+  const { mkdir: criarPasta } = await import("node:fs/promises");
+  await criarPasta(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A3"}`, { recursive: true });
+  for (const width of [390, 1440]) {
+    await p.setViewportSize({ width, height: 900 });
+    await p.screenshot({ path: `/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A3"}/indicacao-${width}.png`, fullPage: true });
+  }
+  console.log("PASSOU: IA indica por habilidades, sem justificativa, perguntas ou rascunho gerado; convite revisado");
   const antes = calls.filter((x) => x.endpoint === "mvp_create_request").length;
-  await p.getByRole("button", { name: "Ver outra sugestão" }).click();
+  await p.getByRole("button", { name: "Ver outra indicação" }).click();
   await p.waitForTimeout(300);
   assert(calls.some((x) => x.endpoint === "mvp_next_suggestion"));
   assert.equal(calls.filter((x) => x.endpoint === "mvp_create_request").length, antes);
@@ -577,24 +578,24 @@ try {
   await p.clock.install();
   const start = calls.length;
   await p.goto(base);
-  await p.getByText("Preparando a conversa com IA", { exact: true }).waitFor();
+  await p.getByText("A IA está procurando quem pode ajudar…", { exact: true }).waitFor();
   for (let n = 0; n < 12; n++) {
     await p.clock.runFor(10000);
     await new Promise((r) => setTimeout(r, 60));
   }
   const count = () =>
     calls.slice(start).filter((c) => c.endpoint === "mvp_job_status").length;
-  assert.equal(count(), 8, "polling deve parar após oito consultas");
+  assert.equal(count(), 5, "polling deve parar após cinco consultas");
   await p
     .getByText(
-      "A IA está demorando: você pode continuar com compatibilidade básica",
+      "A IA está demorando. Mostramos uma indicação pelas habilidades.",
       { exact: true },
     )
     .waitFor();
   await p.clock.runFor(120000);
   await new Promise((r) => setTimeout(r, 100));
-  assert.equal(count(), 8);
-  console.log("PASSOU: polling para após oito consultas, sem laço ilimitado");
+  assert.equal(count(), 5);
+  console.log("PASSOU: polling para após cinco consultas, sem laço ilimitado");
   assert.deepEqual(errors, []);
   console.log(
     "PASSOU: telas internas em 375/390/768/1440, claro e escuro, sem overflow nem erros JavaScript",

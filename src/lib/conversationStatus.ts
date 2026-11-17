@@ -1,25 +1,11 @@
-export type ConversationJobState = {
-  state: string;
-  mode: string;
-  has_candidate: boolean;
-  error_code?: string | null;
-};
-export function conversationStatus(
-  job: ConversationJobState | null,
-  searching = false,
-  stalled = false,
-) {
-  if (searching) return "Encontrando uma aliada";
-  if (!job) return "Consultando o resultado";
-  if (!job.has_candidate) return "Nenhuma aliada disponível";
-  if (job.mode === "generativa" && job.state === "concluida")
-    return "Sugestão pronta";
-  if (stalled)
-    return "A IA está demorando: você pode continuar com compatibilidade básica";
-  if (["pendente", "executando"].includes(job.state))
-    return "Preparando a conversa com IA";
-  if (["falha", "sem_consentimento"].includes(job.state))
-    return "IA indisponível: mostrando compatibilidade básica";
-  return "Compatibilidade básica: sem IA externa";
+export type ConversationJobState = { state: string; mode: string; has_candidate: boolean; error_code?: string | null };
+export function conversationStatus(job: ConversationJobState | null, searching = false, stalled = false) {
+  if (searching) return "A IA está procurando quem pode ajudar…";
+  if (!job) return "Encontrando uma aliada";
+  if (stalled || job.error_code === "tempo_esgotado") return "A IA está demorando. Mostramos uma indicação pelas habilidades.";
+  if (["pendente", "executando"].includes(job.state)) return "A IA está procurando quem pode ajudar…";
+  if (!job.has_candidate) return "Ninguém compatível agora. Tente outro objetivo ou volte em alguns dias.";
+  if (job.mode === "ia" && job.state === "concluida") return "Indicação pronta";
+  return "Indicação pelas habilidades, sem IA.";
 }
-export const JOB_POLL_DELAYS = [0, 2000, 3000, 5000, 5000, 5000, 5000, 5000];
+export const JOB_POLL_DELAYS = [0, 2000, 3000, 5000, 5000];
