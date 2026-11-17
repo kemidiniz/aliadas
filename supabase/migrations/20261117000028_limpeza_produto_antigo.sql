@@ -30,10 +30,16 @@ create policy "denúncias: denuncio quem eu vejo" on public.reports for insert t
 
 -- 3. Gatilhos das tabelas e funções antigas.
 drop trigger if exists profiles_anonimiza_ai_runs on public.profiles;
-drop trigger if exists forum_posts_protege on public.forum_posts;
-drop trigger if exists forum_comentarios_protege on public.forum_comentarios;
-drop trigger if exists contacts_updated_at on public.contacts;
-drop trigger if exists contacts_aprova_com_linkedin on public.contacts;
+-- As tabelas do fórum podem já ter sido apagadas manualmente em produção (17/11):
+-- os gatilhos só são removidos se a tabela ainda existir.
+do $$begin
+ if to_regclass('public.forum_posts') is not null then drop trigger if exists forum_posts_protege on public.forum_posts;end if;
+ if to_regclass('public.forum_comentarios') is not null then drop trigger if exists forum_comentarios_protege on public.forum_comentarios;end if;
+ if to_regclass('public.contacts') is not null then
+  drop trigger if exists contacts_updated_at on public.contacts;
+  drop trigger if exists contacts_aprova_com_linkedin on public.contacts;
+ end if;
+end;$$;
 drop trigger if exists profiles_aprovado_recomendar on public.profiles;
 
 -- 4. Políticas das tabelas que saem (antes das funções que elas usam).
@@ -50,33 +56,33 @@ alter table public.reports drop constraint if exists reports_post_id_fkey;
 alter table public.reports drop constraint if exists reports_comentario_id_fkey;
 
 -- 6. Funções antigas (lista conferida em pg_proc).
-drop function public.anonimiza_ai_runs();
-drop function public.aparece_na_busca(uuid);
-drop function public.aprova_com_linkedin();
-drop function public.aprovar_indicacao(uuid,text,text,text,text);
-drop function public.buscar_aliadas(text,text,text,integer);
-drop function public.conexao_aceita_com(uuid);
-drop function public.denunciar_conteudo(text,uuid,text);
-drop function public.dispara_recomendar();
-drop function public.forum_comentarios_de(uuid);
-drop function public.forum_feed(text,integer);
-drop function public.forum_protege();
-drop function public.minhas_geracoes_hoje();
-drop function public.pedir_conexao(uuid,text);
-drop function public.pode_ver_foto(text);
-drop function public.pode_ver_perfil(uuid);
-drop function public.responder_conexao(uuid,boolean);
-drop function public.salvar_cadastro(jsonb,jsonb,jsonb);
-drop function public.segredo_webhook_recomendar();
-drop function public.toca_updated_at();
-drop function public.mvp_propose_times(uuid,timestamptz[]);
-drop function public.mvp_confirm_time(uuid);
-drop function public.mvp_schedule(uuid,text);
+drop function if exists public.anonimiza_ai_runs();
+drop function if exists public.aparece_na_busca(uuid);
+drop function if exists public.aprova_com_linkedin();
+drop function if exists public.aprovar_indicacao(uuid,text,text,text,text);
+drop function if exists public.buscar_aliadas(text,text,text,integer);
+drop function if exists public.conexao_aceita_com(uuid);
+drop function if exists public.denunciar_conteudo(text,uuid,text);
+drop function if exists public.dispara_recomendar();
+drop function if exists public.forum_comentarios_de(uuid);
+drop function if exists public.forum_feed(text,integer);
+drop function if exists public.forum_protege();
+drop function if exists public.minhas_geracoes_hoje();
+drop function if exists public.pedir_conexao(uuid,text);
+drop function if exists public.pode_ver_foto(text);
+drop function if exists public.pode_ver_perfil(uuid);
+drop function if exists public.responder_conexao(uuid,boolean);
+drop function if exists public.salvar_cadastro(jsonb,jsonb,jsonb);
+drop function if exists public.segredo_webhook_recomendar();
+drop function if exists public.toca_updated_at();
+drop function if exists public.mvp_propose_times(uuid,timestamptz[]);
+drop function if exists public.mvp_confirm_time(uuid);
+drop function if exists public.mvp_schedule(uuid,text);
 
 -- 7. Tabelas antigas, das dependentes para as referenciadas.
-drop table public.forum_curtidas;
-drop table public.forum_comentarios;
-drop table public.forum_posts;
+drop table if exists public.forum_curtidas;
+drop table if exists public.forum_comentarios;
+drop table if exists public.forum_posts;
 drop table public.program_recommendations;
 drop table public.recommendations;
 drop table public.programs;
