@@ -292,7 +292,7 @@ reset role;
 insert into auth.users(id,email) values(:'f1','f1@exemplo.invalid'),(:'f2','f2@exemplo.invalid');
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'f1', false);
-select public.mvp_save_profile('{"name":"pede outro","situacao":"estudo","area_principal":"ciencias","interesses":[],"can_help":[],"want_talk":["outro"],"channels":["whatsapp"],"ai_consent":true}', '{"whatsapp":"+5511988887777"}', true);
+select public.mvp_save_profile('{"name":"pede outro","situacao":"estudo","area_principal":"ciencias","interesses":["ciencias"],"can_help":[],"want_talk":["outro"],"channels":["whatsapp"],"ai_consent":true}', '{"whatsapp":"+5511988887777"}', true);
 select set_config('request.jwt.claim.sub', :'f2', false);
 select public.mvp_save_profile('{"name":"ajuda outro","situacao":"trabalho","area_principal":"ciencias","interesses":["ciencias"],"can_help":["outro","projeto"],"want_talk":[],"channels":["whatsapp"],"ai_consent":true}', '{"whatsapp":"+5511977776666"}', true);
 reset role;
@@ -312,3 +312,19 @@ set role service_role;
 select public.mvp_claim_job(:'com_texto') as job_outro \gset
 reset role;
 select tst.ok(:'job_outro' is null or position('estatística' in :'job_outro')=0,'texto de "Outro" nunca vai para a IA');
+-- 024: cadastro em duas etapas.
+\set g1 '10000000-0000-0000-0000-000000000041'
+insert into auth.users(id,email) values(:'g1','g1@exemplo.invalid');
+set role authenticated;select set_config('request.jwt.claim.sub', :'g1', false);
+select tst.bloqueia($$select public.mvp_save_profile('{"name":"nova","situacao":"estudo","area_principal":"decidindo","modos":[]}','{}',true)$$,'primeiro acesso exige uma forma de participar');
+select public.mvp_save_profile('{"name":"nova","situacao":"estudo","area_principal":"decidindo","modos":["ajudar","conversa"],"ai_consent":false}','{}',true);
+select tst.ok((select intentions @> '{buscar,compartilhar}' and cardinality(can_help)=0 and cardinality(channels)=0 and cardinality(interesses)=0 from public.professional_profiles where profile_id=auth.uid()),'primeiro acesso salva só nome, situação, área e disposição');
+reset role;
+update public.profiles set status='aprovado' where id=:'g1';
+set role authenticated;select set_config('request.jwt.claim.sub', :'g1', false);
+select tst.bloqueia($$select public.mvp_create_request('carreira','')$$,'buscar exige completar contatos e interesses');
+select public.mvp_save_profile('{"name":"nova","situacao":"estudo","area_principal":"decidindo","interesses":["artes"],"modos":["conversa"],"can_help":["rede"],"want_talk":["carreira"],"channels":["email"]}','{"email":"g1@exemplo.invalid"}',true);
+select tst.ok((select intentions='{buscar}' and can_help='{}' and want_talk='{carreira}' from public.professional_profiles where profile_id=auth.uid()),'desmarcar "Topo ajudar" limpa a lista correspondente');
+select public.mvp_create_request('carreira','') as completa \gset
+select tst.ok(:'completa' is not null,'depois de completar, a busca acontece');
+reset role;

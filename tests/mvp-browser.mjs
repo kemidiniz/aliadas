@@ -29,6 +29,10 @@ const professional = {
   occupation: "formação em saúde",
   moment: "inicio",
   areas: ["saude"],
+  situacao: "transicao",
+  area_principal: "saude",
+  interesses: ["saude"],
+  intentions: ["buscar", "compartilhar"],
   can_help: ["entrevista"],
   want_talk: ["carreira"],
   channels: ["email"],
@@ -293,7 +297,7 @@ try {
 
   await p.goto(base + "/meu-perfil");
   await p.getByRole("heading", { name: "Meu perfil", exact: true }).waitFor();
-  await p.getByText("de 4 seções completas").waitFor();
+  await p.getByText("de 5 seções completas").waitFor();
   assert.equal(await p.getByText("Link da minha sala de chamada (opcional)").count(), 0, "sem sala de chamada");
   assert.equal(await p.getByText("Quando você costuma ter tempo").count(), 0, "sem grade de disponibilidade");
   await p.getByRole("button", { name: "Salvar", exact: true }).click();
@@ -359,21 +363,42 @@ try {
   );
   hasProfessional = false;
   await p.goto(base + "/meu-perfil");
-  await p.getByText("Passo 1 de 3").waitFor();
-  await p.getByRole("button", { name: "Continuar" }).click();
-  await p.getByText("Conte o que você faz ou estuda.").waitFor();
-  await p.getByRole("textbox", { name: "O que você faz ou estuda" }).fill("analista de teste");
-  await p.locator("label.chip", { hasText: "Saúde" }).click();
-  await p.getByRole("button", { name: "Continuar" }).click();
-  await p.getByText("Passo 2 de 3").waitFor();
-  await p.getByText("Como você quer participar agora?").waitFor();
-  assert.equal(await p.getByText("Posso ajudar com", { exact: true }).count(), 0, "listas aparecem só depois de escolher");
-  await p.getByRole("button", { name: "Continuar" }).click();
+  await p.getByRole("heading", { name: "Boas-vindas à aliadas" }).waitFor();
+  assert.equal(await p.getByText("O que você faz ou estuda").count(), 0, "sem texto livre");
+  assert.equal(await p.getByText("Posso ajudar com", { exact: true }).count(), 0, "listas ficam para depois");
+  await p.getByRole("button", { name: "Entrar na aliadas" }).click();
   await p.getByText("Escolha pelo menos uma forma de participar.").waitFor();
-  await p.locator("label.chip", { hasText: "Topo ajudar alguém" }).click();
-  await p.getByText("Posso ajudar com", { exact: true }).waitFor();
+  await p.getByRole("combobox", { name: "Você hoje" }).selectOption("estudo");
+  await p.getByRole("combobox", { name: "Sua área de atuação ou estudo" }).selectOption("decidindo");
+  await p.locator("label.chip", { hasText: "Quero uma conversa" }).click();
+  await p.getByRole("checkbox", { name: /Sou mulher cis/ }).check();
+  const antesNovo = calls.filter((x) => x.endpoint === "mvp_save_profile").length;
+  await p.getByRole("button", { name: "Entrar na aliadas" }).click();
+  await p.waitForURL(base + "/");
+  const cad = calls.filter((x) => x.endpoint === "mvp_save_profile").slice(antesNovo)[0].body;
+  assert.deepEqual(cad.p.modos, ["conversa"]);
+  assert.equal(cad.p.situacao, "estudo");
+  assert.equal(cad.p.area_principal, "decidindo");
+  assert.deepEqual(cad.p.channels, []);
   hasProfessional = true;
-  console.log("PASSOU: primeiro acesso em 3 passos com barra de progresso");
+  console.log("PASSOU: primeiro acesso numa tela só, sem assuntos nem contatos");
+  // perfil incompleto: buscar leva ao "Falta pouco" e a busca continua depois
+  const completo = { ...professional };
+  Object.assign(professional, { channels: [], interesses: [] });
+  await p.goto(base + "/");
+  await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).click();
+  await p.waitForURL(/\/completar-perfil\?buscar=carreira/);
+  await p.getByRole("heading", { name: "Falta pouco para sua primeira conversa" }).waitFor();
+  await p.locator("label.chip", { hasText: "Saúde" }).click();
+  await p.locator("label.chip", { hasText: "E-mail" }).click();
+  await p.getByRole("textbox", { name: "E-mail para contato" }).fill("contato@exemplo.invalid");
+  Object.assign(professional, completo);
+  const antesBusca = calls.filter((x) => x.endpoint === "mvp_create_request").length;
+  await p.getByRole("button", { name: "Salvar e continuar" }).click();
+  await p.waitForURL(base + "/");
+  await p.waitForTimeout(800);
+  assert.equal(calls.filter((x) => x.endpoint === "mvp_create_request").length, antesBusca + 1, "a busca continua de onde parou");
+  console.log("PASSOU: 'Falta pouco' só quando precisa e a busca continua depois de salvar");
   for (const width of [375, 390, 768, 1440])
     for (const theme of ["light", "dark"]) {
       await p.emulateMedia({ colorScheme: theme });

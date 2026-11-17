@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useConversationJob } from "../lib/useConversationJob";
 import { conversationStatus } from "../lib/conversationStatus";
 import LandingInstitucional from "./LandingInstitucional";
@@ -16,6 +16,7 @@ import {
   AREAS_PRO,
   GOALS_PRO,
   SITUACAO_PRO,
+  perfilCompleto,
   type ProCard,
   type ProInvite,
   type ProProfile,
@@ -39,6 +40,9 @@ export default function InicioProfissional() {
   const [erro, setErro] = useState("");
   const { job, stalled, refresh } = useConversationJob(atual?.id, load);
   const rev = useRef(0);
+  const navegar = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const continuou = useRef(false);
 
   async function load() {
     const v = ++rev.current;
@@ -75,6 +79,16 @@ export default function InicioProfissional() {
     setConvites(inv);
     setReady(true);
   }
+  // volta do "Falta pouco": continua a busca de onde parou
+  useEffect(() => {
+    const g = params.get("buscar");
+    if (!ready || !pro || !g || continuou.current || perfil?.status !== "aprovado") return;
+    continuou.current = true;
+    setGoal(g);
+    setOutro(params.get("outro") ?? "");
+    setParams({}, { replace: true });
+    if (perfilCompleto(pro)) criar(undefined, g, params.get("outro") ?? "");
+  }, [ready, pro]);
   useEffect(() => {
     setReady(false);
     load();
@@ -83,10 +97,15 @@ export default function InicioProfissional() {
     };
   }, [session?.user.id]);
 
-  async function criar(e: FormEvent) {
-    e.preventDefault();
+  async function criar(e?: FormEvent, g = goal, texto = outro) {
+    e?.preventDefault();
+    // perfil incompleto: completa e volta para esta mesma busca
+    if (!perfilCompleto(pro)) {
+      const q = new URLSearchParams({ buscar: g, ...(g === "outro" ? { outro: texto } : {}) });
+      return navegar(`/completar-perfil?${q}`);
+    }
     setBusy("criar");
-    const { error } = await supabase.rpc("mvp_create_request", { goal, description: goal === "outro" ? outro : "" });
+    const { error } = await supabase.rpc("mvp_create_request", { goal: g, description: g === "outro" ? texto : "" });
     setBusy("");
     if (error) return toast(mensagemAmigavel(error), "erro");
     setOutro("");
@@ -148,6 +167,11 @@ export default function InicioProfissional() {
             <Botao type="submit" carregando={busy === "criar"} disabled={!pro.available || !goal || (goal === "outro" && !outro.trim())}>
               Encontrar minha aliada
             </Botao>
+            {pro.intentions.includes("compartilhar") && !perfilCompleto(pro) && (
+              <p className="rounded-xl bg-superficie p-3 text-sm">
+                Para ser indicada para outras pessoas, <Link to="/completar-perfil" className="text-link">complete seu perfil</Link>.
+              </p>
+            )}
             {!pro.available && (
               <p className="text-sm text-suave">
                 Você está como indisponível. <Link to="/meu-perfil#privacidade" className="text-link">Mudar no perfil</Link>

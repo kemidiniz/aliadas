@@ -86,6 +86,14 @@ export function App() {
                 element={<Navigate to="/meu-perfil" replace />}
               />
               <Route
+                path="/completar-perfil"
+                element={
+                  <Protegida precisaPerfil={false}>
+                    <Cadastro completar />
+                  </Protegida>
+                }
+              />
+              <Route
                 path="/meu-perfil"
                 element={
                   <Protegida precisaPerfil={false}>

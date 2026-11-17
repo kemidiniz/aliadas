@@ -67,6 +67,7 @@ export type ProProfile = {
   interesses: string[];
   can_help: string[];
   want_talk: string[];
+  intentions: string[];
   channels: string[];
   slots: string[];
   ai_consent: boolean;
@@ -122,3 +123,12 @@ export type ProProposal = {
   inicio: string;
 };
 export const label = (map: Record<string, string>, k: string) => map[k] ?? k;
+
+// Perfil completo para buscar e ser indicada (mesma regra de mvp_pode_buscar + assuntos)
+export function perfilCompleto(p: ProProfile | null) {
+  if (!p) return false;
+  const temContato = p.channels.some((c) => c !== "meet");
+  const listas = (!p.intentions.includes("compartilhar") || p.can_help.length > 0) && (!p.intentions.includes("buscar") || p.want_talk.length > 0);
+  return temContato && p.interesses.length > 0 && listas;
+}
+
