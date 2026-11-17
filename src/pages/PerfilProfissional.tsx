@@ -146,7 +146,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       if (error) throw error;
       await recarregar();
       if (novo) {
-        toast("Boas-vindas! A curadoria vai revisar seu perfil em breve.");
+        toast("Boas-vindas! As embaixadoras vão revisar seu perfil em breve.");
         navegar("/");
       } else if (completar) {
         toast("Pronto! Vamos continuar.");

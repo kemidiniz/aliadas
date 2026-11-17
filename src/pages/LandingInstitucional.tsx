@@ -100,12 +100,12 @@ export default function LandingInstitucional() {
           <div className="border-l-2 border-coral pl-5">
             <h3>Quer uma conversa</h3>
             <p className="mt-3 text-suave">
-              Para preparar uma entrevista, pedir feedback ou pensar no próximo
-              passo.
+              Para se preparar para uma entrevista, pedir feedback ou pensar no
+              próximo passo.
             </p>
           </div>
           <div className="border-l-2 border-campo pl-5">
-            <h3>Quer compartilhar</h3>
+            <h3>Pode ajudar</h3>
             <p className="mt-3 text-suave">
               Para ajudar outra mulher com o que você já viveu.
             </p>
@@ -141,8 +141,7 @@ export default function LandingInstitucional() {
         <h2 id="embaixadoras-title">Quem cuida da comunidade.</h2>
         <div className="editorial-copy">
           <p>
-            Mulheres que cuidam da comunidade: revisam perfis novos e acompanham
-            denúncias. O papel é por convite.
+            Elas revisam perfis novos e acompanham denúncias. O papel é por convite.
           </p>
         </div>
       </section>

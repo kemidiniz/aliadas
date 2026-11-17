@@ -2,7 +2,7 @@
 export const FAQ = [
   {
     q: "A IA vê meus dados?",
-    a: "Só se você autorizar, e mesmo assim ela recebe apenas categorias: áreas, momento e objetivos. Nunca nome, contatos ou textos livres.",
+    a: "Só se você autorizar, e mesmo assim ela recebe apenas categorias: o objetivo da conversa, situação, área e interesses. Nunca nome, contatos ou textos livres.",
   },
   {
     q: "Quando meus contatos aparecem?",
@@ -31,7 +31,7 @@ export const FAQ_AJUDA = [
   },
   {
     q: "Por que ainda não recebi uma indicação?",
-    a: "Seu perfil precisa estar aprovado e completo, e alguém precisa ter dito que pode ajudar com o seu objetivo, com um contato em comum. Se ninguém combinar agora, tente outro objetivo ou volte em alguns dias.",
+    a: "Seu perfil precisa estar aprovado e completo, e alguém precisa ter marcado o seu objetivo em \"Posso ajudar com\", com um contato em comum. Se ninguém combinar agora, tente outro objetivo ou volte em alguns dias.",
   },
   {
     q: "O que acontece depois que eu aceito um convite?",
@@ -39,7 +39,7 @@ export const FAQ_AJUDA = [
   },
   {
     q: "Como bloqueio ou denuncio alguém?",
-    a: "Em Conversas, toque no menu ⋯ do cartão da pessoa e escolha Bloquear ou Denunciar. O bloqueio esconde os contatos, e a denúncia vai só para a curadoria.",
+    a: "Em Conversas, toque no menu ⋯ do cartão da pessoa e escolha Bloquear ou Denunciar. O bloqueio esconde os contatos, e a denúncia vai só para as embaixadoras.",
   },
   {
     q: "Como excluo minha conta?",

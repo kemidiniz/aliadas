@@ -140,7 +140,7 @@ export default function InicioProfissional() {
     return (
       <Pagina titulo="Início">
         <Titulo sub="Novas conversas ficam disponíveis depois da aprovação. Isso protege a comunidade.">
-          Seu perfil está com a curadoria
+          Seu perfil está em revisão pelas embaixadoras
         </Titulo>
         <BotaoLink to="/meu-perfil" variante="secundario">Revisar meu perfil</BotaoLink>
       </Pagina>

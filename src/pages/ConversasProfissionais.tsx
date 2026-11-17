@@ -419,7 +419,7 @@ function Denuncia({
     <div className="space-y-3 rounded-2xl border border-linha p-4">
       <CampoArea
         rotulo="O que aconteceu?"
-        ajuda="Só a curadoria lê."
+        ajuda="Só as embaixadoras leem."
         minLength={5}
         maxLength={800}
         rows={3}
@@ -431,7 +431,7 @@ function Denuncia({
           variante="secundario"
           disabled={busy || motivo.trim().length < 5}
           onClick={async () => {
-            if (await rpc("mvp_report", { target: alvo, reason: motivo }, "Denúncia enviada à curadoria.")) fechar();
+            if (await rpc("mvp_report", { target: alvo, reason: motivo }, "Denúncia enviada às embaixadoras.")) fechar();
           }}
         >
           Enviar denúncia
