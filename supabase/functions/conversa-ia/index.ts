@@ -36,6 +36,7 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
     input = 0,
     output = 0;
   const model = Deno.env.get("GEMINI_MODEL") || "";
+  let usedModel = model;
   try {
     const key = Deno.env.get("GEMINI_API_KEY");
     // Sem confirmação explícita, ZERO requisições externas. Nunca ativa faturamento.
@@ -50,6 +51,7 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
     });
     if (!resp.ok) throw Error(providerError(resp.status));
     const body = await resp.json();
+    if (typeof body.modelVersion === "string" && /^[a-z0-9.-]{3,80}$/.test(body.modelVersion)) usedModel = body.modelVersion;
     try {
       const read = objective ? readObjective(body, job) : readGemini(body, job);
       input = read.usage.input;
@@ -89,7 +91,7 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
   const { error: saveError } = await db.rpc(objective ? "mvp_finish_objective" : "mvp_finish_job", {
     job: job.job_id,
     result,
-    model: model || "nao_configurado",
+    model: usedModel || "nao_configurado",
     input_tokens: input,
     output_tokens: output,
     error_code: code,
