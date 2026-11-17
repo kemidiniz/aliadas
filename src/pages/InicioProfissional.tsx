@@ -162,6 +162,7 @@ export default function InicioProfissional() {
   return (
     <Pagina titulo="Início">
       <Titulo sub="Escolha um objetivo e receba uma indicação.">Olá, {perfil.apelido.split(" ")[0]}</Titulo>
+      {!pro.habilidades?.length && <p className="mb-6 rounded-xl bg-superficie p-4 text-sm">Escolha suas habilidades para poder ser indicada. <Link to="/meu-perfil#ajudar" className="text-link">Escolher habilidades</Link></p>}
       {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
       <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-6">

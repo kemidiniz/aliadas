@@ -66,6 +66,7 @@ export type ProProfile = {
   area_principal: string;
   interesses: string[];
   can_help: string[];
+  habilidades: string[];
   want_talk: string[];
   intentions: string[];
   channels: string[];

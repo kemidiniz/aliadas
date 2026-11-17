@@ -34,6 +34,7 @@ const professional = {
   interesses: ["saude"],
   intentions: ["buscar", "compartilhar"],
   can_help: ["entrevista"],
+  habilidades: ["entrevistas"],
   want_talk: ["carreira"],
   channels: ["email"],
   slots: ["1_tarde", "3_noite"],
@@ -338,11 +339,11 @@ try {
   assert.equal(await p.getByText("Link da minha sala de chamada (opcional)").count(), 0, "sem sala de chamada");
   assert.equal(await p.getByText("Quando você costuma ter tempo").count(), 0, "sem grade de disponibilidade");
   const antesFoco = calls.filter(x => x.endpoint === "professional_profiles").length;
-  await p.locator("label.chip", { hasText: "Ampliar a rede de contatos" }).click();
+  await p.getByRole("checkbox", { name: /^Networking/ }).click();
   await p.evaluate(() => window.dispatchEvent(new Event("focus")));
   await p.waitForTimeout(400);
   assert.equal(calls.filter(x => x.endpoint === "professional_profiles").length, antesFoco, "foco não recarrega formulário");
-  assert(await p.locator("label.chip", { hasText: "Ampliar a rede de contatos" }).locator("input").isChecked());
+  assert(await p.getByRole("checkbox", { name: /^Networking/ }).isChecked());
   assert(await p.evaluate(uid => !!sessionStorage.getItem(`aliadas:rascunho-perfil:${uid}`), uid));
   // Navegação interna cancelada e recuperação após recarregar.
   let avisoSaida = false;
@@ -354,15 +355,15 @@ try {
   assert(new URL(p.url()).pathname === "/meu-perfil");
   await p.reload();
   await p.getByText("Recuperamos o que você não tinha salvado.").waitFor();
-  assert(await p.locator("label.chip", { hasText: "Ampliar a rede de contatos" }).locator("input").isChecked());
+  assert(await p.getByRole("checkbox", { name: /^Networking/ }).isChecked());
   await p.getByRole("button", { name: "Descartar", exact: true }).click();
   p.off("dialog", resolverAviso);
-  assert(!(await p.locator("label.chip", { hasText: "Ampliar a rede de contatos" }).locator("input").isChecked()));
+  assert(!(await p.getByRole("checkbox", { name: /^Networking/ }).isChecked()));
   const { mkdir } = await import("node:fs/promises");
-  await mkdir("/workspace/aliadas-review/A1", { recursive: true });
+  await mkdir(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A2"}`, { recursive: true });
   for (const width of [390, 1440]) {
     await p.setViewportSize({ width, height: 900 });
-    await p.screenshot({ path: `/workspace/aliadas-review/A1/perfil-${width}.png`, fullPage: true });
+    await p.screenshot({ path: `/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A2"}/perfil-${width}.png`, fullPage: true });
   }
   console.log("PASSOU: foco preserva marcações, navegação avisa, rascunho restaura e descarta");
   await p.getByRole("button", { name: "Salvar", exact: true }).click();
@@ -380,12 +381,17 @@ try {
   await p.getByRole("heading", { name: "Como você pode ajudar" }).waitFor();
   for (const fora of ["Quero conversar sobre", "Como você quer participar agora?"])
     assert.equal(await p.getByText(fora, { exact: true }).count(), 0, `sem ${fora}`);
-  await p.getByText("Se marcar algum assunto, você pode ser indicada para conversas sobre ele.", { exact: false }).waitFor();
-  await p.locator("label.chip", { hasText: "Se preparar para uma entrevista" }).click();
+  await p.getByText("Escolha o que você sabe fazer e toparia compartilhar numa conversa.", { exact: true }).waitFor();
+  await p.getByRole("checkbox", { name: /^Preparação para entrevistas/ }).click();
   await p.getByRole("button", { name: "Salvar", exact: true }).click();
   await p.getByText("Perfil salvo.").last().waitFor();
   const ultimo = calls.filter((x) => x.endpoint === "mvp_save_profile").at(-1).body;
-  assert.deepEqual(ultimo.p.can_help, [], "perfil sem nenhum assunto é válido: só busca");
+  assert.deepEqual(ultimo.p.habilidades, [], "habilidades opcionais: pode só buscar");
+  assert.deepEqual(ultimo.p.can_help, ["entrevista"], "preserva temas legados durante a transição");
+  await p.getByRole("textbox", { name: "Buscar habilidades" }).fill("processo seletivo");
+  await p.getByRole("checkbox", { name: /^Preparação para entrevistas/ }).waitFor();
+  assert.equal(await p.getByRole("checkbox", { name: /^Networking/ }).count(), 0);
+  await p.getByRole("textbox", { name: "Buscar habilidades" }).fill("");
   assert(!("want_talk" in ultimo.p) && !("modos" in ultimo.p));
   console.log("PASSOU: 'Como você pode ajudar' só com 'Posso ajudar com', opcional");
   // Foto: arquivo grande (8 MB), PNG com transparência, colar, arrastar e recusa de não imagem

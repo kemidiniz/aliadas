@@ -11,8 +11,9 @@ import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
 import { enviarFoto, useFotoUrl } from "../lib/fotos";
 import { FotoPerfil } from "../components/FotoPerfil";
-import { AREAS_PRO, CHANNELS_PRO, GOALS_PRO, SITUACAO_PRO, type ProContacts, type ProProfile } from "../lib/professional";
+import { AREAS_PRO, CHANNELS_PRO, SITUACAO_PRO, type ProContacts, type ProProfile } from "../lib/professional";
 
+import { EscolhaHabilidades } from "../components/EscolhaHabilidades";
 import { chaveRascunhoPerfil, useAvisoPerfil } from "../lib/rascunhoPerfil";
 
 const opcoes = (m: Record<string, string>) => Object.entries(m).map(([valor, rotulo]) => ({ valor, rotulo }));
@@ -22,11 +23,12 @@ type Dados = {
   area: string;
   interesses: string[];
   can_help: string[];
+  habilidades: string[];
   channels: string[];
   ai_consent: boolean;
   available: boolean;
 };
-const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], channels: [], ai_consent: false, available: true };
+const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], habilidades: [], channels: [], ai_consent: false, available: true };
 
 function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
   const e: Record<string, string> = {};
@@ -86,7 +88,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       if (pr.error || co.error) { toast("Não foi possível carregar seu perfil. Atualize a página.", "erro"); return; }
       const p = pr.data as ProProfile | null;
       const salvo = {
-        d: p ? { nome: nomeInicial.current, situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], channels: p.channels.filter(x => x !== "meet"), ai_consent: p.ai_consent, available: p.available } : { ...vazio, nome: nomeInicial.current },
+        d: p ? { nome: nomeInicial.current, situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels.filter(x => x !== "meet"), ai_consent: p.ai_consent, available: p.available } : { ...vazio, nome: nomeInicial.current },
         c: (co.data as ProContacts) ?? { linkedin: "", whatsapp: "", email: "", meet: null, nome_completo: "" },
         termos: Boolean(p),
       };
@@ -158,6 +160,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           area_principal: d.area,
           interesses: d.interesses,
           can_help: d.can_help,
+          habilidades: d.habilidades,
           channels: d.channels,
           ai_consent: d.ai_consent,
           available: d.available,
@@ -209,13 +212,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     ),
     ajudar: (
       <div className="space-y-6">
-        <MultiEscolha
-          rotulo="Posso ajudar com (opcional)"
-          ajuda="Se marcar algum assunto, você pode ser indicada para conversas sobre ele. Deixe em branco se agora você só quer buscar."
-          opcoes={opcoes(GOALS_PRO)}
-          valores={d.can_help}
-          aoMudar={(can_help) => set({ can_help })}
-        />
+        <EscolhaHabilidades valores={d.habilidades} aoMudar={habilidades => set({ habilidades })} />
         <Caixinha marcado={d.available} aoMudar={(available) => set({ available })}>
           Disponível para receber convites
         </Caixinha>
@@ -287,6 +284,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
         <Titulo sub="Só mais isto para encontrarmos alguém para você.">Falta pouco para sua primeira conversa</Titulo>
         <form onSubmit={salvar} className="space-y-8" noValidate>
           {campos.interesses}
+          {campos.ajudar}
           {campos.contatos}
           {sujo && <p role="status" className="text-sm text-suave">Mudanças não salvas</p>}
           <Botao type="submit" carregando={busy}>Salvar e continuar</Botao>
