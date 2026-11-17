@@ -31,16 +31,16 @@ Linha de base técnica verificável: versão anterior tinha cadastro de oito eta
 3. **IA generativa:** Gemini em Edge Function para justificar a dupla e produzir duas perguntas/rascunho, apenas com consentimento; pendente validação real gratuita.
 4. **Validação humana:** usuária revisa/edita o rascunho e decide se convida; destinatária decide aceitar; ambas avaliam separadamente. Avaliadoras externas testam qualidade.
 
-Prompt completo e versão no arquivo `supabase/functions/conversa-ia/core.ts` (`SYSTEM`). Inputs externos: apenas objetivo, intenção, áreas, temas e momento categóricos. Não são enviados nomes, códigos de perfil, ids, contatos, ocupação livre, descrição da solicitação ou conversa.
+Prompt completo e versão no arquivo `supabase/functions/conversa-ia/core.ts` (`SYSTEM`). Inputs externos: apenas o objetivo e, de cada participante, áreas, momento e assuntos ("quero conversar sobre" de quem pede, "posso ajudar com" de quem ajuda), todos categóricos. Não são enviados nomes, códigos de perfil, ids, contatos, ocupação livre, descrição da solicitação ou conversa.
 
 ## critérios definidos ANTES dos testes humanos
 
 - Segurança: 100% dos testes de acesso proibido precisam passar. Uma exposição de contato reprova a rodada.
-- Uma sugestão só é elegível se não há bloqueio, ambas aprovadas/disponíveis, intenção complementar, objetivo comum, canais e disponibilidade compatíveis.
+- Uma sugestão só é elegível se não há bloqueio, ambas estão aprovadas e disponíveis, o objetivo do pedido está no "posso ajudar com" da outra pessoa e há canal ou disponibilidade compatível.
 - Justificativa: escala 1–5 para relevância ao objetivo e fidelidade às categorias. Não pode inventar fatos.
 - Perguntas: duas, claras e úteis para o objetivo (1–5).
 - Rascunho: editável, respeitoso e sem envio automático; clareza/utilidade 1–5.
-- Caso aprovado: todas as dimensões acima com nota >=4 e nenhum problema de segurança/dado inventado. Meta de aprovação da rodada: >=80%; meta proposta para o teste, não resultado obtido.
+- **Caso aprovado (regra do edital): pelo menos 2 das 3 avaliadoras marcam "aprovado".** Cada avaliadora dá um veredito por caso: aprovado, ajustar ou reprovado. A régua de notas acima (1 a 5) serve de apoio para o comentário, não decide sozinha. Dado inventado ou problema de segurança leva a "reprovado". Meta proposta para a rodada: >=80% dos casos aprovados; é meta, não resultado.
 - Usabilidade: a participante identifica a ação principal e conclui o fluxo sem ajuda. Registrar tempo e obstáculos; não definir baseline retrospectivamente para favorecer resultado.
 
 ## três execuções REAIS da automação — pendentes
@@ -61,7 +61,7 @@ Depois de autorização para staging e validação de key/termos gratuitos:
 
 ## vinte casos reais, três avaliadoras e duas rodadas — pendentes
 
-`docs/casos-validacao.csv` contém vinte **linhas vazias para coleta**, não vinte casos realizados. Coletar casos reais higienizados ou autorizados, com finalidade e consentimento separados. Não registrar nomes/contatos/empresas, relatos sensíveis nem conteúdos de conversa. Manter somente categorias, ids locais e evidências minimizadas. A autorização da desenvolvedora não substitui a das participantes.
+`docs/casos-validacao.csv` foi **substituído** por `validacao/casos.csv` (entrada do script abaixo); fica só como histórico. Nenhum caso foi apresentado como realizado. Coletar casos reais higienizados ou autorizados, com finalidade e consentimento separados. Não registrar nomes/contatos/empresas, relatos sensíveis nem conteúdos de conversa. Manter somente categorias, ids locais e evidências minimizadas. A autorização da desenvolvedora não substitui a das participantes.
 
 Convidar três avaliadoras além da desenvolvedora; registrar A1/A2/A3, sem divulgar identidades. Na primeira rodada, cada caso é avaliado usando a mesma rubrica. Calcular aprovação = casos aprovados / casos avaliados; registrar denominador, notas, falhas e comentários higienizados. Alterar prompt/interface após os resultados; versionar mudanças. Na segunda rodada repetir os mesmos critérios e conjunto comparável, identificar o que mudou e calcular diferença em pontos percentuais. Relatar também regressões, não apenas médias melhores.
 
@@ -69,6 +69,30 @@ Convidar três avaliadoras além da desenvolvedora; registrar A1/A2/A3, sem divu
 |---|---|---|---|---|---|---|
 | 1 | pendente | não executada | — | — | não avaliado | — |
 | 2 | pendente | não executada | — | — | não avaliado | — |
+
+## Script da validação (parte manual declarada)
+
+As 20 situações × 2 rodadas somam 40 gerações, e o produto limita a 30 gerações por dia no total e a 3 pedidos por pessoa a cada 24 h. Por isso os casos rodam num script separado: **parte manual declarada: mesmo prompt e mesmo modelo da produção, rodado fora do limite diário do produto.** O script importa de `supabase/functions/conversa-ia/core.ts` o `SYSTEM`, a montagem da entrada mínima e a validação da saída; não há cópia do prompt. As 3 execuções da automação continuam acontecendo pelo site.
+
+- Entrada: `validacao/casos.csv`, só categorias (as mesmas chaves de `src/lib/professional.ts`). A coluna `observacao` nunca vai para o Gemini.
+- 1 chamada por caso, 1 s de pausa, sem retentativa. Erros ficam registrados na coluna `erro`; nada é simulado.
+- Saídas: `validacao/saidas-rodada-N.csv` (log com tokens, modelo, data e hora) e `validacao/avaliacao-rodada-N.csv` (planilha para as avaliadoras).
+- 2ª rodada: prompt ajustado em `SYSTEM_V2` (core.ts), com comentário do que mudou e por quê. Só vai para a função publicada com autorização da titular.
+- Consolidação: `validacao/resultado.md`, com taxa por rodada, diferença em pontos percentuais, casos que pioraram e comentários dos casos em "ajustar" ou "reprovado".
+
+### Passo a passo
+
+1. Instale o Deno: `curl -fsSL https://deno.land/install.sh | sh` (ou `brew install deno`).
+2. Preencha `validacao/casos.csv` com os 20 casos (apague as linhas com `#`).
+3. No terminal, na pasta do projeto, defina a chave só nesta sessão (nunca em arquivo versionado):
+   `export GEMINI_API_KEY=...` e `export GEMINI_MODEL=gemini-2.5-flash-lite` (o mesmo da produção).
+4. Rodada 1: `deno run --allow-read --allow-write=validacao --allow-env --allow-net=generativelanguage.googleapis.com validacao/rodar.ts --rodada 1 --versao-prompt v1`
+5. Importe `validacao/avaliacao-rodada-1.csv` numa planilha, compartilhe com A1, A2 e A3 e peça um veredito (aprovado, ajustar ou reprovado) e um comentário por caso. Baixe de volta como CSV com o mesmo nome.
+6. Ajuste `SYSTEM_V2` com base nos comentários e descreva a mudança no comentário acima dele.
+7. Rodada 2: o mesmo comando com `--rodada 2 --versao-prompt v2`, e repita o passo 5.
+8. Consolide: `deno run --allow-read --allow-write=validacao validacao/consolidar.ts` e leia `validacao/resultado.md`.
+
+O teste local (`npm run test:validacao`) usa um Gemini simulado e 2 casos fictícios numa pasta temporária; não serve como evidência.
 
 ## roteiro da demonstração (até dois minutos)
 

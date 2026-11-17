@@ -96,3 +96,17 @@ test("erros de modelo, acesso e cota têm códigos sem expor corpo externo", asy
   assert.equal(providerError(403), "acesso_provedor");
   assert.equal(providerError(500), "falha_provedor");
 });
+test("geminiBody e readGemini: mesmo pedido e mesma leitura para função e validação", async () => {
+  const { geminiBody, readGemini, SYSTEM, PROMPTS } = await import("../supabase/functions/conversa-ia/core.ts");
+  const job = { goal: "carreira", a: profile, b: profile };
+  const b = geminiBody(job);
+  assert.equal(b.systemInstruction.parts[0].text, SYSTEM);
+  assert.equal(PROMPTS.v1, SYSTEM);
+  assert.equal(b.generationConfig.maxOutputTokens, 700);
+  assert(!JSON.stringify(b).includes("NÃO ENVIAR"));
+  const ok = { explanation: "Experiências complementares.", questions: ["Qual o objetivo?", "O que já tentou?"], draft: "Oi! Podemos conversar?" };
+  const r = readGemini({ usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 }, candidates: [{ content: { parts: [{ text: JSON.stringify(ok) }] } }] });
+  assert.deepEqual(r.usage, { input: 10, output: 5 });
+  assert.throws(() => readGemini({ candidates: [{ content: { parts: [{ text: "não é json" }] } }] }), /saida_invalida/);
+  assert.throws(() => readGemini({ candidates: [{ finishReason: "MAX_TOKENS" }] }), /saida_truncada/);
+});

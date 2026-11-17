@@ -1,13 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.119.0";
 import { segredoConfere } from "../_shared/http.ts";
-import {
-  minimized,
-  SYSTEM,
-  RESPONSE_SCHEMA,
-  validateOutput,
-  usageCounts,
-  providerError,
-} from "./core.ts";
+import { geminiBody, geminiUrl, readGemini, providerError } from "./core.ts";
 const db = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -46,44 +39,27 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
     if (Deno.env.get("GEMINI_FREE_TIER_CONFIRMED") !== "true" || !key || !model)
       throw Error("ia_nao_configurada");
     if (!/^[a-z0-9.-]{3,80}$/.test(model)) throw Error("modelo_invalido");
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        signal: AbortSignal.timeout(20000),
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [
-            { role: "user", parts: [{ text: JSON.stringify(minimized(job)) }] },
-          ],
-          generationConfig: {
-            maxOutputTokens: 700,
-            temperature: 0.2,
-            responseMimeType: "application/json",
-            responseSchema: RESPONSE_SCHEMA,
-          },
-        }),
-      },
-    );
+    const resp = await fetch(geminiUrl(model), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      signal: AbortSignal.timeout(20000),
+      body: JSON.stringify(geminiBody(job)),
+    });
     if (!resp.ok) throw Error(providerError(resp.status));
     const body = await resp.json();
-    const usage = usageCounts(body.usageMetadata);
-    input = usage.input;
-    output = usage.output;
-    if (body.candidates?.[0]?.finishReason === "MAX_TOKENS")
-      throw Error("saida_truncada");
-    if (
-      body.promptFeedback?.blockReason ||
-      body.candidates?.[0]?.finishReason === "SAFETY"
-    )
-      throw Error("bloqueado_provedor");
-    const raw = body.candidates?.[0]?.content?.parts
-      ?.filter((p: { thought?: boolean }) => !p.thought)
-      .map((p: { text?: string }) => p.text || "")
-      .join("");
-    if (!raw || raw.length > 4000) throw Error("saida_invalida");
-    result = validateOutput(JSON.parse(raw));
+    try {
+      const read = readGemini(body);
+      input = read.usage.input;
+      output = read.usage.output;
+      result = read.result;
+    } catch (e) {
+      const usage = (e as { usage?: { input: number; output: number } }).usage;
+      if (usage) {
+        input = usage.input;
+        output = usage.output;
+      }
+      throw e;
+    }
   } catch (e) {
     const allowed = [
       "ia_nao_configurada",
