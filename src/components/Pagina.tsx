@@ -16,7 +16,7 @@ export function Pagina({
     document.title = titulo === "aliadas" ? "aliadas" : `${titulo} · aliadas`;
   }, [titulo]);
   return (
-    <div className={`mx-auto w-full ${LARGURAS[largura]} px-5 py-10 sm:py-14`}>
+    <div className={`mx-auto w-full ${LARGURAS[largura]} px-5 py-8 sm:py-10`}>
       <div className="w-full">{children}</div>
     </div>
   );
@@ -34,7 +34,7 @@ export function Titulo({
       <h1 className="font-titulo text-3xl font-bold text-destaque sm:text-4xl">
         {children}
       </h1>
-      {sub && <p className="mt-3 text-lg text-suave">{sub}</p>}
+      {sub && <p className="mt-2 text-base text-suave">{sub}</p>}
     </header>
   );
 }

@@ -7,6 +7,13 @@
    TOKENS DE COR: troque aqui para mudar a identidade inteira.
    ============================================================ */
 :root {
+  /* Escala tipográfica: 5 tamanhos (nada abaixo de 14px) */
+  --text-pequeno: 0.875rem; /* 14px */
+  --text-corpo: 1rem; /* 16px */
+  --text-destaque: 1.125rem; /* 18px */
+  --text-titulo: 1.5rem; /* 24px no celular, 28px a partir de 640px */
+  --text-display: clamp(2rem, 4vw, 3rem); /* 32–48px */
+
   --vinho: #6b1e3a;
   --coral: #e0654a;
   --off-white: #fbf8f3;
@@ -24,6 +31,12 @@
   --logo-resto: var(--vinho);
   --erro: #9b1c1c;
   --foco: var(--vinho);
+}
+
+@media (min-width: 640px) {
+  :root {
+    --text-titulo: 1.75rem;
+  }
 }
 
 .dark {
@@ -59,12 +72,6 @@
   /* títulos (h1/h2): troque só esta linha para mudar a fonte de destaque */
   --font-titulo: "Quicksand", ui-sans-serif, system-ui, sans-serif;
 
-  /* Escala tipográfica: 5 tamanhos */
-  --text-pequeno: 0.875rem;
-  --text-corpo: 1rem;
-  --text-destaque: 1.25rem;
-  --text-titulo: 1.75rem;
-  --text-display: clamp(2.25rem, 5vw, 3.5rem);
   /* as classes do Tailwind apontam para a mesma escala */
   --text-xs: var(--text-pequeno);
   --text-sm: var(--text-pequeno);
@@ -123,7 +130,7 @@ h2 {
 /* Sistema visual do MVP: mesma largura, ritmo, tipografia e foco em todas as telas. */
 html {
   font-size: 16px;
-  line-height: 1.65;
+  line-height: 1.55;
 }
 h1,
 h2,
@@ -177,7 +184,7 @@ a {
 .landing-hero {
   display: grid;
   gap: 2.5rem;
-  padding: 1.5rem 0 4.5rem;
+  padding: 1.5rem 0 3rem;
   align-items: center;
 }
 .landing-hero h1 {
@@ -217,7 +224,7 @@ a {
   text-align: right;
 }
 .institutional-section {
-  padding: 4rem 0;
+  padding: 3rem 0;
   border-top: 1px solid var(--linha);
 }
 .institutional-section h2 {
@@ -299,7 +306,7 @@ a {
   margin-bottom: 0.75rem;
 }
 .final-call {
-  padding: 4.5rem 0 1rem;
+  padding: 3rem 0 1rem;
   text-align: center;
 }
 .final-call h2 {

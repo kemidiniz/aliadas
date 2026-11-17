@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Pagina, Titulo } from '../components/Pagina'
 
-const p = 'mt-4 text-lg leading-relaxed'
+const p = 'mt-4'
 const h2 = 'mt-10 scroll-mt-24 text-2xl font-bold text-destaque'
 
 export function TermoDeConduta() {
@@ -9,7 +9,7 @@ export function TermoDeConduta() {
     <Pagina titulo="Termos de uso" largura="texto">
       <Titulo>Termos de uso</Titulo>
       <p className={p}>A aliadas é para mulheres cis e trans e pessoas não binárias de todas as áreas. Para ficar bom para todo mundo, combinamos:</p>
-      <ul className="mt-4 list-disc space-y-2 pl-6 text-lg">
+      <ul className="mt-4 list-disc space-y-2 pl-6">
         <li>Respeito sempre. Nada de assédio, preconceito, transfobia, racismo, capacitismo ou qualquer discriminação.</li>
         <li>Conte sua trajetória com verdade. Não invente cargos, empresas ou conquistas.</li>
         <li>Não use a aliadas para vender cursos, serviços ou pedir dinheiro.</li>
@@ -30,7 +30,7 @@ export function Privacidade() {
       <h2 className={h2}>O que guardamos</h2>
       <p className={p}>Nome de apresentação, ocupação, momento de carreira, áreas, assuntos com que pode ajudar e sobre os quais quer conversar, disponibilidade, foto opcional, contatos que você escolheu, link opcional da sua sala de chamada e consentimentos. O e-mail de login fica separado dos contatos que você decide compartilhar.</p>
       <h2 className={h2}>Quem vê o quê</h2>
-      <ul className="mt-4 list-disc space-y-2 pl-6 text-lg">
+      <ul className="mt-4 list-disc space-y-2 pl-6">
         <li>Nome, ocupação e áreas: a pessoa para quem você foi indicada ou com quem tem um convite, e a curadoria.</li>
         <li>Contatos e sala de chamada: só você e, depois do aceite mútuo, a outra participante. O bloqueio interrompe o acesso; contatos já vistos não podem ser recuperados.</li>
         <li>Horários propostos: só as duas participantes de um convite aceito.</li>
