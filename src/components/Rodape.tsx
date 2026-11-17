@@ -56,6 +56,11 @@ export function Rodape() {
           </ul>
         </nav>
       </div>
+      <div className="border-t border-linha">
+        <p className="mx-auto max-w-[1200px] px-5 py-4 text-xs text-suave">
+          © 2026 Kemily Diniz. Todos os direitos reservados.
+        </p>
+      </div>
     </footer>
   );
 }

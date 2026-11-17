@@ -100,6 +100,7 @@ try {
     3,
   );
   assert.equal(await g.locator('a[href="/forum"]').count(), 0);
+  await g.getByText("© 2026 Kemily Diniz. Todos os direitos reservados.").waitFor();
   await g.getByRole("link", { name: "Quem somos" }).first().click();
   await g.waitForURL(base + "/quem-somos");
   await g.getByRole("heading", { level: 2, name: "Como funciona" }).waitFor();
