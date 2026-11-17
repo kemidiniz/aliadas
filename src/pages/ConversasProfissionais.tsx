@@ -245,7 +245,7 @@ function Conversa({
           <p className="text-sm text-suave">Aguardando o aceite. Contatos só aparecem depois dele.</p>
         ) : (
           <div className="flex flex-wrap gap-3">
-            <Botao carregando={busy} onClick={() => rpc("mvp_respond", { invite: i.id, accept: true }, "Convite aceito. Agora combinem um horário.")}>
+            <Botao carregando={busy} onClick={() => rpc("mvp_respond", { invite: i.id, accept: true }, "Convite aceito. Os contatos já aparecem no cartão.")}>
               Aceitar convite
             </Botao>
             <Botao variante="secundario" disabled={busy} onClick={() => rpc("mvp_respond", { invite: i.id, accept: false }, "Convite recusado.")}>

@@ -85,8 +85,13 @@ try {
     assert(await p.getByRole("link", { name: "Painel" }).count() >= 1, "quem tem atribuição vê o Painel");
     if (kind === "reviewer") {
       await p.getByRole("heading", { name: "Perfis aguardando aprovação" }).waitFor();
-      await p.getByRole("button", { name: "Recusar" }).waitFor();
+      await p.getByRole("button", { name: "Não aprovar" }).waitFor();
       assert.equal(await p.getByRole("combobox", { name: /Mostrar perfis/ }).count(), 0, "sem lista de todos os perfis");
+      await p.getByRole("button", { name: "Não aprovar" }).click();
+      await p.getByRole("textbox", { name: "Motivo (opcional)" }).fill("Complete suas informações profissionais.");
+      await p.getByRole("button", { name: "Confirmar decisão" }).click();
+      await p.waitForTimeout(100);
+      assert.equal(calls.find(c=>c.endpoint==="mvp_admin_review_with_reason").body.reason,"Complete suas informações profissionais.");
       const proibidas = ["mvp_metrics", "mvp_feedback_metrics", "feedback", "mvp_ai_metrics", "conversation_jobs", "mvp_admin_search", "mvp_admin_ambassadors"];
       assert(!calls.some((c) => proibidas.includes(c.endpoint)), "só Avaliar perfis: nenhuma chamada de outras abas");
     }

@@ -37,14 +37,6 @@ export default function Curadoria() {
   return (
     <Pagina titulo="Painel das embaixadoras">
       <Titulo sub="Cada aba aparece de acordo com os acessos da sua conta.">Painel das embaixadoras</Titulo>
-      {adminAccess.legacy && (
-        <div className="mb-6">
-          <Aviso>
-            Acesso administrativo legado preservado. A identificação da administradora principal está preparada para
-            migração e depende de autorização para aplicar os papéis.
-          </Aviso>
-        </div>
-      )}
       <div role="tablist" aria-label="Áreas administrativas" className="mb-8 flex flex-wrap gap-3">
         {tabs.map((t) => (
           <button
@@ -163,6 +155,8 @@ function Profiles() {
   const [rows, setRows] = useState<Profile[] | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [recusa, setRecusa] = useState<string | null>(null);
+  const [motivo, setMotivo] = useState("");
   async function load() {
     const { data, error } = await supabase.rpc("mvp_admin_profiles", { filter_status: "pendente" });
     if (error) {
@@ -178,12 +172,12 @@ function Profiles() {
   }, []);
   async function review(id: string, status: string) {
     setBusy(true);
-    const { error } = await supabase.rpc("mvp_admin_review", { target: id, new_status: status });
+    const { error } = await supabase.rpc("mvp_admin_review_with_reason", { target: id, new_status: status, reason: status === "reprovado" ? motivo : "" });
     setBusy(false);
     if (error) {
       setError(mensagemAmigavel(error));
       await recarregar();
-    } else await load();
+    } else { setRecusa(null); setMotivo(""); await load(); }
   }
   return (
     <>
@@ -232,11 +226,15 @@ function Profiles() {
                   <Botao carregando={busy} onClick={() => review(p.id, "aprovado")}>
                     Aprovar
                   </Botao>
-                  <Botao variante="secundario" carregando={busy} onClick={() => review(p.id, "reprovado")}>
-                    Recusar
+                  <Botao variante="secundario" carregando={busy} onClick={() => { setRecusa(p.id); setMotivo(""); }}>
+                    Não aprovar
                   </Botao>
                 </div>
               )}
+              {recusa === p.id && <div className="mt-4 space-y-3">
+                <label className="block text-sm font-semibold">Motivo (opcional)<textarea className="mt-2 w-full rounded-xl border-2 border-campo bg-fundo p-3" value={motivo} maxLength={500} onChange={e => setMotivo(e.target.value)} /></label>
+                <div className="flex gap-3"><Botao carregando={busy} onClick={() => review(p.id, "reprovado")}>Confirmar decisão</Botao><Botao variante="discreto" onClick={() => setRecusa(null)}>Cancelar</Botao></div>
+              </div>}
             </li>
           ))}
         </ul>

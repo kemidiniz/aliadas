@@ -150,4 +150,5 @@ select tst.ok(not exists (select 1 from public.profiles where id = :eve), 'perfi
 \ir admin_test.sql
 \ir habilidades_test.sql
 \ir recomendacao_test.sql
+\ir revisao_motivo_test.sql
 \echo 'TODOS OS TESTES DE RLS PASSARAM'

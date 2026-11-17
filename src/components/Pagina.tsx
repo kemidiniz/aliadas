@@ -6,7 +6,7 @@ import { useEffect, type ReactNode } from "react";
 export const CONTAINER = "mx-auto w-full max-w-[1200px] px-5 sm:px-8";
 export function Pagina({ titulo, children }: { titulo: string; children: ReactNode }) {
   useEffect(() => {
-    document.title = titulo === "aliadas" ? "aliadas" : `${titulo} · aliadas`;
+    document.title = titulo === "aliadas" ? "aliadas · Uma conversa pode abrir novos caminhos." : `${titulo} · aliadas`;
   }, [titulo]);
   return <div className={`${CONTAINER} py-8 sm:py-10`}>{children}</div>;
 }

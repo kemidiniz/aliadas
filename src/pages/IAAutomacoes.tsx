@@ -20,6 +20,10 @@ type Execucao = {
   output_tokens: number | null;
   created_at: string;
 };
+const ESTADOS: Record<string,string> = { pendente: "Na fila", executando: "Processando", concluida: "Concluída", falha: "Falhou", sem_consentimento: "Sem consentimento", done: "Concluída", failed: "Falhou" };
+const ERROS: Record<string,string> = { limite_global: "Limite diário atingido", limite_provedor: "Cota do Gemini atingida", ia_nao_configurada: "IA ainda não configurada", acesso_provedor: "Acesso ao Gemini indisponível", modelo_indisponivel: "Modelo indisponível", configuracao_provedor: "Configuração do Gemini precisa de revisão", falha_provedor: "Gemini indisponível", saida_invalida: "Resposta recusada pela validação", saida_truncada: "Resposta incompleta", bloqueado_provedor: "Resposta bloqueada pelo provedor", consentimento_revogado: "Consentimento retirado", revisao_iniciada: "Indicação já revisada", tempo_esgotado: "Tempo de espera excedido", fila_indisponivel: "Fila temporariamente indisponível", falha_ia: "Falha ao processar IA", sugestao_trocada: "Indicação trocada", categorias_invalidas: "Categorias inválidas", sem_candidatas: "Nenhuma candidata elegível", sem_consentimento: "Sem consentimento" };
+const estado = (s:string) => ESTADOS[s] ?? "Estado em revisão";
+const erroIA = (s:string|null) => s ? ERROS[s] ?? "Falha em revisão" : "Sem erro";
 const SEM = "Sem dados ainda";
 
 // CSV sem dado pessoal: nenhum id de pessoa, nome ou contato.
@@ -38,7 +42,7 @@ export function baixarCsv(nome: string, cab: string[], linhas: unknown[][]) {
 }
 const exportarCsv = (execucoes: Execucao[]) =>
   baixarCsv("execucoes", ["data", "estado", "erro", "modelo", "tokens_entrada", "tokens_saida", "id_execucao"],
-    execucoes.map((l) => [l.created_at, l.state, l.error_code ?? "", l.model ?? "", l.input_tokens ?? 0, l.output_tokens ?? 0, l.id]));
+    execucoes.map((l) => [l.created_at, estado(l.state), erroIA(l.error_code), l.model ?? "", l.input_tokens ?? 0, l.output_tokens ?? 0, l.id]));
 
 // Aba "IA e automações": execuções, tokens e erros do mês, rotina diária e
 // pedidos sem ninguém compatível. Permissão: ver_ia_automacoes (checada no banco).
@@ -72,8 +76,8 @@ export default function IAAutomacoes() {
   const mes: Record<string, number> = {
     "Execuções no mês": Number(metrics.jobs_month ?? 0),
     "Execuções com erro": Number(metrics.jobs_failed_month ?? 0),
-    "Tokens de entrada": tokens.input,
-    "Tokens de saída": tokens.output,
+    "Uso da IA (tokens enviados)": tokens.input,
+    "Uso da IA (tokens recebidos)": tokens.output,
   };
   const botao =
     "mt-4 inline-flex h-12 items-center rounded-xl border-2 border-destaque px-5 font-semibold text-destaque hover:bg-superficie disabled:opacity-50";
@@ -83,6 +87,7 @@ export default function IAAutomacoes() {
       <MetricasHabilidades />
       <div>
         <h2 className="mb-3 text-xl">IA no mês</h2>
+        <p className="mb-4 text-sm text-suave">Uso da IA (tokens enviados / recebidos). Mede o custo da IA.</p>
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(mes).map(([k, v]) => (
             <div key={k} className="rounded-xl border border-linha p-4">
@@ -123,7 +128,7 @@ export default function IAAutomacoes() {
           <ul className="space-y-2">
             {logs.slice(0, 30).map((l) => (
               <li key={l.id} className="break-words rounded-xl bg-superficie p-4 text-sm">
-                {new Date(l.created_at).toLocaleString("pt-BR")} · {l.state} · {l.error_code ?? "Sem erro"} · {l.model ?? "Sem modelo"} · tokens {l.input_tokens ?? 0}/{l.output_tokens ?? 0}
+                {new Date(l.created_at).toLocaleString("pt-BR")} · {estado(l.state)} · {erroIA(l.error_code)} · {l.model ?? "Sem modelo"} · tokens {l.input_tokens ?? 0}/{l.output_tokens ?? 0}
               </li>
             ))}
           </ul>
