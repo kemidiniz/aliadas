@@ -140,16 +140,16 @@ function grupo(i: ProInvite, eu: string, fb: Feedback[]): Aba {
 const PASSOS = ["Convite", "Aceite", "Contatos liberados", "Avaliação"];
 function Linha({ atual, parada }: { atual: number; parada?: boolean }) {
   return (
-    <ol className="flex items-center gap-1" aria-label="Etapas da conversa">
+    <ol className="grid grid-cols-4 items-start gap-2" aria-label="Etapas da conversa">
       {PASSOS.map((p, n) => {
         const feito = n < atual;
         const agora = n === atual && !parada;
         return (
-          <li key={p} className="flex flex-1 flex-col items-center gap-1 text-center" aria-current={agora ? "step" : undefined}>
+          <li key={p} className="flex min-w-0 flex-col items-center gap-2 text-center" aria-current={agora ? "step" : undefined}>
             <span
               className={`h-1.5 w-full rounded-full ${feito ? "bg-destaque" : agora ? "bg-coral" : "bg-linha"}`}
             />
-            <span className={`text-xs ${agora ? "font-semibold text-texto" : "text-suave"}`}>
+            <span className={`min-h-8 text-xs leading-4 ${agora ? "font-semibold text-texto" : "text-suave"}`}>
               {p}
               <span className="sr-only">{feito ? " (feito)" : agora ? " (etapa atual)" : ""}</span>
             </span>

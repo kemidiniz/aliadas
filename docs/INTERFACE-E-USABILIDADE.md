@@ -52,3 +52,7 @@ RLS, revisão humana, contatos após aceite mútuo, bloqueio, denúncia, limite 
 Build/TypeScript, 12 testes da IA, 337 verificações SQL/RLS (incluindo o contrato histórico e os atuais), testes de navegador em claro/escuro e de administração por permissão, envio das três respostas opcionais e exportação completa com histórico limitado a três na tela. Capturas em 390px e 1440px. O teste da foto atrasou o carregamento da imagem, confirmou a ausência do texto provisório e verificou reutilização da assinatura ao voltar ao perfil.
 
 As respostas de usabilidade dos testes são simuladas e ficam fora do banco de produção. Os testes não criaram contas nem consumiram gerações do Gemini em produção. Avaliações humanas e sua vinculação aos vinte casos continuam pendentes.
+
+## Complemento mobile
+
+As etapas de Encontrar usam três colunas fixas, com números destacados e rótulos curtos no celular. Em Alianças, as quatro etapas têm a mesma posição inicial e espaço reservado para duas linhas, alinhando Contatos liberados às demais. Alinhamento conferido no navegador em 375, 390, 768 e 1440px, além das capturas em 390/1440. Ajuste somente de interface, sem nova migration.

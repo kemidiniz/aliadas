@@ -91,7 +91,15 @@ export function ObjetivoConversa({ pro, aoEncontrar }: { pro: ProProfile; aoEnco
   }
   const pronta = objetivo?.state === "pronta";
   return <section aria-label="Encontre sua aliada" className="space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
-    <ol className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-suave" aria-label="Etapas da busca"><li className={!objetivo ? "font-semibold text-destaque" : ""}>1. Seu objetivo</li><li className={objetivo ? "font-semibold text-destaque" : ""}>2. Revise as habilidades</li><li>3. Encontre sua aliada</li></ol>
+    <ol className="grid grid-cols-3 gap-2 border-b border-linha pb-5" aria-label="Etapas da busca">
+      {[["Objetivo","Seu objetivo"],["Habilidades","Revise as habilidades"],["Aliada","Encontre sua aliada"]].map(([curto,completo],i)=>{
+        const ativa = i === (objetivo ? 1 : 0);
+        return <li key={curto} aria-current={ativa ? "step" : undefined} className="flex min-w-0 flex-col items-center gap-2 text-center">
+          <span aria-hidden className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-sm font-semibold ${ativa ? "border-destaque bg-destaque text-sobre-destaque" : "border-campo text-suave"}`}>{i+1}</span>
+          <span className={`text-xs leading-5 ${ativa ? "font-semibold text-destaque" : "text-suave"}`}><span className="sm:hidden">{curto}</span><span className="hidden sm:inline">{completo}</span></span>
+        </li>;
+      })}
+    </ol>
     {!objetivo ? <form onSubmit={analisar} className="space-y-5">
       <CampoArea rotulo="Qual é o objetivo da sua próxima conversa?" ajuda="Conte o que você quer alcançar em uma ou duas frases. Sem nomes, contatos ou informações confidenciais." placeholder="Ex.: Quero me preparar para minha primeira entrevista de emprego." minLength={8} maxLength={300} rows={4} required value={texto} onChange={e => setTexto(e.target.value)} />
       <Caixinha marcado={consentimento} aoMudar={setConsentimento}>Autorizo a IA a sugerir habilidades para este objetivo, usando apenas expressões profissionais, minha situação e área. Nunca nome, contatos ou foto.</Caixinha>

@@ -64,7 +64,12 @@ try {
  assert.equal(await p.getByText('Convites esperando sua resposta',{exact:true}).count(),0);
  const bounds=await p.getByRole('region',{name:'Encontre sua aliada',exact:true}).boundingBox();
  const titulo=await p.getByRole('heading',{level:1}).boundingBox();assert(Math.abs(bounds.x-titulo.x)<2&&Math.abs(bounds.width-titulo.width)<2,'busca ocupa largura do título');
- for(const width of [390,1440]) {await p.setViewportSize({width,height:1000});await p.evaluate(()=>scrollTo(0,0));await p.screenshot({path:`${pasta}/encontrar-${width}.png`,fullPage:true});}
+ for(const width of [375,390,768,1440]) {
+  await p.setViewportSize({width,height:1000});await p.evaluate(()=>scrollTo(0,0));
+  const ys=await p.getByRole('list',{name:'Etapas da busca'}).getByRole('listitem').evaluateAll(ns=>ns.map(n=>n.getBoundingClientRect().top));
+  assert(Math.max(...ys)-Math.min(...ys)<1,`três etapas da busca alinhadas em ${width}`);
+  if([390,1440].includes(width))await p.screenshot({path:`${pasta}/encontrar-${width}.png`,fullPage:true});
+ }
  await p.setViewportSize({width:1440,height:1000});await p.getByRole('navigation',{name:'Principal'}).first().getByRole('link',{name:'Perfil',exact:true}).click();
  await p.getByRole('heading',{name:'Meu perfil',exact:true}).waitFor();await p.waitForTimeout(200);
  assert.equal(assinaturas,antes,'retornar ao perfil reutiliza assinatura em memória, sem nova requisição');
@@ -78,7 +83,14 @@ try {
  await p.getByRole('button',{name:'+ Ver mais',exact:true}).click();
  assert.equal(await p.getByRole('heading',{name:/Aliada por período/}).count(),4);
  await p.getByRole('button',{name:'Mostrar menos',exact:true}).click();
- for(const width of [390,1440]){await p.setViewportSize({width,height:1000});await p.evaluate(()=>scrollTo(0,0));await p.screenshot({path:`${pasta}/aliancas-periodos-${width}.png`,fullPage:true});}
+ for(const width of [375,390,768,1440]) {
+  await p.setViewportSize({width,height:1000});await p.evaluate(()=>scrollTo(0,0));
+  for(const linha of await p.getByRole('list',{name:'Etapas da conversa'}).all()) {
+    const ys=await linha.locator('li > span:nth-child(2)').evaluateAll(ns=>ns.map(n=>n.getBoundingClientRect().top));
+    assert(Math.max(...ys)-Math.min(...ys)<1,`rótulos de Convite/Aceite/Contatos/Avaliação alinhados em ${width}`);
+  }
+  if([390,1440].includes(width))await p.screenshot({path:`${pasta}/aliancas-periodos-${width}.png`,fullPage:true});
+ }
  console.log('PASSOU: alianças agrupadas por períodos, três iniciais e ver mais sem perder histórico.');
  console.log('PASSOU: Encontrar sem caixa de convites e com largura completa; Meet removido; foto sem flash do alt e assinatura reaproveitada.');
 }finally{await browser.close();}
