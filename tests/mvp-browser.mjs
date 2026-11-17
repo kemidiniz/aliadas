@@ -123,10 +123,27 @@ try {
   await pastaLanding(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B3"}`,{recursive:true});
   for(const width of [390,1440]) { await g.setViewportSize({width,height:1000}); await g.evaluate(()=>scrollTo(0,0)); await g.waitForTimeout(200);await g.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B3"}/landing-${width}.png`,fullPage:true}); }
 
-  await g.getByRole("link", { name: "Quem somos" }).first().click();
-  await g.waitForURL(base + "/quem-somos");
-  await g.getByRole("heading", { level: 2, name: "Como funciona" }).waitFor();
-  assert.equal(await g.title(), "Quem somos · aliadas");
+  await g.getByRole("link", { name: "Sobre a aliadas" }).first().click();
+  await g.waitForURL(base + "/sobre");
+  await g.getByRole("heading", { name: "Uma conversa pode abrir novos caminhos." }).waitFor();
+  assert.equal(await g.title(), "aliadas · Uma conversa pode abrir novos caminhos.");
+  await g.goto(base + "/quem-somos");
+  await g.waitForURL(base + "/sobre");
+  for (const [rota,hash] of [["/privacidade#ia","ia"],["/privacidade","privacidade"],["/termo-de-conduta","termos"]]) {
+    await g.goto(base+rota);await g.waitForURL(base+"/termos-e-privacidade#"+hash);
+    await g.locator("#"+hash).waitFor();await g.waitForTimeout(200);
+    const box=await g.locator("#"+hash).boundingBox();assert(box.y>=0 && box.y<1000,`âncora ${hash} visível`);
+  }
+  const { mkdir: pastaRodape }=await import("node:fs/promises");
+  await pastaRodape(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B8"}`,{recursive:true});
+  for(const width of [360,390,1440]) {
+    await g.setViewportSize({width,height:1000});await g.evaluate(()=>document.fonts.ready);
+    const links=g.getByRole("navigation",{name:"Rodapé"}).getByRole("link");assert.equal(await links.count(),3);
+    const boxes=await links.evaluateAll(nodes=>nodes.map(n=>({y:n.getBoundingClientRect().y,left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,font:parseFloat(getComputedStyle(n).fontSize)})));
+    assert(boxes.every(b=>b.font>=14 && b.left>=0 && b.right<=width),JSON.stringify(boxes));assert(Math.max(...boxes.map(b=>b.y))-Math.min(...boxes.map(b=>b.y))<2,"links do rodapé na mesma linha");
+    await g.locator("footer").screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B8"}/rodape-${width}.png`});
+  }
+  console.log("PASSOU: /sobre público, rotas legais preservam âncoras, rodapé com 3 links de 14px na mesma linha em 360/390/1440");
   await g.goto(base + "/feedback");
   await g.waitForURL(base + "/ajuda");
   await g.getByRole("heading", { level: 1, name: "Ajuda e feedback" }).waitFor();
@@ -248,6 +265,12 @@ try {
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   jobState = "executando";
+  await p.goto(base+"/sobre");
+  await p.getByRole("navigation",{name:"Principal"}).first().getByRole("link",{name:"Alianças",exact:true}).waitFor();
+  await p.getByRole("heading",{name:"Uma conversa pode abrir novos caminhos."}).waitFor();
+  assert.equal(await p.getByRole("link",{name:"Encontrar minha aliada",exact:true}).first().getAttribute("href"),"/");
+  await p.getByRole("link",{name:"Encontrar minha aliada",exact:true}).first().click();
+  console.log("PASSOU: /sobre logada mostra landing e CTA leva ao Início");
   await p.goto(base);
   await p.getByRole("heading", { level: 1, name: /Olá/ }).waitFor();
   // o objetivo é escolhido na busca, sem pré-seleção vinda do perfil

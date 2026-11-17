@@ -15,13 +15,12 @@ const Cadastro = lazy(() => import("./pages/PerfilProfissional"));
 const Conversas = lazy(() => import("./pages/ConversasProfissionais"));
 const Curadoria = lazy(() => import("./pages/Curadoria"));
 const FeedbackPagina = lazy(() => import("./pages/Feedback"));
-const QuemSomos = lazy(() => import("./pages/QuemSomos"));
-const TermoDeConduta = lazy(() =>
-  import("./pages/Textos").then((m) => ({ default: m.TermoDeConduta })),
-);
-const Privacidade = lazy(() =>
-  import("./pages/Textos").then((m) => ({ default: m.Privacidade })),
-);
+const Sobre = lazy(() => import("./pages/LandingInstitucional"));
+const TermosEPrivacidade = lazy(() => import("./pages/Textos").then(m => ({ default:m.TermosEPrivacidade })));
+function RedirecionarLegal({ parte }: { parte: string }) {
+ const local=useLocation();
+ return <Navigate to={`/termos-e-privacidade${local.search}${local.hash || `#${parte}`}`} replace />;
+}
 import NaoEncontrada from "./pages/NaoEncontrada";
 
 export function App() {
@@ -31,7 +30,7 @@ export function App() {
     if (local.hash) {
       requestAnimationFrame(() =>
         document
-          .getElementById(decodeURIComponent(local.hash.slice(1)))
+          .getElementById(local.hash.slice(1))
           ?.scrollIntoView(),
       );
     } else window.scrollTo(0, 0);
@@ -115,11 +114,13 @@ export function App() {
                 path="/recomendacoes"
                 element={<Navigate to="/" replace />}
               />
-              <Route path="/quem-somos" element={<QuemSomos />} />
+              <Route path="/sobre" element={<Sobre />} />
+              <Route path="/quem-somos" element={<Navigate to="/sobre" replace />} />
               <Route path="/ajuda" element={<FeedbackPagina />} />
               <Route path="/feedback" element={<Navigate to="/ajuda" replace />} />
-              <Route path="/termo-de-conduta" element={<TermoDeConduta />} />
-              <Route path="/privacidade" element={<Privacidade />} />
+              <Route path="/termos-e-privacidade" element={<TermosEPrivacidade />} />
+              <Route path="/termo-de-conduta" element={<RedirecionarLegal parte="termos" />} />
+              <Route path="/privacidade" element={<RedirecionarLegal parte="privacidade" />} />
               <Route path="*" element={<NaoEncontrada />} />
             </Routes>
           </AnimatePresence>

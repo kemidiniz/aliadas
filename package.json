@@ -14,7 +14,8 @@
     "test:browser": "node tests/mvp-browser.mjs",
     "test:admin-browser": "node tests/admin-browser.mjs",
     "test:visual": "node tests/visual-final.mjs",
-    "test:validacao": "node tests/validacao-local.mjs"
+    "test:validacao": "node tests/validacao-local.mjs",
+    "test:links": "node tests/links-internos.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

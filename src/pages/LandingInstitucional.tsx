@@ -1,3 +1,5 @@
+import { useAuth } from "../lib/auth";
+import { Link } from "react-router-dom";
 import { BotaoLink } from "../components/Botao";
 import { Pagina } from "../components/Pagina";
 import { FONTE_LINKEDIN as LINKEDIN, FONTE_WEF as WEF } from "../lib/fontes";
@@ -22,6 +24,7 @@ function Arrow() {
 const CONCEITO_NO_HERO = false;
 
 export default function LandingInstitucional() {
+  const { session }=useAuth();
   return (
     <Pagina titulo="aliadas">
       <section className="landing-hero" aria-labelledby="hero-title">
@@ -35,7 +38,7 @@ export default function LandingInstitucional() {
             carreira e compartilhe o que você já sabe.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
-            <BotaoLink to="/entrar">Encontrar minha aliada</BotaoLink>
+            <BotaoLink to={session ? "/" : "/entrar"}>Encontrar minha aliada</BotaoLink>
             <a className="text-link" href="#como-funciona">
               Como funciona
             </a>
@@ -145,14 +148,14 @@ export default function LandingInstitucional() {
                 {f.q}
                 <span aria-hidden className="text-xl text-destaque transition-transform duration-200 group-open:rotate-45">+</span>
               </summary>
-              <p className="pb-5 text-suave">{f.a}</p>
+              <p className="pb-5 text-suave">{f.a}{f.q === "A IA vê meus dados?" && <> <Link to="/termos-e-privacidade#ia" className="text-link">Saiba mais</Link></>}</p>
             </details>
           ))}
         </div>
       </section>
       <section className="final-call" aria-labelledby="final-title">
         <h2 id="final-title">Sua próxima conversa começa aqui.</h2>
-        <BotaoLink to="/entrar">Encontrar minha aliada</BotaoLink>
+        <BotaoLink to={session ? "/" : "/entrar"}>Encontrar minha aliada</BotaoLink>
         <p className="mt-4 text-sm text-suave">Todas nós temos algo a ensinar e muito a aprender.</p>
       </section>
     </Pagina>

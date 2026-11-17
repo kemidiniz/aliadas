@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { useEffect, type ReactNode } from "react";
 
 // Container e hierarquia compartilhados; conteúdo legível desde o primeiro frame.
@@ -5,6 +6,17 @@ import { useEffect, type ReactNode } from "react";
 // o título de toda página começa alinhado ao logo.
 export const CONTAINER = "mx-auto w-full max-w-[1200px] px-5 sm:px-8";
 export function Pagina({ titulo, children }: { titulo: string; children: ReactNode }) {
+  const { hash }=useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    let ativo=true;
+    void document.fonts.ready.then(()=>requestAnimationFrame(()=>{
+      if (!ativo) return;
+      let id=hash.slice(1);try { id=decodeURIComponent(id); } catch { /* hash inválido não interrompe a página */ }
+      document.getElementById(id)?.scrollIntoView();
+    }));
+    return ()=>{ativo=false;};
+  },[hash,titulo]);
   useEffect(() => {
     document.title = titulo === "aliadas" ? "aliadas · Uma conversa pode abrir novos caminhos." : `${titulo} · aliadas`;
   }, [titulo]);

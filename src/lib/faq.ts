@@ -32,7 +32,7 @@ export const FAQ_AJUDA = [
   },
   {
     q: "Por que ainda não recebi uma indicação?",
-    a: "Seu perfil precisa estar aprovado e completo, e alguém precisa ter marcado o seu objetivo em \"Posso ajudar com\", com um contato em comum. Se ninguém combinar agora, tente outro objetivo ou volte em alguns dias.",
+    a: "Seu perfil precisa estar aprovado e completo. Outra participante precisa ter habilidades úteis para o seu objetivo e um canal em comum; se ninguém combinar agora, tente outro objetivo ou volte em alguns dias.",
   },
   {
     q: "O que acontece depois que eu aceito um convite?",

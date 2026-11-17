@@ -43,3 +43,9 @@ Não executar deploy, migrations remotas, seed em produção ou contratar servi�
 A finalização visual e administrativa foi autorizada posteriormente pela titular. A migration 015 e o bootstrap da conta principal foram aplicados e auditados; nenhuma outra conta foi promovida. Veja `docs/VALIDACAO.md` (tabela requisito/implementado/comprovado/pendente/próxima ação) e `docs/AUDITORIA-SEGURANCA.md`. A migration 015 e o bootstrap exigem autorização expressa.
 
 Relatório objetivo da finalização: [docs/FINALIZACAO.md](docs/FINALIZACAO.md). A autorização expressa e os resultados de aplicação do backend estão registrados no relatório de finalização.
+
+## Rodada final — 17/11/2026
+
+A IA agora recomenda por habilidades; não escreve justificativa, perguntas ou convite. Perfil com rascunho automático, navegação por Alianças e conteúdo institucional em `/sobre`. Termos/Privacidade unificados. Consulte [MVP atual](docs/MVP.md), [validação humana](docs/VALIDACAO.md), [custos](docs/CUSTOS.md), [segurança](docs/SEGURANCA.md) e [e-mails](docs/EMAILS.md). Essas descrições prevalecem sobre as seções históricas acima.
+
+`npm run test:links` confere destinos internos. `npm run test:validacao` usa Gemini simulado e arquivos temporários; não comprova geração real. Dados reais de validação não devem ser publicados no Git.

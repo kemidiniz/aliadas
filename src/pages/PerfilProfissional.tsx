@@ -69,7 +69,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   const fotoAtual = useFotoUrl(semFoto ? null : (perfil?.foto_path ?? null));
 
   const uid = session?.user.id;
-  const nomeInicial = useRef(perfil?.apelido ?? "");
   const [base, setBase] = useState("");
   const [recuperado, setRecuperado] = useState(false);
   const [original, setOriginal] = useState<{ d: Dados; c: ProContacts; termos: boolean } | null>(null);
@@ -84,12 +83,13 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     Promise.all([
       supabase.from("professional_profiles").select("*").eq("profile_id", uid).maybeSingle(),
       supabase.from("professional_contacts").select("*").eq("profile_id", uid).maybeSingle(),
-    ]).then(([pr, co]) => {
+      supabase.from("profiles").select("apelido").eq("id", uid).maybeSingle(),
+    ]).then(([pr, co, info]) => {
       if (!ativo) return;
-      if (pr.error || co.error) { toast("Não foi possível carregar seu perfil. Atualize a página.", "erro"); return; }
+      if (pr.error || co.error || info.error) { toast("Não foi possível carregar seu perfil. Atualize a página.", "erro"); return; }
       const p = pr.data as ProProfile | null;
       const salvo = {
-        d: p ? { nome: nomeInicial.current, situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels, ai_consent: p.ai_consent, available: p.available } : { ...vazio, nome: nomeInicial.current },
+        d: p ? { nome: (info.data?.apelido ?? ""), situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels, ai_consent: p.ai_consent, available: p.available } : { ...vazio, nome: (info.data?.apelido ?? "") },
         c: (co.data as ProContacts) ?? { linkedin: "", whatsapp: "", email: "", meet: null, nome_completo: "" },
         termos: Boolean(p),
       };
@@ -108,7 +108,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     });
     return () => { ativo = false; };
   }, [uid]);
-  useEffect(() => { if (base && conteudo !== base) liberado.current = false; }, [conteudo, base, foto, semFoto]);
+  useEffect(() => { if (base && (conteudo !== base || foto || semFoto)) liberado.current = false; }, [conteudo, base, foto, semFoto]);
   useEffect(() => {
     if (!uid || carregando || liberado.current) return;
     try {
@@ -116,6 +116,9 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       else sessionStorage.removeItem(chaveRascunhoPerfil(uid));
     } catch { /* O formulário continua disponível se o navegador bloquear o armazenamento. */ }
   }, [uid, carregando, sujo, conteudo]);
+  useEffect(() => {
+    if (!carregando && completar && novo) { liberado.current=true; navegar("/meu-perfil", { replace:true }); }
+  },[carregando,completar,novo,navegar]);
   const descartar = () => {
     if (!original) return;
     setD(original.d); setC(original.c); setTermos(original.termos); setFoto(null); setSemFoto(false); setRecuperado(false);
@@ -133,10 +136,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
         <CartaoCarregando />
       </Pagina>
     );
-  if (completar && novo) {
-    navegar("/meu-perfil", { replace: true });
-    return null;
-  }
+  if (completar && novo) return null;
 
   const e = erros(d, c, termos, completar);
   const err = (k: string) => (mostrarErros ? e[k] : undefined);
@@ -239,14 +239,14 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     ia: (
       <Caixinha marcado={d.ai_consent} aoMudar={(ai_consent) => set({ ai_consent })}>
         Autorizo enviar ao Gemini só categorias (situação, área, interesses e habilidades) para recomendar conversas. Nunca nome, contatos ou foto.{" "}
-        <Link to="/privacidade#ia" className="text-link">Saiba mais</Link>
+        <Link to="/termos-e-privacidade#ia" className="text-link">Saiba mais</Link>
       </Caixinha>
     ),
     termos: (
       <>
         <Caixinha marcado={termos} aoMudar={setTermos} obrigatoria>
-          Sou mulher cis, trans ou pessoa não binária e aceito os <Link to="/termo-de-conduta" className="text-link">Termos de uso</Link> e a{" "}
-          <Link to="/privacidade" className="text-link">Privacidade</Link>.
+          Sou mulher cis, trans ou pessoa não binária e aceito os <Link to="/termos-e-privacidade#termos" className="text-link">Termos de uso</Link> e a{" "}
+          <Link to="/termos-e-privacidade#privacidade" className="text-link">Privacidade</Link>.
         </Caixinha>
         {err("termos") && <p className="text-sm text-erro" role="alert">{err("termos")}</p>}
       </>

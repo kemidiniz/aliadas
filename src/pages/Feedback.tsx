@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { useState, type FormEvent } from 'react'
 import { Aviso } from '../components/Aviso'
 import { Botao } from '../components/Botao'
@@ -79,7 +80,7 @@ export default function FeedbackPagina() {
                 {x.q}
                 <span aria-hidden className="text-xl text-destaque transition-transform duration-200 group-open:rotate-45">+</span>
               </summary>
-              <p className="pb-5 text-suave">{x.a}</p>
+              <p className="pb-5 text-suave">{x.a}{x.q === "A IA vê meus dados?" && <> <Link to="/termos-e-privacidade#ia" className="text-link">Saiba mais</Link></>}</p>
             </details>
           ))}
         </div>

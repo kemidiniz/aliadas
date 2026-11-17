@@ -1,83 +1,50 @@
-# MVP profissional — entrega local
+# Aliadas — MVP por habilidades
 
-Revisão: 15/11/2026. Este documento substitui o escopo histórico do `PENDENCIAS.md`. A publicação foi autorizada posteriormente pela usuária nesta conversa.
+Atualizado em 17/11/2026. Reaproveita o projeto React/Vite/TypeScript/Supabase existente; não cria rede social, mentoria formal ou chat próprio. Inclusão: mulheres cis e trans e pessoas não binárias, de todas as áreas e momentos de carreira.
 
-## o que muda para quem usa
+## Jornada
 
-A participante confirma seu e-mail e cria ou atualiza um perfil profissional em uma página. Não precisa de vínculo institucional nem LinkedIn. Escolhe buscar uma troca, compartilhar ou ambas; áreas e temas são categorias de todas as áreas profissionais. Pode incluir foto opcional e disponibilidades de manhã/tarde/noite, com fuso de Brasília.
+1. Confirmar acesso por e-mail e criar perfil curto.
+2. Após revisão humana, completar interesses e contatos; escolher até oito habilidades se quiser ser indicada.
+3. Escolher objetivo e, opcionalmente, apoio até 300 caracteres (obrigatório em Outro).
+4. Receber uma indicação, revisar a mensagem fixa editável e clicar em Enviar convite.
+5. Após aceite mútuo, abrir somente os canais autorizados: LinkedIn, WhatsApp, e-mail e Google Meet. Sem compartilhamento automático do e-mail Auth, APIs de mensagens, Calendar ou criação de Meet.
+6. Registrar se a conversa aconteceu, nota 1–5 e resultados. Cada participante responde independentemente; aceite ou ausência de resposta não comprova encontro. Utilidade exige confirmação e nota 4 ou 5.
 
-Na home escolhe um objetivo principal e pode registrar até 400 caracteres de contexto, que nunca vão para a IA. A curadoria aprova perfis; essa aprovação não chama mais a IA paga. Registrar uma solicitação escolhe deterministicamente uma candidata e, quando ambas consentem, cria um trabalho para a função Gemini. A interface oferece uma recomendação por vez. Somente a dona da solicitação pode revisar a mensagem e clicar em “aprovar e enviar convite”. Não há mensagens automáticas nem catálogo.
+Menu: Início, Alianças e Perfil. Painel só para administradora principal e embaixadoras com atribuição; as permissões são rechecadas no banco. Só a principal concede/revoga acessos. Fórum, feed, cursos, pitch independente e ranking público continuam fora.
 
-O convite fica pendente até a destinatária aceitar. O compartilhamento usa uma nova tabela de contatos, sem copiar nenhum dado do Auth ou dos contatos antigos. LinkedIn, WhatsApp, e-mail e Meet são opcionais, editáveis e liberados individualmente conforme os canais autorizados; não existe obrigação de reciprocidade. O banco impede contatos antes do aceite e para terceiros. Bloquear revoga acesso e impede novas sugestões/convites.
+Página institucional pública em `/sobre`, também para quem está logada. `/` mostra a instituição para visitantes e o Início para participantes. Termos e Privacidade em `/termos-e-privacidade`, com âncoras. URLs antigas redirecionam.
 
-As participantes escolhem um aplicativo externo. Para chamada, veem os períodos comuns e confirmam manualmente o mesmo horário. Uma delas cria um link Meet manualmente e o salva no perfil. Não há Calendar/Meet API, mensagens internas ou gravação. Cada uma informa se a conversa ocorreu, nota 1–5 e resultado categórico. Ausência de resposta não é encontro realizado.
+## Perfil estável
 
-## arquivos novos principais
+Carregamento por id da conta, sem sobrescrever o formulário na renovação de sessão/foco. Rascunho temporário em sessionStorage, por conta, com recuperação/descarte e aviso ao sair; apagado ao salvar/logout. Nunca inclui senha. Fotos ficam em memória durante edição e precisam ser escolhidas novamente após recarregar, pois o rascunho é textual.
 
-- `src/pages/InicioProfissional.tsx`, `PerfilProfissional.tsx`, `ConversasProfissionais.tsx`, `IndicadoresMvp.tsx`: jornada e indicadores.
-- `src/lib/professional.ts`: categorias, tipos e rótulos.
-- Migrations `20261116000012_mvp_conversas.sql`, `20261116000013_mvp_worker.sql` e `20261116000014_mvp_compatibilidade.sql`: tabelas, seleção, contatos, consentimentos, feedback, bloqueios, métricas e fila. Datas são identificadores de ordenação, não evidência de aplicação.
-- `supabase/functions/conversa-ia/core.ts` e `index.ts`: minimização, chamada Gemini, validação e registro.
-- `supabase/tests/mvp_test.sql`, `tests/conversa-ia.test.mjs`, `tests/mvp-browser.mjs`: autorização, contratos e interface.
+Catálogo fechado de 26 habilidades em seis grupos. `src/lib/habilidades.ts` reexporta a fonte compartilhada com worker e validação; migration 031 cria referência e valida até oito ids. `can_help` histórico permanece para a transição. Sem habilidades, o Início orienta atualizar o perfil.
 
-Alterados: App/rotas, cabeçalho/rodapé, entrada, curadoria, textos legais, config de funções, runner de RLS via inclusão da suíte nova, README e documentação.
+## IA real e plano B
 
-## funcionalidades retiradas da experiência principal
+O banco filtra perfis aprovados, disponíveis, canal comum, bloqueios, pares ativos e sobrecarga. Separa até 15 candidatas com habilidades e consentimento novo (`habilidades-v1`), priorizando mapa do objetivo e menos convites recentes, com sorteio no empate.
 
-Fórum/publicações/curtidas/comentários, catálogo de programas, cadastro de oito etapas e navegação antiga. URLs antigas redirecionam. Código e dados antigos continuam no repositório/banco para histórico. Não havia pitch independente, busca complexa, pagamentos ou ranking público nesta implementação; não foram criados.
+INSERT do pedido → gatilho → pg_net → Edge Function `conversa-ia` → Gemini seleciona até três habilidades necessárias e ordena até três candidatas → validação no worker e banco → revisão humana. O mapa código-pessoa e a ordem completa ficam privados no servidor. Perfil sem consentimento só participa do plano B.
 
-A função antiga `recomendar` foi substituída no código por uma resposta 410, sem chamadas pagas. Isso só vale no remoto após deploy autorizado dessa função. Não confundir código preparado com endpoint remoto atualizado. As novas migrations removem os gatilhos legados Anthropic/Make, sem apagar tabelas ou funções históricas.
+O provedor recebe objetivo/categorias, habilidades e códigos C1…C15. Do apoio, só expressões do catálogo atravessam a lista permitida após remoção de contatos/documentos; nunca nomes, contatos, fotos, ids reais ou apoio bruto. O texto original é protegido no pedido e não entra em logs. A destinatária vê o contexto por RPC, com contatos acidentais ocultos. Termos do plano gratuito e possível uso dos dados pelo Google estão no consentimento/página legal.
 
-## ativação — exige autorização posterior
+JSON com enums e validação de habilidades efetivamente oferecidas. Justificativa, perguntas e rascunho antigos ficam no banco sem uso na tela. A IA não envia convites. Trocar indicação percorre a lista salva e depois usa o mapa fixo, sem nova geração nem pedido. Sem consentimento/cota/configuração válida, continua a regra, identificada como indicação sem IA. Após 15s, o frontend pode continuar pelo plano B.
 
-1. Revisar backup/exportação e o histórico real de migrations do projeto. Não rodar `db push` cegamente: algumas alterações anteriores foram aplicadas pelo SQL Editor e podem não estar registradas. Não reaplicar migrations 001–011 em banco existente.
-2. Aplicar somente as migrations MVP de 16/11 (012, 013 e 014), em ordem, após revisão. Foram testadas em Postgres descartável e depois aplicadas em produção sob autorização, com registro no histórico de migrations. Novas tabelas não importam automaticamente contatos privados nem convertem perfis reais: as participantes completam o cadastro profissional e consentimentos.
-3. Verificar Security Advisor e RLS. Testar com contas autorizadas em staging, sem publicar nem usar dados reais em provedor de IA.
-4. Antes de ativar Gemini, confirmar no AI Studio projeto **sem faturamento**, disponibilidade no Brasil, modelo com cota gratuita efetiva, termos de dados, limites por minuto/dia e formatos estruturados. Sem essa confirmação, não definir `GEMINI_FREE_TIER_CONFIRMED=true`.
-5. Guardar `GEMINI_API_KEY`, `GEMINI_MODEL` e a confirmação acima apenas em secrets das Edge Functions. Não usar a chave pública do Supabase nem a Anthropic. Não comprar créditos nem adicionar cartão. Se houver dúvida de faturamento, não fazer o teste.
-6. Publicar `conversa-ia` e a aposentadoria de `recomendar` somente com autorização. A função nova autentica via cabeçalho `x-mvp-secret`, não pelo frontend. O navegador não recebe nem usa esse segredo.
-7. Criar no Vault `mvp_worker_url` (URL HTTPS da função) e `mvp_worker_secret` (segredo hexadecimal de 64 caracteres, gerado com `openssl rand -hex 32`) pelo painel seguro. O worker lê o segredo via RPC exclusiva de service_role. Não gravar valores no Git ou neste documento.
-8. Criar solicitação com duas participantes aprovadas, disponíveis e consentindo. Conferir job, entrega HTTP do pg_net, estado final, tokens e revisão humana. Só depois realizar os três testes reais previstos em `VALIDACAO.md`.
-9. Aprovar publicação do frontend separadamente. A publicação do frontend e as mudanças de produção foram autorizadas após a entrega local.
+Limites: três pedidos/pessoa/24h, trinta chamadas iniciadas/24h globalmente, 700 tokens máximos de saída, timeout de 14s e até cinco consultas automáticas de estado. Logs guardam modelo, tokens e códigos de erro, sem apoio ou dados pessoais.
 
-Para testar localmente o worker com Supabase CLI, monte secrets em arquivo ignorado; não passe dados reais. `deno check --no-lock supabase/functions/conversa-ia/index.ts` verifica tipos, não comprova o provedor. A suíte SQL usa um stub de pg_net; confirma o gatilho e payload, mas não sua entrega HTTP real.
+## Segurança e administração
 
-## limites e falhas
+RLS nas tabelas expostas; pool privado sem grants a participantes. Contatos só após aceite e sem bloqueio; cada canal depende de autorização individual. Bloqueio, denúncia e exclusão preservados. Motivo opcional de não aprovação só pode ser gravado por revisão autorizada. Não foram alterados papéis nesta rodada.
 
-- 3 solicitações por participante a cada 24h; serialização por participante evita corrida.
-- 30 trabalhos de IA globalmente a cada 24h; um claim por trabalho, com lock e idempotência. Contam falhas também. Estes são limites do produto, não cotas prometidas pelo Google.
-- Até 700 tokens de saída, 20s de timeout, uma chamada sem retentativa automática. Categorias de no máximo oito itens. Resposta de até 400 caracteres de justificativa, duas perguntas de até 160 e mensagem de até 400.
-- Sem consentimento de qualquer participante, nenhum trabalho é criado. Com configuração ausente/limite/falha, permanece o resultado básico com rótulo explícito; logs não alegam sucesso.
-- Uma queda entre claim e finalização pode deixar `executando`. A curadoria deve investigar jobs sem finalização e entregas pg_net. Não reenviar cegamente: pode duplicar consumo. Não há recuperação automática nem Cron ativado nesta versão.
-- Revogação após a geração impede novas chamadas; não apaga retroativamente dados já recebidos pelo provedor. Revogação durante a chamada impede publicar o resultado. O registro histórico pode ser excluído com a conta.
-- Pedido sem candidata informa indisponibilidade, não inventa uma aliada. Requer outra participante aprovada e intenção complementar, tema, canal e disponibilidade compatíveis.
+Painel: tarefas permitidas no topo, métricas e demanda/oferta de habilidades; IA e automações reúne consumo, erros, convites pendentes agregados e três exportações para a banca. Dados de perfil/contato não são incluídos nos exports de provas.
 
-## testes e limitações
+## Publicação e evidência
 
-Build TypeScript/Vite; tipos das Edge Functions; testes SQL com RLS e contratos de job; testes Node de minimização/injeção/saída; navegador desktop e mobile com Auth/API simulados. Contagem e comandos finais em `VALIDACAO.md`.
+Bloco A publicado sob autorização geral: migration 031, worker versão 12 e frontend commit `ff725b2`. Deploy Vercel `dpl_D6g5qLtNqMdRUrLW9kbBm2CFqhct`, confirmado READY e no domínio público antes de iniciar B. Sete perfis presentes na migração preservados; backup privado fora do Git.
 
-Não verificados: Gemini real, limites/termos atuais do Google, entrega real de pg_net, login por e-mail/SMTP em staging, three real executions, consumo e billing reais, avaliadoras reais. Não há evidência de 20 casos reais ou duas rodadas humanas. Essa ausência impede chamar o projeto final de validado ou a IA de operacional.
+Na checagem após 031, zero perfis tinham habilidades/consentimento novo; por isso a nova geração real e três execuções não foram alegadas. A presença dos secrets não comprova resposta Gemini. Consultar situação final no relatório de entrega.
 
-## registro histórico da ativação inicial autorizada
+Testes: build, RLS local descartável, contratos de IA, navegador com Auth/API simulados, worker Deno com rede externa proibida, validação humana com stub e varredura de links. Evidência sintética não substitui pessoas reais nem API generativa real. Ver `VALIDACAO.md`, `CUSTOS.md`, `SEGURANCA.md` e `EMAILS.md`.
 
-- Projeto Supabase `mbiutzyteuvcoahhizmg`: migrations `20261116000012`, `20261116000013` e `20261116000014` aplicadas, registradas no histórico. Sete tabelas novas com RLS ativo; permissões anônimas verificadas.
-- Contagens históricas preservadas na ativação: 3 contas Auth, 2 perfis, 2 consentimentos, 2 contatos e 1 conexão. Nenhum contato histórico foi importado para o perfil novo.
-- `conversa-ia` publicada; URL e segredo interno no Vault. `GEMINI_FREE_TIER_CONFIRMED=false` explicitamente configurado. A compatibilidade básica funciona sem consumo de IA externa; não há chave Gemini nem teste real de geração.
-- `recomendar` aposentada com HTTP 410; gatilhos antigos e aprovação automática por informar LinkedIn desativados. A função de exclusão de conta foi preservada.
-- A branch remota tinha mudanças posteriores de recuperação de senha e e-mails. Elas foram integradas sem force-push; pitch, busca e mural continuam apenas no histórico, fora da navegação nova. Recuperação de senha foi testada na interface com API simulada.
-- Endpoint de contatos e RPC de compartilhamento recusaram acesso anônimo em produção. Worker recusou chamada sem segredo.
-- Link principal da publicação: https://aliadas-indol.vercel.app. Novas participantes e perfis antigos precisam completar o novo perfil profissional para usar a jornada. Não há conta fictícia inserida em produção pelos testes desta entrega.
-
-## Finalização visual, Gemini e administração — alterações locais posteriores
-
-A nova finalização não foi publicada. Landing institucional, Inter auto-hospedada, navegação distinta para visitantes, perfil agrupado, estados claros de conversas e polling limitado estão preparados no código. A aprovação de encontro exibida na conversa depende do feedback salvo, não apenas de escolher “sim” no formulário.
-
-A administradora confirmou o identificador da própria conta, sem mudança de produção. A migration 015 e o bootstrap separado estão preparados; a seção Embaixadoras só aparece para a principal depois desse bootstrap. Embaixadoras recebem atribuições específicas, nunca o privilégio legado amplo.
-
-Secrets Gemini agora existem e a confirmação gratuita está verdadeira; a titular confirmou ausência de faturamento. Isso substitui o diagnóstico histórico de chave ausente. Ainda não há perfis profissionais ou jobs para gerar conteúdo real. O frontend trata modo básico, processamento e falhas separadamente. Não criar contas fictícias ou gerar evidências simuladas em produção.
-
-Ordem de publicação futura, mediante aprovação expressa: revisar migration 015 → aplicar em produção → executar bootstrap confiável → atualizar conversa-ia → publicar frontend → testar com contas reais autorizadas. Não reaplicar migrations históricas nem restaurar fórum, pitch ou catálogo.
-
-## Autorização da finalização e aplicação da migration 015
-
-Após a revisão local, a titular autorizou expressamente o deploy completo, a migration 015 e o registro de sua conta principal. O backend administrativo foi aplicado e auditado, preservando o papel legado. Nenhuma embaixadora foi cadastrada automaticamente. Os avisos anteriores de “não aplicado” descrevem a etapa de preparação e ficam substituídos por este registro para essa versão. A versão está autorizada para publicação no endereço principal; geração real e validações humanas continuam sem evidência.
+Sem novas ferramentas pagas, faturamento, pagamentos ou contas fictícias em produção. Descoberta de habilidades por currículo (B7) é opcional e fica fora desta entrega principal.
