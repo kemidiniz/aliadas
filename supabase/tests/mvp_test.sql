@@ -48,18 +48,7 @@ select tst.ok(public.mvp_shared_contacts(:'invite')->>'email'='compartilhar@exem
 select tst.ok(public.mvp_shared_contacts(:'invite')->>'whatsapp' is null,'whatsapp preenchido mas não autorizado permanece oculto');
 select tst.ok(public.mvp_shared_contacts(:'invite')->'common_slots'='["1_tarde"]'::jsonb,'calcula períodos em comum deterministicamente');
 select tst.bloqueia(format('select public.mvp_schedule(%L,''amanhã'')', :'invite'),'proposta em texto livre não é mais oferecida');
-select tst.bloqueia(format('select public.mvp_propose_times(%L,array[now()+interval ''20 days''])', :'invite'),'horário além de 14 dias é rejeitado');
-select tst.bloqueia(format('select public.mvp_propose_times(%L,array[now()+interval ''1 day'',now()+interval ''2 days'',now()+interval ''3 days'',now()+interval ''4 days''])', :'invite'),'no máximo três horários');
-select public.mvp_propose_times(:'invite',array[now()+interval '1 day',now()+interval '2 days']);
-select tst.ok((select count(*) from public.conversation_time_proposals where invite_id=:'invite')=2,'participante lê as próprias propostas');
-select id as proposta from public.conversation_time_proposals where invite_id=:'invite' order by inicio limit 1 \gset
-select tst.bloqueia(format('select public.mvp_confirm_time(%L)', :'proposta'),'autora não confirma a própria proposta');
-select set_config('request.jwt.claim.sub', :'u3', false);
-select tst.ok((select count(*) from public.conversation_time_proposals)=0,'terceira pessoa não lê horários');
-select tst.bloqueia(format('select public.mvp_confirm_time(%L)', :'proposta'),'terceira pessoa não confirma horário');
-select set_config('request.jwt.claim.sub', :'u2', false);
-select public.mvp_confirm_time(:'proposta');
-select tst.ok((select horario_confirmado is not null and confirmado_em is not null from public.conversation_invites where id=:'invite'),'a outra participante confirma um horário');
+-- (horários propostos saíram na 028; as funções foram removidas)
 select set_config('request.jwt.claim.sub', :'u1', false);
 select public.mvp_feedback(:'invite',true,5::smallint,'clareza');
 select tst.bloqueia(format('select public.mvp_feedback(%L,false,5::smallint,''clareza'')', :'invite'),'feedback incoerente é rejeitado');

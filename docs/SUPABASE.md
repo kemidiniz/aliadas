@@ -2,6 +2,19 @@
 
 # guia do supabase (passo a passo)
 
+## Mapa das tabelas (depois da 028)
+
+| Grupo | Tabelas |
+|---|---|
+| Contas e acesso | profiles, roles, principal_administrator, ambassador_permissions, admin_access_audit, consents |
+| Perfil profissional | professional_profiles, professional_contacts |
+| Conversas | conversation_requests, conversation_suggestions, conversation_jobs, conversation_invites, conversation_feedback, conversation_feedback_requests, conversation_blocks, conversation_expiry_runs |
+| Comunidade e site | reports, feedback |
+| Arquivos | storage: bucket privado `fotos` |
+
+Saíram na 028 (produto antigo): forum_posts, forum_comentarios, forum_curtidas, programs, program_recommendations, recommendations, connections, contacts, ai_runs e conversation_time_proposals. Detalhes em `docs/LIMPEZA-BANCO.md`. Rotinas: `aliadas-expirar-convites` (pg_cron, diária). Edge Functions: `conversa-ia` e `excluir-conta`.
+
+
 > Regra de ouro: **nenhuma chave entra no código, em print ou no git.** A única chave que vai para o frontend é a *anon/publishable* (ela é pública por natureza; quem protege os dados é o RLS).
 
 ## 1. criar o projeto
