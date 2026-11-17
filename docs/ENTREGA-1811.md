@@ -52,3 +52,10 @@ A rede desta sessão bloqueia jitsi.org, então não foi possível conferir na d
 6. Teste rápido com a sua conta: abrir o perfil (as listas novas devem vir preenchidas a partir dos temas antigos), fazer uma busca e ver um cartão ou a mensagem "Ninguém compatível agora".
 
 **Ordem importa:** as migrations vão antes do frontend. O frontend novo chama `mvp_create_request(goal, description)`, que só existe depois da 017.
+
+## Registro do deploy (17/11, autorizado)
+
+- Migrations 016 e 017 aplicadas em produção (o banco não tinha perfis profissionais; nada a converter).
+- `conversa-ia` republicada (versão 8, `verify_jwt` desligado como antes).
+- Security Advisor: nenhuma tabela sem RLS. Avisos novos esperados: 4 RPCs de participantes (SECURITY DEFINER) e `conversation_suggestions` sem política (uso interno). Continua pendente ligar a proteção contra senhas vazadas no painel de Auth.
+- Site publicado na Vercel a partir do commit d140ad2 (aliadas-indol.vercel.app).
