@@ -141,6 +141,12 @@ try {
     const links=g.getByRole("navigation",{name:"Rodapé"}).getByRole("link");assert.equal(await links.count(),3);
     const boxes=await links.evaluateAll(nodes=>nodes.map(n=>({y:n.getBoundingClientRect().y,left:n.getBoundingClientRect().left,right:n.getBoundingClientRect().right,font:parseFloat(getComputedStyle(n).fontSize)})));
     assert(boxes.every(b=>b.font>=14 && b.left>=0 && b.right<=width),JSON.stringify(boxes));assert(Math.max(...boxes.map(b=>b.y))-Math.min(...boxes.map(b=>b.y))<2,"links do rodapé na mesma linha");
+    const conteudo=await g.locator("footer > div").evaluate(n=>({left:n.getBoundingClientRect().left+parseFloat(getComputedStyle(n).paddingLeft),right:n.getBoundingClientRect().right-parseFloat(getComputedStyle(n).paddingRight)}));
+    const titulo=await g.getByRole("heading",{level:1}).boundingBox();
+    const logo=await g.locator('footer a[href="/"]').boundingBox();
+    assert(Math.abs(conteudo.left-titulo.x)<1 && Math.abs(logo.x-titulo.x)<1,"rodapé e título usam a mesma margem");
+    assert(boxes.every(b=>b.left>=conteudo.left-1 && b.right<=conteudo.right+1),"links respeitam as duas margens do conteúdo");
+    if(width<640) assert(Math.abs(boxes[0].left-titulo.x)<1 && Math.abs(boxes.at(-1).right-conteudo.right)<1,"links no celular alinhados ao conteúdo, sem margem negativa");
     await g.locator("footer").screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B8"}/rodape-${width}.png`});
   }
   console.log("PASSOU: /sobre público, rotas legais preservam âncoras, rodapé com 3 links de 14px na mesma linha em 360/390/1440");
