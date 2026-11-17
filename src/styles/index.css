@@ -407,3 +407,14 @@ button.chip:disabled {
 
 .faq summary { list-style: none; }
 .faq summary::-webkit-details-marker { display: none; }
+
+/* Conceito em destaque logo abaixo do título do hero */
+.conceito {
+  margin-top: 1rem;
+  font-family: var(--font-titulo);
+  font-size: var(--text-destaque);
+  font-weight: 700;
+  color: var(--texto);
+  border-left: 4px solid var(--coral);
+  padding-left: 0.875rem;
+}

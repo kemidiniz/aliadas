@@ -29,6 +29,12 @@ export default function QuemSomos() {
         </a>
         ).
       </p>
+      <h2 className={h2}>Não é apenas mentoria, é aliança</h2>
+      <p className={p}>
+        Na mentoria, alguém com mais experiência guia alguém com menos. Aqui,
+        qualquer mulher pode apoiar outra, em qualquer momento da carreira, lado
+        a lado.
+      </p>
       <h2 className={h2}>Para quem é</h2>
       <p className={p}>
         Para mulheres cis e trans e pessoas não binárias, de qualquer área, que
@@ -43,14 +49,14 @@ export default function QuemSomos() {
           IA explica a indicação, sugere duas perguntas e um rascunho de convite.
         </li>
         <li>
-          Você revisa e decide se envia. A outra pessoa decide se aceita. Só
-          depois do aceite os contatos aparecem.
+          Você revisa e decide se envia. A outra pessoa decide se aceita. Depois
+          do aceite, os contatos aparecem e vocês conversam por onde preferirem.
         </li>
       </ol>
       <h2 className={h2}>Quem faz</h2>
       <p className={p}>
         A aliadas nasceu na formação em IA Aplicada da {"{reprograma}"}, criada
-        por [NOME]. A {"{reprograma}"} não administra nem patrocina a plataforma.
+        por Kemily Diniz. A {"{reprograma}"} não administra nem patrocina a plataforma.
       </p>
       {POR_QUE_CRIEI && (
         <>

@@ -94,7 +94,7 @@ export default function FeedbackPagina() {
                   </fieldset>
                   <Escolha
                     nome="encontrou"
-                    rotulo="Você conseguiu marcar uma conversa?"
+                    rotulo="Você conseguiu se conectar com alguém?"
                     valor={f.encontrou_aliadas}
                     aoMudar={(v) => muda('encontrou_aliadas', v)}
                     erro={erros.encontrou_aliadas}

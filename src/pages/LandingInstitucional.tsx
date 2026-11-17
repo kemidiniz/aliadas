@@ -29,7 +29,7 @@ const FAQ = [
   },
   {
     q: "A aliadas é mentoria?",
-    a: "Não. É uma conversa profissional com objetivo definido, sem terapia nem mentoria formal.",
+    a: "Não é apenas mentoria. Na mentoria, alguém com mais experiência guia alguém com menos. Aqui, qualquer mulher pode apoiar outra, em qualquer momento da carreira: com escuta, uma dica ou um contato.",
   },
   {
     q: "E se não houver ninguém compatível?",
@@ -47,6 +47,7 @@ export default function LandingInstitucional() {
         <div>
           <p className="eyebrow">Conexões entre mulheres</p>
           <h1 id="hero-title">Uma conversa pode abrir novos caminhos.</h1>
+          <p className="conceito">Não é apenas mentoria, é aliança.</p>
           <p className="hero-description">
             Encontre uma mulher para conversar sobre o próximo passo da sua
             carreira e compartilhe o que você já sabe.
@@ -149,17 +150,12 @@ export default function LandingInstitucional() {
         <p className="eyebrow">Como funciona</p>
         <h2 id="solution-title">Três passos até a conversa.</h2>
         <ol className="steps-list">
-          {[
-            { title: "Escolha o objetivo", text: "Diga sobre o que quer conversar." },
-            { title: "Receba uma indicação", text: "Alguém que pode ajudar com esse objetivo." },
-            { title: "Converse por onde preferir", text: "Depois do aceite, os contatos aparecem e vocês combinam a conversa." },
-          ].map((step, i) => (
-            <li key={step.title}>
+          {["Escolha o objetivo.", "Receba uma indicação.", "Depois do aceite, conversem por onde preferirem."].map((passo, i) => (
+            <li key={passo}>
               <span className="step-number" aria-hidden>
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <h3>{step.title}</h3>
-              <p className="mt-3 text-suave">{step.text}</p>
+              <h3>{passo}</h3>
             </li>
           ))}
         </ol>
