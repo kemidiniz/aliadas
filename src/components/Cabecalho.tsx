@@ -49,7 +49,7 @@ export function Cabecalho() {
       ]
     : [
         { to: "/#como-funciona", rotulo: "Como funciona" },
-        { to: "/#quem-somos", rotulo: "Quem somos" },
+        { to: "/quem-somos", rotulo: "Quem somos" },
         { to: "/entrar", rotulo: "Entrar" },
       ];
 

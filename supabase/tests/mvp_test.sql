@@ -164,3 +164,38 @@ select set_config('request.jwt.claim.sub', :'u3', false);
 select tst.bloqueia(format('select public.mvp_next_suggestion(%L)', :'busca'),'terceira pessoa não troca sugestão alheia');
 select tst.bloqueia($$select * from public.conversation_suggestions$$,'histórico de sugestões não é legível por participantes');
 reset role;
+-- 018: desempate por menos convites recebidos e exclusão de quem tem 2 pendentes.
+\set d1 '10000000-0000-0000-0000-000000000011'
+\set d2 '10000000-0000-0000-0000-000000000012'
+\set d3 '10000000-0000-0000-0000-000000000013'
+\set d4 '10000000-0000-0000-0000-000000000014'
+\set d5 '10000000-0000-0000-0000-000000000015'
+insert into auth.users(id,email) values(:'d1','d1@exemplo.invalid'),(:'d2','d2@exemplo.invalid'),(:'d3','d3@exemplo.invalid'),(:'d4','d4@exemplo.invalid'),(:'d5','d5@exemplo.invalid');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'d1', false);
+select public.mvp_save_profile('{"name":"quem pede","occupation":"estudante","moment":"inicio","areas":["direito"],"can_help":[],"want_talk":["rede"],"channels":["linkedin"],"slots":[]}', '{}', true);
+select set_config('request.jwt.claim.sub', :'d2', false);
+select public.mvp_save_profile('{"name":"ajuda dois","occupation":"advogada","moment":"experiente","areas":["direito"],"can_help":["rede"],"want_talk":[],"channels":["linkedin"],"slots":[]}', '{}', true);
+select set_config('request.jwt.claim.sub', :'d3', false);
+select public.mvp_save_profile('{"name":"ajuda tres","occupation":"juiza","moment":"experiente","areas":["direito"],"can_help":["rede"],"want_talk":[],"channels":["linkedin"],"slots":[]}', '{}', true);
+select set_config('request.jwt.claim.sub', :'d4', false);
+select public.mvp_save_profile('{"name":"outra quatro","occupation":"designer de testes","moment":"inicio","areas":["artes"],"can_help":[],"want_talk":["carreira"],"channels":["email"],"slots":[]}', '{}', true);
+select set_config('request.jwt.claim.sub', :'d5', false);
+select public.mvp_save_profile('{"name":"outra cinco","occupation":"designer de testes","moment":"inicio","areas":["artes"],"can_help":[],"want_talk":["carreira"],"channels":["email"],"slots":[]}', '{}', true);
+reset role;
+update public.profiles set status='aprovado' where id in(:'d1',:'d2',:'d3',:'d4',:'d5');
+-- d2 recebeu 1 convite recente (recusado); d3 nenhum. Empatadas na pontuação.
+insert into public.conversation_requests(id,owner_id,intention,goal) values('40000000-0000-0000-0000-000000000001',:'d4','buscar','situacao');
+insert into public.conversation_invites(request_id,sender_id,recipient_id,message,state) values('40000000-0000-0000-0000-000000000001',:'d4',:'d2','oi','recusada');
+set role authenticated;select set_config('request.jwt.claim.sub', :'d1', false);
+select public.mvp_create_request('rede','') as emp \gset
+select tst.ok((select candidate_id=:'d3' from public.conversation_requests where id=:'emp'),'empate: escolhe quem recebeu menos convites em 14 dias');
+reset role;
+-- d3 passa a ter 2 convites pendentes: sai da seleção.
+insert into public.conversation_requests(id,owner_id,intention,goal) values('40000000-0000-0000-0000-000000000002',:'d4','buscar','situacao'),('40000000-0000-0000-0000-000000000003',:'d5','buscar','situacao');
+insert into public.conversation_invites(request_id,sender_id,recipient_id,message) values('40000000-0000-0000-0000-000000000002',:'d4',:'d3','oi'),('40000000-0000-0000-0000-000000000003',:'d5',:'d3','oi');
+set role authenticated;select set_config('request.jwt.claim.sub', :'d1', false);
+select public.mvp_create_request('rede','') as sobrecarga \gset
+select tst.ok((select candidate_id=:'d2' from public.conversation_requests where id=:'sobrecarga'),'quem tem 2 convites pendentes não é escolhida');
+select tst.ok(public.mvp_next_suggestion(:'sobrecarga') is null,'ver outra sugestão não repete e não traz quem está sobrecarregada');
+reset role;

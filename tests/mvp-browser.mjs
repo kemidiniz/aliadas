@@ -100,6 +100,10 @@ try {
     3,
   );
   assert.equal(await g.locator('a[href="/forum"]').count(), 0);
+  await g.getByRole("link", { name: "Quem somos" }).first().click();
+  await g.waitForURL(base + "/quem-somos");
+  await g.getByRole("heading", { level: 2, name: "Como funciona" }).waitFor();
+  assert.equal(await g.title(), "Quem somos · aliadas");
   await g.goto(base + "/forum");
   await g.waitForURL(base + "/");
   console.log("PASSOU: início público, três itens e fórum fora da jornada");
@@ -210,6 +214,7 @@ try {
   await p.getByRole("heading", { name: "Suas buscas" }).waitFor();
   await p.getByText("aliada de teste", { exact: true }).waitFor();
   assert(!calls.some((x) => x.endpoint === "mvp_invite"));
+  assert.equal(await p.getByText("Sugerido pela IA", { exact: true }).count(), 0, "modo básico sem selo de IA");
   assert.deepEqual(calls.find((x) => x.endpoint === "mvp_create_request").body, { goal: "carreira", description: "" });
   assert.equal(await p.getByRole("button", { name: /atualizar resultado/i }).count(), 0);
   console.log("PASSOU: objetivo da conversa em chips, busca em cartão e sem convite automático");
@@ -225,6 +230,8 @@ try {
   ];
   jobState = "concluida";
   await p.getByText("Pergunta de teste um?", { exact: true }).waitFor({ timeout: 15000 });
+  await p.getByText("Sugerido pela IA", { exact: true }).waitFor();
+  await p.getByText("Revise antes de enviar. Você decide se manda.").waitFor();
   assert.equal(await p.getByRole("textbox", { name: "Sua mensagem" }).inputValue(), "minha mensagem revisada de teste");
   console.log("PASSOU: resultado assíncrono aparece sozinho e preserva a mensagem editada (API simulada)");
   const antes = calls.filter((x) => x.endpoint === "mvp_create_request").length;

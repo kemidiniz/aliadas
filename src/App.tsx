@@ -15,6 +15,7 @@ const Cadastro = lazy(() => import("./pages/PerfilProfissional"));
 const Conversas = lazy(() => import("./pages/ConversasProfissionais"));
 const Curadoria = lazy(() => import("./pages/Curadoria"));
 const FeedbackPagina = lazy(() => import("./pages/Feedback"));
+const QuemSomos = lazy(() => import("./pages/QuemSomos"));
 const TermoDeConduta = lazy(() =>
   import("./pages/Textos").then((m) => ({ default: m.TermoDeConduta })),
 );
@@ -104,6 +105,7 @@ export function App() {
                 path="/recomendacoes"
                 element={<Navigate to="/" replace />}
               />
+              <Route path="/quem-somos" element={<QuemSomos />} />
               <Route path="/feedback" element={<FeedbackPagina />} />
               <Route path="/termo-de-conduta" element={<TermoDeConduta />} />
               <Route path="/privacidade" element={<Privacidade />} />

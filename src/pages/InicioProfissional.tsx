@@ -316,6 +316,11 @@ function Indicacao({
         </div>
       </header>
       <Chips rotulo="Áreas" itens={card.areas.map((a) => AREAS_PRO[a as keyof typeof AREAS_PRO] ?? a)} />
+      {r.mode === "generativa" && (
+        <span className="inline-flex rounded-full border border-campo px-3 py-1 text-xs font-semibold text-suave">
+          Sugerido pela IA
+        </span>
+      )}
       <p>{r.explanation}</p>
       {r.questions.length > 0 && (
         <div className="rounded-2xl bg-superficie p-4">
@@ -330,7 +335,11 @@ function Indicacao({
       {status && <p className="text-xs text-suave" role="status">{status}</p>}
       <CampoArea
         rotulo="Sua mensagem"
-        ajuda="Revise antes de enviar. Contatos só aparecem depois do aceite."
+        ajuda={
+          r.mode === "generativa"
+            ? "Revise antes de enviar. Você decide se manda."
+            : "Revise antes de enviar. Contatos só aparecem depois do aceite."
+        }
         maxLength={600}
         rows={3}
         value={msg}

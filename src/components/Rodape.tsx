@@ -14,7 +14,7 @@ export function Rodape() {
             {"{reprograma}"} não administra nem patrocina a plataforma.
           </p>
         </div>
-        <nav aria-label="rodapé">
+        <nav aria-label="Rodapé">
           {curadora && (
             <Link
               className="mb-3 block text-destaque underline"
@@ -30,6 +30,11 @@ export function Rodape() {
                 to="/feedback"
               >
                 Feedback
+              </Link>
+            </li>
+            <li>
+              <Link className="text-texto hover:text-destaque" to="/quem-somos">
+                Quem somos
               </Link>
             </li>
             <li>

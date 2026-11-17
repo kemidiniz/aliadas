@@ -77,33 +77,10 @@ export type Feedback = {
   created_at: string
 }
 
-export const ROTULO_ONDE_ESTA: Record<OndeEsta, string> = {
-  estudando: 'estou estudando',
-  primeira_vaga: 'buscando a primeira vaga',
-  ate_2_anos: 'trabalho na área há até 2 anos',
-}
 
-export const ROTULO_FORMA: Record<FormaConexao, string> = {
-  chamada: 'chamada de vídeo',
-  mensagem: 'mensagem',
-  encontro: 'encontro presencial',
-}
 
-export const formasTexto = (f: FormaConexao[]) => f.map((x) => ROTULO_FORMA[x]).join(', ')
 
 // sugestões de áreas; quem quiser pode escrever outra
-export const AREAS = [
-  'inteligência artificial',
-  'dados',
-  'desenvolvimento front-end',
-  'desenvolvimento back-end',
-  'desenvolvimento mobile',
-  'ux design',
-  'produto',
-  'qualidade de software',
-  'infraestrutura e nuvem',
-  'segurança da informação',
-] as const
 
 export const PAGINAS_DO_SITE = [
   'home',

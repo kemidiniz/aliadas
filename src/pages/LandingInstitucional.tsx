@@ -1,9 +1,7 @@
 import { BotaoLink } from "../components/Botao";
 import { Pagina } from "../components/Pagina";
-const LINKEDIN =
-  "https://www.linkedin.com/business/talent/blog/talent-acquisition/women-less-likely-to-have-strong-networks";
-const WEF =
-  "https://www.weforum.org/publications/global-gender-gap-report-2024/economic-and-leadership-gaps-constraining-growth-and-skewing-transitions-7b05a512cb";
+import { Link } from "react-router-dom";
+import { FONTE_LINKEDIN as LINKEDIN, FONTE_WEF as WEF } from "../lib/fontes";
 function Arrow() {
   return (
     <svg
@@ -121,6 +119,9 @@ export default function LandingInstitucional() {
             conexões profissionais mais simples e intencionais.
           </p>
         </div>
+        <Link to="/quem-somos" className="text-link mt-5 inline-block">
+          Conheça a aliadas →
+        </Link>
       </section>
       <section className="institutional-section" aria-labelledby="audience-title">
         <p className="eyebrow">Para quem é</p>
