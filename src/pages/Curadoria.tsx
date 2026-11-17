@@ -5,49 +5,47 @@ import { Pagina, Titulo } from "../components/Pagina";
 import { Botao } from "../components/Botao";
 import { Aviso, Carregando } from "../components/Aviso";
 import { mensagemAmigavel } from "../lib/erros";
-import { AREAS_PRO, MOMENTS_PRO, GOALS_PRO } from "../lib/professional";
-import IndicadoresMvp from "./IndicadoresMvp";
+import { AREAS_PRO, SITUACAO_PRO, GOALS_PRO, label } from "../lib/professional";
+import IAAutomacoes from "./IAAutomacoes";
 import FeedbackPainel from "./FeedbackPainel";
-import Embaixadoras from "./Embaixadoras";
-type Tab = "painel" | "feedback" | "perfis" | "denuncias" | "embaixadoras";
+import AvaliacaoConversas, { pct } from "./AvaliacaoConversas";
+import Acessos from "./Acessos";
+
+// Cada aba aparece só para quem tem a permissão; o banco confere de novo em cada RPC.
+type Tab = "visao" | "perfis" | "denuncias" | "feedback" | "ia" | "acessos";
 export default function Curadoria() {
   const { adminAccess, recarregar } = useAuth();
-  const [tab, setTab] = useState<Tab>("painel");
+  const [tab, setTab] = useState<Tab>("visao");
   const [contagem, setContagem] = useState<Record<string, number>>({});
   useEffect(() => {
-    // contadores das abas; sem acesso ao painel, as abas ficam sem número
-    supabase.rpc("mvp_metrics").then(({ data }) => {
-      if (data) setContagem({ perfis: Number(data.pending_profiles ?? 0), denuncias: Number(data.open_reports ?? 0) });
+    supabase.rpc("mvp_admin_counts").then(({ data }) => {
+      if (data) setContagem(data as Record<string, number>);
     });
   }, [tab]);
   const tabs: { id: Tab; label: string }[] = [];
-  if (adminAccess.principal || adminAccess.legacy)
-    tabs.push({ id: "painel", label: "Painel" }, { id: "feedback", label: "Feedback" });
+  if (adminAccess.ver_visao_geral) tabs.push({ id: "visao", label: "Visão geral" });
   if (adminAccess.review_profiles) tabs.push({ id: "perfis", label: "Perfis" });
-  if (adminAccess.handle_reports)
-    tabs.push({ id: "denuncias", label: "Denúncias" });
-  if (adminAccess.principal)
-    tabs.push({ id: "embaixadoras", label: "Embaixadoras" });
+  if (adminAccess.handle_reports) tabs.push({ id: "denuncias", label: "Denúncias" });
+  if (adminAccess.ver_feedback) tabs.push({ id: "feedback", label: "Feedback" });
+  if (adminAccess.ver_ia_automacoes) tabs.push({ id: "ia", label: "IA e automações" });
+  if (adminAccess.principal) tabs.push({ id: "acessos", label: "Acessos" });
   const active = tabs.some((x) => x.id === tab) ? tab : tabs[0]?.id;
+  const ir = (t: Tab) => {
+    setTab(t);
+    recarregar();
+  };
   return (
     <Pagina titulo="Painel das embaixadoras">
-      <Titulo sub="Acesso restrito às atribuições autorizadas para sua conta.">
-        Painel das embaixadoras
-      </Titulo>
+      <Titulo sub="Cada aba aparece de acordo com os acessos da sua conta.">Painel das embaixadoras</Titulo>
       {adminAccess.legacy && (
         <div className="mb-6">
           <Aviso>
-            Acesso administrativo legado preservado. A identificação da
-            administradora principal está preparada para migração e depende de
-            autorização para aplicar os papéis.
+            Acesso administrativo legado preservado. A identificação da administradora principal está preparada para
+            migração e depende de autorização para aplicar os papéis.
           </Aviso>
         </div>
       )}
-      <div
-        role="tablist"
-        aria-label="Áreas administrativas"
-        className="mb-8 flex flex-wrap gap-3"
-      >
+      <div role="tablist" aria-label="Áreas administrativas" className="mb-8 flex flex-wrap gap-3">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -56,10 +54,7 @@ export default function Curadoria() {
             aria-controls={`admin-${t.id}`}
             id={`tab-${t.id}`}
             className={`rounded-xl border px-4 py-3 font-medium ${active === t.id ? "border-destaque bg-destaque text-sobre-destaque" : "border-campo"}`}
-            onClick={() => {
-              setTab(t.id);
-              recarregar();
-            }}
+            onClick={() => ir(t.id)}
           >
             {t.label}
             {contagem[t.id] ? (
@@ -71,49 +66,107 @@ export default function Curadoria() {
           </button>
         ))}
       </div>
-      <section
-        role="tabpanel"
-        className="min-h-[60vh]"
-        id={`admin-${active}`}
-        aria-labelledby={`tab-${active}`}
-      >
+      <section role="tabpanel" className="min-h-[60vh]" id={`admin-${active}`} aria-labelledby={`tab-${active}`}>
+        {active === "visao" && <VisaoGeral ir={ir} pode={(t) => tabs.some((x) => x.id === t)} />}
         {active === "perfis" && <Profiles />}
         {active === "denuncias" && <Reports />}
-        {active === "painel" && <IndicadoresMvp />}
-        {active === "feedback" && <FeedbackPainel />}
-        {active === "embaixadoras" && <Embaixadoras />}
+        {active === "feedback" && (
+          <div className="space-y-12">
+            <div>
+              <h2 className="mb-4 text-xl">Feedback do site</h2>
+              <FeedbackPainel />
+            </div>
+            <div>
+              <h2 className="mb-4 text-xl">Avaliação das conversas</h2>
+              <AvaliacaoConversas />
+            </div>
+          </div>
+        )}
+        {active === "ia" && <IAAutomacoes />}
+        {active === "acessos" && <Acessos />}
         {!active && <Aviso>Nenhuma atribuição administrativa ativa.</Aviso>}
       </section>
     </Pagina>
   );
 }
+
+type Visao = {
+  pending_profiles: number;
+  pending_invites: number;
+  conversations_happened: number;
+  useful_rate: number | null;
+  open_reports: number;
+  feedback_new: number;
+};
+// Só 6 cards; cada um leva à aba de detalhe (se a pessoa tiver acesso a ela).
+function VisaoGeral({ ir, pode }: { ir: (t: Tab) => void; pode: (t: Tab) => boolean }) {
+  const [m, setM] = useState<Visao | null>(null);
+  const [erro, setErro] = useState("");
+  useEffect(() => {
+    supabase.rpc("mvp_metrics").then(({ data, error }) => {
+      if (error) setErro("Não foi possível carregar a visão geral agora.");
+      else setM(data as Visao);
+    });
+  }, []);
+  if (erro) return <Aviso tipo="erro">{erro}</Aviso>;
+  if (!m) return <Carregando />;
+  const cards: [string, string | number, Tab][] = [
+    ["Perfis aguardando aprovação", m.pending_profiles, "perfis"],
+    ["Convites esperando resposta", m.pending_invites, "feedback"],
+    ["Conversas que aconteceram", m.conversations_happened, "feedback"],
+    ["Conversas úteis", pct(m.useful_rate), "feedback"],
+    ["Denúncias abertas", m.open_reports, "denuncias"],
+    ["Feedbacks novos", m.feedback_new, "feedback"],
+  ];
+  return (
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {cards.map(([rotulo, valor, destino]) => {
+        const conteudo = (
+          <>
+            <span className="block text-sm text-suave">{rotulo}</span>
+            <span className="mt-1 block font-titulo text-3xl font-bold text-destaque">{valor}</span>
+          </>
+        );
+        return (
+          <li key={rotulo}>
+            {pode(destino) ? (
+              <button
+                type="button"
+                onClick={() => ir(destino)}
+                className="block h-full w-full rounded-2xl border border-linha p-5 text-left transition-colors hover:border-destaque hover:bg-superficie"
+              >
+                {conteudo}
+                <span className="mt-3 block text-sm font-semibold text-destaque">Ver detalhes</span>
+              </button>
+            ) : (
+              <div className="h-full rounded-2xl border border-linha p-5">{conteudo}</div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 type Profile = {
   id: string;
   name: string;
   status: string;
-  occupation: string | null;
-  moment: string | null;
-  areas: string[] | null;
-  themes: string[] | null;
+  situacao: string | null;
+  area_principal: string | null;
+  interesses: string[] | null;
+  can_help: string[] | null;
 };
+// Só os perfis que aguardam aprovação, com aprovar ou recusar.
 function Profiles() {
   const { session, recarregar } = useAuth();
-  const [filter, setFilter] = useState("pendente");
   const [rows, setRows] = useState<Profile[] | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function load() {
-    setRows(null);
-    const { data, error } = await supabase.rpc("mvp_admin_profiles", {
-      filter_status: filter,
-    });
+    const { data, error } = await supabase.rpc("mvp_admin_profiles", { filter_status: "pendente" });
     if (error) {
-      setError(
-        mensagemAmigavel(
-          error,
-          "Não foi possível carregar os perfis autorizados.",
-        ),
-      );
+      setError(mensagemAmigavel(error, "Não foi possível carregar os perfis."));
       setRows([]);
     } else {
       setRows(data);
@@ -122,13 +175,10 @@ function Profiles() {
   }
   useEffect(() => {
     load();
-  }, [filter]);
+  }, []);
   async function review(id: string, status: string) {
     setBusy(true);
-    const { error } = await supabase.rpc("mvp_admin_review", {
-      target: id,
-      new_status: status,
-    });
+    const { error } = await supabase.rpc("mvp_admin_review", { target: id, new_status: status });
     setBusy(false);
     if (error) {
       setError(mensagemAmigavel(error));
@@ -137,84 +187,54 @@ function Profiles() {
   }
   return (
     <>
-      <label className="mb-6 block">
-        Mostrar perfis
-        <select
-          className="ml-3 rounded-xl border border-campo bg-fundo p-3"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        >
-          {Object.entries({
-            pendente: "Pendentes",
-            aprovado: "Aprovados",
-            reprovado: "Reprovados",
-            pausado: "Pausados",
-          }).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </select>
-      </label>
+      <h2 className="mb-5 text-xl">Perfis aguardando aprovação</h2>
       {error && <Aviso tipo="erro">{error}</Aviso>}
       {!rows ? (
         <Carregando />
       ) : !rows.length ? (
-        <p>Nenhum perfil neste estado.</p>
+        <p className="text-suave">Nenhum perfil aguardando aprovação.</p>
       ) : (
         <ul className="space-y-5">
           {rows.map((p) => (
             <li key={p.id} className="rounded-2xl border border-linha p-6">
-              <h2 className="text-xl">{p.name}</h2>
-              <p className="mt-2">
-                {p.occupation ??
-                  "Perfil histórico: a participante ainda precisa completar os dados profissionais."}
-              </p>
-              <p className="mt-3 text-sm text-suave">
-                {MOMENTS_PRO[p.moment as keyof typeof MOMENTS_PRO] ?? ""}
-              </p>
-              <p className="mt-2 text-sm">
-                {p.areas
-                  ?.map((x) => AREAS_PRO[x as keyof typeof AREAS_PRO] ?? x)
-                  .join(", ")}
-              </p>
-              <p className="mt-2 text-sm">
-                {p.themes
-                  ?.map((x) => GOALS_PRO[x as keyof typeof GOALS_PRO] ?? x)
-                  .join("; ")}
-              </p>
+              <h3 className="text-lg">{p.name}</h3>
+              <dl className="mt-3 space-y-1 text-sm">
+                {p.situacao && (
+                  <div>
+                    <dt className="inline text-suave">Hoje: </dt>
+                    <dd className="inline">{label(SITUACAO_PRO, p.situacao)}</dd>
+                  </div>
+                )}
+                {p.area_principal && (
+                  <div>
+                    <dt className="inline text-suave">Área: </dt>
+                    <dd className="inline">{label(AREAS_PRO, p.area_principal)}</dd>
+                  </div>
+                )}
+                {!!p.interesses?.length && (
+                  <div>
+                    <dt className="inline text-suave">Interesses: </dt>
+                    <dd className="inline">{p.interesses.map((x) => label(AREAS_PRO, x)).join(", ")}</dd>
+                  </div>
+                )}
+                {!!p.can_help?.length && (
+                  <div>
+                    <dt className="inline text-suave">Pode ajudar com: </dt>
+                    <dd className="inline">{p.can_help.map((x) => label(GOALS_PRO, x)).join("; ")}</dd>
+                  </div>
+                )}
+                {!p.situacao && <p className="text-suave">Ainda não completou o primeiro acesso.</p>}
+              </dl>
               {p.id === session?.user.id ? (
-                <p className="mt-4 text-sm text-suave">
-                  Seu perfil deve ser avaliado por outra responsável autorizada.
-                </p>
+                <p className="mt-4 text-sm text-suave">Seu perfil deve ser avaliado por outra embaixadora.</p>
               ) : (
                 <div className="mt-5 flex flex-wrap gap-3">
-                  {p.status !== "aprovado" && (
-                    <Botao
-                      carregando={busy}
-                      onClick={() => review(p.id, "aprovado")}
-                    >
-                      Aprovar perfil
-                    </Botao>
-                  )}
-                  {p.status !== "reprovado" && (
-                    <Botao
-                      variante="secundario"
-                      carregando={busy}
-                      onClick={() => review(p.id, "reprovado")}
-                    >
-                      Reprovar perfil
-                    </Botao>
-                  )}
-                  {p.status === "aprovado" && (
-                    <Botao
-                      variante="discreto"
-                      carregando={busy}
-                      onClick={() => review(p.id, "pausado")}
-                    >
-                      Pausar perfil
-                    </Botao>
-                  )}
+                  <Botao carregando={busy} onClick={() => review(p.id, "aprovado")}>
+                    Aprovar
+                  </Botao>
+                  <Botao variante="secundario" carregando={busy} onClick={() => review(p.id, "reprovado")}>
+                    Recusar
+                  </Botao>
                 </div>
               )}
             </li>

@@ -119,10 +119,9 @@ select public.mvp_invite(:'queued','convite de teste para medir ausência de res
 select set_config('request.jwt.claim.sub', :'u2', false);
 select public.mvp_respond(:'unanswered_invite',true);
 select set_config('request.jwt.claim.sub', :cur, false);
-select public.mvp_metrics() as metrics \gset
-select tst.ok((:'metrics'::jsonb->>'accepted')::integer=2 and (:'metrics'::jsonb->>'confirmed')::integer=1,'aceite sem feedback não é confirmado como conversa realizada');
-select tst.ok((:'metrics'::jsonb->>'useful')::integer=1 and (:'metrics'::jsonb->>'responses')::integer=2,'utilidade e respostas não são duplicadas por convite');
-select tst.ok((:'metrics'::jsonb->>'conflicting')::integer=1 and (:'metrics'::jsonb->>'average')::numeric=5,'divergência entre participantes fica visível e média usa notas válidas');
+select public.mvp_conversation_metrics() as metrics \gset
+select tst.ok((:'metrics'::jsonb->>'conversations_happened')::integer=1,'aceite sem feedback não é contado como conversa que aconteceu');
+select tst.ok((:'metrics'::jsonb->>'useful_rate')::numeric=1,'utilidade não é duplicada por convite');
 reset role;
 -- 016/017: sala fixa, perfil com duas listas e "ver outra sugestão".
 reset role;
@@ -203,9 +202,11 @@ select tst.bloqueia($$select public.mvp_metrics()$$,'participante não lê o pai
 select tst.ok((select count(*) from public.conversation_jobs)=0,'participante não lê execuções da IA');
 select set_config('request.jwt.claim.sub', :cur, false);
 select public.mvp_metrics() as painel \gset
-select tst.ok(:'painel'::jsonb ?& array['pending_profiles','requests_without_match','stale_invites','open_reports','feedback_month','tokens_month','jobs_failed_month'],'painel traz os indicadores novos');
-select tst.ok((:'painel'::jsonb->'requests_without_match'->>'carreira')::int>=1,'pedidos sem candidata agrupados por objetivo');
-select tst.ok((:'painel'::jsonb->>'feedback_month')::int>=1 and (:'painel'::jsonb->'tokens_month'->>'input')::int>=0,'feedback e tokens do mês vêm de dados reais');
+select public.mvp_ai_metrics() as ia \gset
+select tst.ok(:'painel'::jsonb ?& array['pending_profiles','pending_invites','conversations_happened','useful_rate','open_reports','feedback_new'] and (select count(*) from jsonb_object_keys(:'painel'::jsonb))=6,'visão geral traz só os 6 números dos cards');
+select tst.ok(:'ia'::jsonb ?& array['requests_without_match','tokens_month','jobs_failed_month','jobs_month'] and not (:'painel'::jsonb ? 'tokens_month'),'números da IA ficam só na aba IA e automações');
+select tst.ok((:'ia'::jsonb->'requests_without_match'->>'carreira')::int>=1,'pedidos sem candidata agrupados por objetivo');
+select tst.ok((:'painel'::jsonb->>'feedback_new')::int=(select count(*) from public.feedback where status='novo') and (:'ia'::jsonb->'tokens_month'->>'input')::int>=0,'feedback e tokens vêm de dados reais');
 reset role;
 -- 021: convites pendentes há mais de 7 dias expiram e não bloqueiam nova indicação.
 select tst.ok((select quando='7 6 * * *' and comando like '%mvp_expire_invites%' from cron.agendamentos where nome='aliadas-expirar-convites'),'rotina diária agendada no pg_cron');
@@ -354,8 +355,8 @@ set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
 select tst.bloqueia($$select public.mvp_metrics()$$,'participante não lê os indicadores da avaliação');
 select tst.ok((select count(*) from public.conversation_expiry_runs)=0,'participante não lê o log da rotina');
 select set_config('request.jwt.claim.sub', :cur, false);
-select public.mvp_metrics() as painel2 \gset
-select tst.ok(:'painel2'::jsonb ?& array['expired_invites','conversations_happened','useful_rate','top_marks','feedback_requests_pending'],'painel traz os indicadores da avaliação');
+select public.mvp_conversation_metrics() as painel2 \gset
+select tst.ok(:'painel2'::jsonb ?& array['expired_invites','conversations_happened','useful_rate','top_marks','feedback_requests_pending'],'aba Feedback traz os indicadores da avaliação');
 select tst.ok((:'painel2'::jsonb->>'expired_invites')::int>=1 and (:'painel2'::jsonb->'top_marks'->>'escuta')::int>=2,'expirados e marcas vêm de dados reais');
 reset role;
 -- 027: dúvida no feedback e métricas só para o painel.

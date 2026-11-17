@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
 import { Carregando } from "../components/Aviso";
 import { useToast } from "../components/Toast";
-import { baixarCsv } from "./IndicadoresMvp";
+import { baixarCsv } from "./IAAutomacoes";
 
 type Linha = {
   id: string;

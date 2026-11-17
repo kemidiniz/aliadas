@@ -16,6 +16,9 @@ export type AdminAccess = {
   legacy: boolean;
   review_profiles: boolean;
   handle_reports: boolean;
+  ver_visao_geral?: boolean;
+  ver_feedback?: boolean;
+  ver_ia_automacoes?: boolean;
 };
 const NO_ADMIN: AdminAccess = {
   principal: false,
@@ -45,7 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     adminAccess.principal ||
     adminAccess.legacy ||
     adminAccess.review_profiles ||
-    adminAccess.handle_reports;
+    adminAccess.handle_reports ||
+    Boolean(adminAccess.ver_visao_geral || adminAccess.ver_feedback || adminAccess.ver_ia_automacoes);
   const [carregando, setCarregando] = useState(true);
 
   const carregarDados = useCallback(async (s: Session | null) => {
@@ -75,6 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         legacy: true,
         review_profiles: true,
         handle_reports: true,
+        ver_visao_geral: true,
+        ver_feedback: true,
+        ver_ia_automacoes: true,
       });
     else setAdminAccess(NO_ADMIN);
     return true;
