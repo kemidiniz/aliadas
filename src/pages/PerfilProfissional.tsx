@@ -50,8 +50,11 @@ const SECOES = [
   { id: "privacidade", titulo: "Privacidade" },
 ] as const;
 
-function validar(nome: string, p: Dados, c: ProContacts, termos: boolean) {
+function validar(nome: string, p: Dados, c: ProContacts, termos: boolean, modos: string[]) {
   const e: Record<string, string> = {};
+  if (!modos.length) e.modos = "Escolha pelo menos uma forma de participar.";
+  if (modos.includes("ajudar") && !p.can_help.length) e.can_help = "Escolha pelo menos um assunto.";
+  if (modos.includes("conversa") && !p.want_talk.length) e.want_talk = "Escolha pelo menos um assunto.";
   if (nome.trim().length < 2) e.nome = "Escreva como quer ser chamada.";
   if (p.occupation.trim().length < 2) e.occupation = "Conte o que você faz ou estuda.";
   if (!p.areas.length) e.areas = "Escolha ao menos uma área.";
@@ -69,7 +72,7 @@ function validar(nome: string, p: Dados, c: ProContacts, termos: boolean) {
   return e;
 }
 const secaoDoErro: Record<string, string> = {
-  nome: "quem", occupation: "quem", areas: "quem", assuntos: "assuntos",
+  nome: "quem", occupation: "quem", areas: "quem", modos: "assuntos", can_help: "assuntos", want_talk: "assuntos", assuntos: "assuntos",
   channels: "contatos", linkedin: "contatos", whatsapp: "contatos", email: "contatos", meet: "contatos",
   termos: "privacidade",
 };
@@ -88,6 +91,9 @@ export default function PerfilProfissional() {
   const [semFoto, setSemFoto] = useState(false);
   const [c, setC] = useState<ProContacts>({ linkedin: "", whatsapp: "", email: "", meet: "" });
   const [termos, setTermos] = useState(false);
+  // "Como você quer participar agora?": só interface; o banco guarda as duas listas.
+  const [modos, setModos] = useState<string[]>([]);
+  const [avisoModo, setAvisoModo] = useState("");
   const [erros, setErros] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [excluir, setExcluir] = useState(false);
@@ -119,6 +125,11 @@ export default function PerfilProfissional() {
       if (co.data) setC(co.data as ProContacts);
       setNome(perfil?.apelido ?? "");
       setTermos(Boolean(d));
+      if (d)
+        setModos([
+          ...((d.can_help ?? []).length ? ["ajudar"] : []),
+          ...((d.want_talk ?? []).length ? ["conversa"] : []),
+        ]);
       setCarregando(false);
     });
     return () => {
@@ -126,10 +137,22 @@ export default function PerfilProfissional() {
     };
   }, [session, perfil?.apelido]);
 
-  const e = validar(nome, p, c, termos);
+  const e = validar(nome, p, c, termos, modos);
+  function mudarModos(novos: string[]) {
+    setAvisoModo("");
+    const removido = modos.find((m) => !novos.includes(m));
+    if (removido) {
+      if (!novos.length) return setAvisoModo("Mantenha pelo menos uma opção marcada.");
+      const campo = removido === "ajudar" ? "can_help" : "want_talk";
+      const nomeLista = removido === "ajudar" ? "Posso ajudar com" : "Quero conversar sobre";
+      if (p[campo].length && !window.confirm(`Desmarcar limpa a lista "${nomeLista}". Pode limpar?`)) return;
+      setP({ ...p, [campo]: [] });
+    }
+    setModos(novos);
+  }
   const completa: Record<string, boolean> = {
     quem: !e.nome && !e.occupation && !e.areas,
-    assuntos: !e.assuntos,
+    assuntos: !e.assuntos && !e.modos && !e.can_help && !e.want_talk,
     contatos: !e.channels && !e.linkedin && !e.whatsapp && !e.email && !e.meet,
     disponibilidade: p.slots.length > 0,
     privacidade: !e.termos,
@@ -223,8 +246,23 @@ export default function PerfilProfissional() {
     ),
     assuntos: (
       <div className="space-y-6">
-        <MultiEscolha rotulo="Posso ajudar com" ajuda="Você será indicada para quem busca esses assuntos." opcoes={opcoes(GOALS_PRO)} valores={p.can_help} aoMudar={(can_help) => setP({ ...p, can_help })} />
-        <MultiEscolha rotulo="Quero conversar sobre" ajuda="Só deixa o objetivo pré-escolhido no início." erro={err("assuntos")} opcoes={opcoes(GOALS_PRO)} valores={p.want_talk} aoMudar={(want_talk) => setP({ ...p, want_talk })} />
+        <MultiEscolha
+          rotulo="Como você quer participar agora?"
+          ajuda="Pode marcar as duas."
+          erro={avisoModo || err("modos")}
+          opcoes={[
+            { valor: "ajudar", rotulo: "Topo ajudar alguém" },
+            { valor: "conversa", rotulo: "Quero uma conversa" },
+          ]}
+          valores={modos}
+          aoMudar={mudarModos}
+        />
+        {modos.includes("ajudar") && (
+          <MultiEscolha rotulo="Posso ajudar com" ajuda="Você será indicada para quem busca esses assuntos." erro={err("can_help")} opcoes={opcoes(GOALS_PRO)} valores={p.can_help} aoMudar={(can_help) => setP({ ...p, can_help })} />
+        )}
+        {modos.includes("conversa") && (
+          <MultiEscolha rotulo="Quero conversar sobre" ajuda="Só deixa o objetivo pré-escolhido no início." erro={err("want_talk")} opcoes={opcoes(GOALS_PRO)} valores={p.want_talk} aoMudar={(want_talk) => setP({ ...p, want_talk })} />
+        )}
       </div>
     ),
     contatos: (

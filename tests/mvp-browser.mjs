@@ -313,6 +313,22 @@ try {
   assert.deepEqual(savedProfile.p.can_help, ["entrevista"]);
   assert(savedProfile.p.slots.includes("1_manha"));
   console.log("PASSOU: perfil com seções abertas, erro ao lado do campo, grade pelo teclado e sem consentimento automático de IA");
+  assert.equal(await p.getByRole("checkbox", { name: "Topo ajudar alguém" }).isChecked(), true, "estado inicial vem das listas");
+  assert.equal(await p.getByRole("checkbox", { name: "Quero uma conversa" }).isChecked(), true);
+  p.once("dialog", (d) => d.dismiss());
+  await p.locator("label.chip", { hasText: "Topo ajudar alguém" }).click();
+  assert.equal(await p.getByText("Posso ajudar com", { exact: true }).count(), 1, "cancelar mantém a lista");
+  p.once("dialog", (d) => d.accept());
+  await p.locator("label.chip", { hasText: "Topo ajudar alguém" }).click();
+  assert.equal(await p.getByText("Posso ajudar com", { exact: true }).count(), 0, "aceitar esconde e limpa a lista");
+  await p.locator("label.chip", { hasText: "Quero uma conversa" }).click();
+  await p.getByText("Mantenha pelo menos uma opção marcada.").waitFor();
+  await p.getByRole("button", { name: "Salvar", exact: true }).click();
+  await p.getByText("Perfil salvo.").last().waitFor();
+  const ultimo = calls.filter((x) => x.endpoint === "mvp_save_profile").at(-1).body;
+  assert.deepEqual(ultimo.p.can_help, []);
+  assert.deepEqual(ultimo.p.want_talk, ["carreira"]);
+  console.log("PASSOU: 'Como você quer participar agora?' mostra as listas, confirma antes de limpar e exige uma opção");
   await context.route("**/auth/v1/user", (route) =>
     route.fulfill({
       status: 200,
@@ -355,6 +371,12 @@ try {
   await p.locator("label.chip", { hasText: "Saúde" }).click();
   await p.getByRole("button", { name: "Continuar" }).click();
   await p.getByText("Passo 2 de 3").waitFor();
+  await p.getByText("Como você quer participar agora?").waitFor();
+  assert.equal(await p.getByText("Posso ajudar com", { exact: true }).count(), 0, "listas aparecem só depois de escolher");
+  await p.getByRole("button", { name: "Continuar" }).click();
+  await p.getByText("Escolha pelo menos uma forma de participar.").waitFor();
+  await p.locator("label.chip", { hasText: "Topo ajudar alguém" }).click();
+  await p.getByText("Posso ajudar com", { exact: true }).waitFor();
   hasProfessional = true;
   console.log("PASSOU: primeiro acesso em 3 passos com barra de progresso");
   for (const width of [375, 390, 768, 1440])
