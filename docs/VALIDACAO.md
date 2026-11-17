@@ -1,37 +1,36 @@
 # Validação da recomendação por habilidades
 
+## Finalidade atual — objetivo escrito e habilidades (037–039)
+
+A validação agora avalia **a inferência de habilidades úteis para um objetivo escrito**, antes de buscar pessoas. O Gemini não recebe o pool nem decide a pessoa indicada. `objective.ts` contém SYSTEM/SYSTEM_V2, esquema, minimização e validação usados também no instrumento `rodar.ts`. A ordem das pessoas resulta de cruzamento determinístico **local**, depois das habilidades; `indicacoes_IA` no CSV é esse resultado derivado, não uma escolha generativa de pessoas.
+
+Critérios definidos antes dos testes: (1) habilidades propostas ajudam no objetivo; (2) não omitem a necessidade principal; (3) são de uma a três, do catálogo, sem repetição; (4) objetivo insuficiente pode produzir lista vazia e escolha manual; (5) nenhum dado pessoal é enviado. Caso aprovado = duas de três avaliadoras marcam aprovado, com todos os vereditos preenchidos para calcular a taxa.
+
+O campo `objetivo` aceita o enunciado profissional; `apoio_texto`, quando preenchido, é o texto usado pela IA (até 300 caracteres). `pede_interesses` permanece só por compatibilidade com a planilha anterior, fica vazio e é ignorado. O pool fica só no computador para ilustrar o cruzamento após habilidades. Nenhuma simulação confirma a decisão da participante no site.
+
+O plano B do instrumento faz reconhecimento **literal** de expressões de vocabulário profissional fechado, para comparação controlada sem geração. No produto, sem IA, a participante escolhe manualmente: são bases de comparação distintas. Registrar essa diferença no pitch. As avaliadoras comparam A (habilidades inferidas) com B (reconhecimento literal), além de conferir se a primeira pessoa derivada ajudaria; não atribuir à IA o desempate determinístico. O script consolida em quantos casos A foi aprovado e B não, taxas e diferença entre rodadas.
+
+Os dados reais, vinte casos, três avaliadoras e duas rodadas continuam pendentes. O teste local usa respostas stub e apaga casos fictícios. A consulta remota de 17/11 encontrou 11 perfis, três com habilidades e nenhum job; não é evidência de geração. O diagnóstico de metadados do Gemini descrito abaixo também não é geração.
+
+
 Revisão: 17/11/2026. Entrega: 18/11 às 12h de Brasília. Os resultados abaixo distinguem implementação, teste local e comprovação com pessoas reais.
 
-## O que está sendo validado
+## Problema, público e critérios
 
-A IA escolhe até três habilidades necessárias e ordena até três aliadas pelas habilidades oferecidas. Não gera justificativa, perguntas nem mensagem. A mensagem do convite usa um modelo fixo editável. A decisão de enviar continua humana.
+O público inclui mulheres cis e trans e pessoas não binárias de todas as áreas e momentos de carreira. Os estudos históricos da landing contextualizam redes profissionais, mas não comprovam necessidade ou eficácia da aliadas. O objetivo é facilitar uma conversa profissional útil, sem mentoria formal.
 
-Problema: o acesso a redes profissionais pode dificultar encontrar uma pessoa para uma troca objetiva. Público: mulheres cis e trans e pessoas não binárias de diferentes áreas e momentos de carreira. Os estudos históricos da landing contextualizam o problema; não comprovam a necessidade nem a eficácia da aliadas.
-
-Linha de base do produto: mapa fixo de objetivo → habilidades; ordenação por quantidade de habilidades em comum, menos convites recentes e sorteio. A área de formação não determina quem pode ajudar. Perfis antigos com `can_help` continuam no plano B até escolherem habilidades; não recebem habilidades ou consentimentos inventados.
-
-## Critérios definidos antes das rodadas
-
-Cada avaliadora considera os cinco critérios em conjunto:
-
-1. As habilidades necessárias fazem sentido para o objetivo.
-2. A primeira recomendada ajudaria de verdade.
-3. A ordem faz sentido, considerando o pool disponível.
-4. Só aparecem habilidades da lista e presentes nas candidatas.
-5. Nenhum dado pessoal aparece.
-
-Vereditos: **aprovado**, **ajustar** ou **reprovado**, com comentário. Caso aprovado = pelo menos **duas de três avaliadoras** marcaram aprovado. Taxas só incluem casos com três vereditos válidos; ausências são pendências. Meta proposta: 80% de casos aprovados, sem incidente de privacidade; não é resultado medido.
+As três avaliadoras registram aprovado, ajustar ou reprovado e comentário. Meta proposta: 80% dos casos aprovados e nenhum incidente de privacidade; isso é um critério de sucesso, não resultado medido. Critérios vigentes estão definidos no início deste documento, antes das rodadas.
 
 ## Preencher os arquivos
 
 - `validacao/pool.csv`: até 15 perfis reais, autorizados e anonimizados. Código C1…C15, situação, área, até oito ids de habilidades separados por `|` e consentimento `sim`. Não colocar nomes, fotos, contatos ou ids Supabase. O arquivo não faz concessão de consentimento por si só: guarde a autorização fora do repositório público.
-- `validacao/casos.csv`: 20 casos reais higienizados, com código CASO01…CASO20, objetivo, apoio até 300 caracteres, situação, área, interesses e observação. Incluir três ou quatro difíceis: Outro, texto vago, necessidade sem habilidade no pool. A observação não vai à IA.
+- `validacao/casos.csv`: 20 casos reais higienizados, com código CASO01…CASO20, objetivo, apoio até 300 caracteres, situação, área e observação; interesses permanece vazio. Incluir três ou quatro difíceis: Outro, texto vago, necessidade sem habilidade no pool. A observação não vai à IA.
 - Os dois arquivos contêm somente cabeçalho e uma linha-modelo comentada. Dados fictícios dos testes ficam em diretório temporário e são apagados.
 - Chaves permitidas: `src/lib/professional.ts`; catálogo e mapa: `src/lib/habilidades.ts`, reexportados do arquivo compartilhado com o worker.
 
 ## Rodar sem alterar produção
 
-O script usa o **mesmo SYSTEM, responseSchema com enums, minimização e validação** da Edge Function. O apoio bruto não sai para o Google: após retirar contatos/documentos, só são transmitidas expressões do catálogo. Isso protege nomes que um filtro de telefones não reconheceria, mas pode perder nuances; avaliar também essa limitação.
+O script usa o **mesmo SYSTEM, esquema com enums, minimização e validação de objective.ts** da Edge Function. O texto bruto não sai para o Google: após retirar contatos/documentos, só são transmitidas expressões de vocabulário profissional fechado. Isso protege nomes que um filtro de telefones não reconheceria, mas pode perder nuances; avaliar também essa limitação.
 
 Configure a chave apenas no ambiente seguro local, nunca no CSV, Git ou chat. Use o mesmo modelo publicado, em projeto Google sem faturamento, e `GEMINI_FREE_TIER_CONFIRMED=true`.
 
@@ -62,19 +61,15 @@ O script gera `indicacoes_plano_B` para os mesmos casos sem nova chamada externa
 - Casos em que a regra foi aprovada e a IA não foi; regressões entre rodadas.
 - Comentários agrupados e vereditos faltantes.
 
-No pitch, usar “A IA ajudou em X de Y casos comparáveis em que a regra não foi aprovada” **somente depois da avaliação real**. A hipótese é interpretar a necessidade para além do mapa fixo, não escrever mensagens mais bonitas.
+No pitch, usar “A IA ajudou em X de Y casos comparáveis em que a regra não foi aprovada” **somente depois da avaliação real**. A hipótese é interpretar a necessidade para além do reconhecimento literal, não escrever mensagens mais bonitas.
 
 ## Três execuções reais da automação
 
-Após publicação autorizada, duas ou mais participantes reais precisam: perfil aprovado/completo, habilidades, disponibilidade/canal compatíveis e consentimento novo de IA. Criar pedido pelo site → banco filtra → pg_net chama worker → Gemini ordena → resultado é salvo → usuária revisa → convite depende de clique. Não criar contas fictícias nem alterar habilidades/consentimento de outra pessoa para destravar uma demonstração.
+O gatilho começa quando uma participante registra um objetivo com consentimento atualizado. O banco cria um job → pg_net chama conversa-ia → Gemini infere habilidades → validação rejeita ids estranhos/repetidos → banco salva resultado, modelo, tokens e estado → participante revisa → só depois o banco busca pessoas. A IA não depende da existência de candidatas nem de seus consentimentos, pois não recebe seus dados.
 
-Em Painel › IA e automações, guardar exportação higienizada de três jobs distintos: data, estado concluído, modelo, tokens, erro vazio e ids de execução/pedido (nunca ids de pessoas). Conferir modo `ia`, habilidades e candidata antes do convite. `regra`, falhas, stubs locais e aceite sem feedback não comprovam geração ou encontro.
+Em Painel › IA e automações, exportar três jobs distintos com data, etapa, tentativa, estado concluído, modelo, tokens, habilidades retornadas e identificador de execução. Falha com zero tokens, escolha manual, stub e consulta de metadados não comprovam geração. Tentativas alternativas do mesmo objetivo são execuções reais do gatilho de atualização, mas não devem ser descritas como três participantes, três casos distintos ou avaliação humana. Se a banca exigir três solicitações independentes, executar mais três objetivos reais pelo site dentro das cotas.
 
-| Execução | Resultado real | Evidência |
-|---|---|---|
-| 1 | Pendente de pool elegível com habilidades e consentimento | Não realizada nesta rodada |
-| 2 | Pendente | Não realizada |
-| 3 | Pendente | Não realizada |
+Situação anterior à publicação: zero jobs. A titular autorizou nesta conversa o processamento informado e um teste real com seu objetivo de melhorar a experiência do site e organizar o painel. Evidências posteriores serão anexadas em `docs/EVIDENCIAS-IA.md`, sem dados pessoais.
 
 ## Entrevistas e demonstração
 
@@ -84,18 +79,17 @@ Pitch até cinco minutos: problema/público e evidência (45s), solução e quat
 
 ```mermaid
 flowchart LR
- A[Perfil e consentimentos] --> B[Pedido com objetivo]
- B --> C[Banco filtra candidatas]
- C --> D[pg_net e Edge Function]
- D --> E[Gemini escolhe por habilidades]
- E --> F[Validação e resultado salvo]
- D --> G[Plano B por habilidades]
- F --> H[Revisão humana]
- G --> H
- H --> I[Convite por clique]
- I --> J[Aceite e contatos autorizados]
- J --> K[Conversa externa]
- K --> L[Confirmação e utilidade]
+ A[Objetivo escrito e consentimento] --> B[Gatilho cria job]
+ B --> C[pg_net e Edge Function]
+ C --> D[Gemini sugere habilidades]
+ D --> E[JSON validado e resultado registrado]
+ C --> F[Sem IA: escolha manual]
+ E --> G[Participante confirma habilidades]
+ F --> G
+ G --> H[Banco cruza habilidades e elegibilidade]
+ H --> I[Indicação e convite revisado]
+ I --> J[Aceite mútuo e contatos autorizados]
+ J --> K[Conversa externa e avaliação]
 ```
 
 ## Evidências e pendências
@@ -107,8 +101,8 @@ Testes locais: build/TypeScript, SQL/RLS, contratos de IA, worker Deno sem rede 
 | Requisito | Implementado | Comprovado | Pendente | Próxima ação |
 |---|---|---|---|---|
 | Banco com RLS e contatos após aceite | Sim | Testes locais de autorização | Revisão pós-publicação | Conferir políticas remotas |
-| Automação por gatilho | Sim | Trigger/pg_net stub local | Três execuções reais | Participantes completarem habilidades |
-| IA por habilidades | Sim | Esquema, minimização e rejeição locais | Resposta real da nova função | Executar com pool real consentido |
+| Automação por gatilho | Sim | Trigger/pg_net stub local | Três execuções reais | Registrar objetivos reais com consentimento |
+| IA por habilidades | Sim | Esquema, minimização e rejeição locais | Resposta real da nova função | Executar objetivo real com consentimento |
 | Revisão humana antes do convite | Sim | Navegador simulado | Teste com participantes | Revisar e enviar pelo site |
 | 20 casos e três avaliadoras | Instrumentos prontos | Script testado com stub | Preenchimento/avaliação reais | Preencher pool/casos e convidar avaliadoras |
 | Duas rodadas e comparação IA × regra | Sim | Consolidação local | Resultados reais | Avaliar, ajustar SYSTEM_V2, repetir |

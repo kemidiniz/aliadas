@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { ConviteRecebido } from "../components/ConviteRecebido";
 import { useConversationJob } from "../lib/useConversationJob";
 import { conversationStatus } from "../lib/conversationStatus";
 import LandingInstitucional from "./LandingInstitucional";
 import { Pagina, Titulo } from "../components/Pagina";
 import { Botao, BotaoLink } from "../components/Botao";
-import { CampoArea, CampoSelect } from "../components/Campo";
+import { CampoArea } from "../components/Campo";
 import { Avatar } from "../components/Avatar";
 import { CartaoCarregando, Chips, Vazio } from "../components/ui";
 import { useToast } from "../components/Toast";
@@ -18,24 +18,22 @@ import {
   AREAS_PRO,
   GOALS_PRO,
   SITUACAO_PRO,
-  perfilCompleto,
   type ProCard,
   type ProInvite,
   type ProProfile,
   type ProRequest,
 } from "../lib/professional";
 
+import { ObjetivoConversa } from "../components/ObjetivoConversa";
 import { nomeHabilidade } from "../lib/habilidades";
-const modeloConvite = (r: ProRequest) => `Oi! Vi na aliadas que você pode ajudar com ${r.habilidades_que_ajudam?.length ? nomeHabilidade(r.habilidades_que_ajudam[0]) : "este objetivo profissional"}. Estou buscando apoio para ${GOALS_PRO[r.goal as keyof typeof GOALS_PRO] ?? "um objetivo profissional"}. Topa uma conversa?`;
-const OPCOES_OBJETIVO = Object.entries(GOALS_PRO).map(([valor, rotulo]) => ({ valor, rotulo }));
+const modeloConvite = (r: ProRequest) => `Oi! Vi na aliadas que você pode ajudar com ${r.habilidades_que_ajudam?.length ? nomeHabilidade(r.habilidades_que_ajudam[0]) : "este objetivo profissional"}. Estou buscando apoio para ${r.description?.trim() || GOALS_PRO[r.goal as keyof typeof GOALS_PRO] || "um objetivo profissional"}. Topa uma conversa?`;
+
 
 export default function InicioProfissional() {
   const { session, perfil, carregando } = useAuth();
   const toast = useToast();
   const [pro, setPro] = useState<ProProfile | null>(null);
   const [ready, setReady] = useState(false);
-  const [goal, setGoal] = useState("");
-  const [outro, setOutro] = useState("");
   const [atual, setAtual] = useState<ProRequest | null>(null);
   const [cards, setCards] = useState<ProCard[]>([]);
   const [convites, setConvites] = useState<ProInvite[]>([]);
@@ -44,9 +42,6 @@ export default function InicioProfissional() {
   const [erro, setErro] = useState("");
   const { job, stalled, refresh } = useConversationJob(atual?.id, load);
   const rev = useRef(0);
-  const navegar = useNavigate();
-  const [params, setParams] = useSearchParams();
-  const continuou = useRef(false);
 
   async function load() {
     const v = ++rev.current;
@@ -90,16 +85,6 @@ export default function InicioProfissional() {
     setPedidos((fr.data as { id: string; invite_id: string }[]) ?? []);
     setReady(true);
   }
-  // volta do "Falta pouco": continua a busca de onde parou
-  useEffect(() => {
-    const g = params.get("buscar");
-    if (!ready || !pro || !g || continuou.current || perfil?.status !== "aprovado") return;
-    continuou.current = true;
-    setGoal(g);
-    setOutro(params.get("outro") ?? "");
-    setParams({}, { replace: true });
-    if (perfilCompleto(pro)) criar(undefined, g, params.get("outro") ?? "");
-  }, [ready, pro]);
   useEffect(() => {
     setReady(false);
     load();
@@ -107,21 +92,6 @@ export default function InicioProfissional() {
       rev.current++;
     };
   }, [session?.user.id]);
-
-  async function criar(e?: FormEvent, g = goal, texto = outro) {
-    e?.preventDefault();
-    // perfil incompleto: completa e volta para esta mesma busca
-    if (!perfilCompleto(pro)) {
-      const q = new URLSearchParams({ buscar: g, ...(texto ? { outro: texto } : {}) });
-      return navegar(`/completar-perfil?${q}`);
-    }
-    setBusy("criar");
-    const { error } = await supabase.rpc("mvp_create_request", { goal: g, description: texto });
-    setBusy("");
-    if (error) return toast(mensagemAmigavel(error), "erro");
-    setOutro("");
-    await load();
-  }
 
   if (carregando || (!ready && session))
     return (
@@ -138,11 +108,11 @@ export default function InicioProfissional() {
         <BotaoLink to="/meu-perfil">Começar</BotaoLink>
       </Pagina>
     );
-  if (perfil.status !== "aprovado")
+  if (!["pendente", "aprovado"].includes(perfil.status))
     return (
       <Pagina titulo="Início">
-        <Titulo sub="Novas conversas ficam disponíveis depois da aprovação. Isso protege a comunidade.">
-          Seu perfil está em revisão pelas embaixadoras
+        <Titulo sub="Sua conta está pausada ou restrita. Entre em contato para receber ajuda.">
+          Sua conta está indisponível para novas buscas
         </Titulo>
         <BotaoLink to="/meu-perfil" variante="secundario">Revisar meu perfil</BotaoLink>
       </Pagina>
@@ -163,34 +133,12 @@ export default function InicioProfissional() {
 
   return (
     <Pagina titulo="Início">
-      <Titulo sub="Escolha um objetivo e receba uma indicação.">Olá, {perfil.apelido.split(" ")[0]}</Titulo>
-      {!pro.habilidades?.length && <p className="mb-6 rounded-xl bg-superficie p-4 text-sm">Escolha suas habilidades para poder ser indicada. <Link to="/meu-perfil#ajudar" className="text-link">Escolher habilidades</Link></p>}
+      <Titulo sub="Conte seu objetivo, revise as habilidades e encontre uma aliada.">Olá, {perfil.apelido.split(" ")[0]}</Titulo>
+      {pro.available && !pro.habilidades?.length && <p className="mb-6 rounded-xl bg-superficie p-4 text-sm">Escolha suas habilidades para poder ser indicada. <Link to="/meu-perfil#ajudar" className="text-link">Escolher habilidades</Link></p>}
       {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
       <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-6">
-          <form onSubmit={criar} className="space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
-            <CampoSelect
-              rotulo="Qual é o objetivo da sua próxima conversa?"
-              value={goal}
-              opcoes={[{ valor: "", rotulo: "Escolha um objetivo" }, ...OPCOES_OBJETIVO]}
-              onChange={(e) => setGoal(e.target.value)}
-            />
-            <CampoArea rotulo="Em que você precisa de apoio?" ajuda="Conte em uma ou duas frases. Sem nomes nem contatos." maxLength={300} rows={3} required={goal === "outro"} value={outro} onChange={e => setOutro(e.target.value)} />
-            <p className="text-xs text-suave">Este texto vai para a IA só para encontrar quem pode ajudar. Tiramos e-mails e telefones antes de enviar.</p>
-            <Botao type="submit" carregando={busy === "criar"} disabled={!pro.available || !goal || (goal === "outro" && !outro.trim())}>
-              Encontrar minha aliada
-            </Botao>
-            {pro.can_help.length > 0 && !perfilCompleto(pro) && (
-              <p className="rounded-xl bg-superficie p-3 text-sm">
-                Para ser indicada para outras pessoas, <Link to="/completar-perfil" className="text-link">complete seu perfil</Link>.
-              </p>
-            )}
-            {!pro.available && (
-              <p className="text-sm text-suave">
-                Você está como indisponível. <Link to="/meu-perfil#privacidade" className="text-link">Mudar no perfil</Link>
-              </p>
-            )}
-          </form>
+          <ObjetivoConversa pro={pro} aoEncontrar={load} />
 
           {atual && (
             <section aria-labelledby="indicacao" className="space-y-4">
@@ -315,7 +263,6 @@ function Indicacao({
           </p>
         </div>
       </header>
-      <Chips rotulo="Áreas de interesse" itens={(card.interesses?.length ? card.interesses : card.areas).map((a) => AREAS_PRO[a as keyof typeof AREAS_PRO] ?? a)} />
       {(card.conversas ?? 0) > 0 && (
         <p className="text-sm text-suave">
           {card.conversas} {card.conversas === 1 ? "conversa realizada" : "conversas realizadas"}
@@ -329,6 +276,7 @@ function Indicacao({
       )}
       <div className="space-y-2"><h4 className="text-sm font-semibold">Por que ela:</h4><Chips rotulo="Habilidades que ajudam" itens={(r.habilidades_que_ajudam ?? []).map(nomeHabilidade)} /></div>
       {!r.habilidades_que_ajudam?.length && <p className="text-sm text-suave">Ela informou que pode conversar sobre esse objetivo. As habilidades do perfil ainda serão atualizadas.</p>}
+      {r.habilidades_necessarias?.length > 1 && <p className="text-xs text-suave">Ela oferece {r.habilidades_que_ajudam?.length ?? 0} de {r.habilidades_necessarias.length} habilidades que você escolheu.</p>}
       <p className="text-xs text-suave">Você precisa de: {(r.habilidades_necessarias ?? []).map(nomeHabilidade).join(" · ")}</p>
       {status && <p className="text-xs text-suave" role="status">{status}</p>}
       <CampoArea

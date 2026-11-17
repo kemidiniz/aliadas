@@ -9,7 +9,7 @@ import { CartaoCarregando } from "../components/ui";
 import { useToast } from "../components/Toast";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
-import { enviarFoto, useFotoUrl } from "../lib/fotos";
+import { apagarFoto, enviarFoto, useFotoUrl } from "../lib/fotos";
 import { FotoPerfil } from "../components/FotoPerfil";
 import { AREAS_PRO, CHANNELS_PRO, SITUACAO_PRO, type ProContacts, type ProProfile } from "../lib/professional";
 
@@ -29,7 +29,7 @@ type Dados = {
   ai_consent_version: string;
   available: boolean;
 };
-const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], habilidades: [], channels: [], ai_consent: false, ai_consent_version: "habilidades-v1", available: true };
+const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], habilidades: [], channels: [], ai_consent: false, ai_consent_version: "habilidades-v1", available: false };
 
 function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
   const e: Record<string, string> = {};
@@ -44,8 +44,8 @@ function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
     e.whatsapp = "Use o código do país, sem espaços. Ex.: +5511999999999";
   if (d.channels.includes("email") && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email ?? "")) e.email = "Confira o e-mail.";
   if (d.channels.includes("meet") && !/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}(?:[?][^\s]*)?$/.test(c.meet ?? "")) e.meet = "Cole um link válido do Google Meet.";
+  if (d.available && !d.habilidades.length) e.habilidades = "Escolha uma habilidade ou desative a disponibilidade para receber convites.";
   if (completar) {
-    if (!d.interesses.length) e.interesses = "Escolha pelo menos uma área.";
     if (!d.channels.length) e.channels = "Escolha pelo menos um contato.";
   }
   return e;
@@ -66,6 +66,8 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   const [termos, setTermos] = useState(false);
   const [mostrarErros, setMostrarErros] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [secaoAtual, setSecaoAtual] = useState("sobre");
+  const [fotoBusy, setFotoBusy] = useState(false);
   const [excluir, setExcluir] = useState(false);
   const fotoAtual = useFotoUrl(semFoto ? null : (perfil?.foto_path ?? null));
 
@@ -120,6 +122,42 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   useEffect(() => {
     if (!carregando && completar && novo) { liberado.current=true; navegar("/meu-perfil", { replace:true }); }
   },[carregando,completar,novo,navegar]);
+  useEffect(() => {
+    if (carregando || novo || completar) return;
+    const ids = ["sobre", "hoje", "ajudar", "contatos", "privacidade", "conta"];
+    const atualizar = () => {
+      const limite = window.innerWidth < 1024 ? 180 : 125;
+      const atual = ids.filter(id => (document.getElementById(id)?.getBoundingClientRect().top ?? Infinity) <= limite).at(-1) ?? "sobre";
+      setSecaoAtual(atual);
+    };
+    window.addEventListener("scroll", atualizar, { passive: true }); atualizar();
+    return () => window.removeEventListener("scroll", atualizar);
+  }, [carregando, novo, completar]);
+  useEffect(() => {
+    if (window.innerWidth >= 1024) return;
+    const lista = document.querySelector<HTMLElement>('[aria-label="Seções do perfil"] ul');
+    const item = lista?.querySelector<HTMLElement>('[aria-current="location"]');
+    if (lista && item) lista.scrollTo({ left: item.offsetLeft - lista.offsetLeft - (lista.clientWidth-item.clientWidth)/2, behavior: "smooth" });
+  }, [secaoAtual]);
+  async function salvarFoto(f: Blob | null) {
+    if (!uid || fotoBusy || busy) throw Error("Aguarde o salvamento atual e tente novamente.");
+    setFotoBusy(true);
+    let path: string | null = null;
+    let vinculada = false;
+    try {
+      path = f ? await enviarFoto(uid, f) : null;
+      const { error } = await supabase.rpc("mvp_save_photo", { photo: path });
+      if (error) throw error;
+      vinculada = true;
+      const antiga = perfil?.foto_path;
+      await recarregar();
+      if (antiga && antiga !== path) { try { await apagarFoto(antiga); } catch { /* A foto atual já está salva. */ } }
+      toast(f ? "Foto salva." : "Foto removida.");
+    } catch (e) {
+      if (path && !vinculada) await apagarFoto(path);
+      throw Error(mensagemAmigavel(e, "Não conseguimos salvar a foto. Tente novamente."));
+    } finally { setFotoBusy(false); }
+  }
   const descartar = () => {
     if (!original) return;
     setD(original.d); setC(original.c); setTermos(original.termos); setFoto(null); setSemFoto(false); setRecuperado(false);
@@ -127,7 +165,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   };
   const avisoRascunho = recuperado ? <div role="status" className="mb-6 space-y-3 rounded-2xl border border-linha p-4">
     <p>Recuperamos o que você não tinha salvado.</p><div className="flex flex-wrap gap-3">
-      <Botao type="button" onClick={() => salvar()} carregando={busy}>Salvar agora</Botao>
+      <Botao type="button" onClick={() => salvar()} carregando={busy} disabled={fotoBusy}>Salvar agora</Botao>
       <Botao type="button" variante="secundario" onClick={descartar}>Descartar</Botao>
     </div></div> : null;
 
@@ -160,7 +198,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           photo: path,
           situacao: d.situacao,
           area_principal: d.area,
-          interesses: d.interesses,
           can_help: d.can_help,
           habilidades: d.habilidades,
           channels: d.channels,
@@ -178,7 +215,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       if (uid) sessionStorage.removeItem(chaveRascunhoPerfil(uid));
       await recarregar();
       if (novo) {
-        toast("Boas-vindas! As embaixadoras vão revisar seu perfil em breve.");
+        toast("Boas-vindas! Seu perfil já pode buscar uma aliada.");
         navegar("/");
       } else if (completar) {
         toast("Pronto! Vamos continuar.");
@@ -210,15 +247,12 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     area: (
       <CampoSelect rotulo="Sua área de atuação ou estudo" value={d.area} erro={err("area")} opcoes={[{ valor: "", rotulo: "Escolha" }, ...opcoes(AREAS_PRO)]} onChange={(x) => set({ area: x.target.value })} />
     ),
-    interesses: (
-      <MultiEscolha rotulo="Áreas de interesse" ajuda="Até 5." erro={err("interesses")} opcoes={opcoes(AREAS_PRO)} valores={d.interesses} max={5} aoMudar={(interesses) => set({ interesses })} />
-    ),
     ajudar: (
-      <div className="space-y-6">
-        <EscolhaHabilidades valores={d.habilidades} aoMudar={habilidades => set({ habilidades })} />
-        <Caixinha marcado={d.available} aoMudar={(available) => set({ available })}>
-          Disponível para receber convites
-        </Caixinha>
+      <div className="space-y-5">
+        <Caixinha marcado={d.available} aoMudar={(available) => set({ available })}>Disponível para receber convites</Caixinha>
+        <p className="text-sm text-suave">Você pode buscar apoio mesmo sem estar disponível para ajudar outras participantes.</p>
+        {d.available && <EscolhaHabilidades valores={d.habilidades} aoMudar={habilidades => set({ habilidades })} />}
+        {err("habilidades") && <p className="text-sm text-erro" role="alert">{err("habilidades")}</p>}
       </div>
     ),
     contatos: (
@@ -240,7 +274,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     ),
     ia: (
       <Caixinha marcado={d.ai_consent} aoMudar={(ai_consent) => set({ ai_consent })}>
-        Autorizo enviar ao Gemini só categorias (situação, área, interesses e habilidades) para recomendar conversas. Nunca nome, contatos ou foto.{" "}
+        Autorizo enviar ao Gemini minha situação, área e expressões profissionais do objetivo para sugerir habilidades. Nunca nome, contatos ou foto.{" "}
         <Link to="/termos-e-privacidade#ia" className="text-link">Saiba mais</Link>
       </Caixinha>
     ),
@@ -287,11 +321,10 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
         {avisoRascunho}
         <Titulo sub="Só mais isto para encontrarmos alguém para você.">Falta pouco para sua primeira conversa</Titulo>
         <form onSubmit={salvar} className="space-y-8" noValidate>
-          {campos.interesses}
           {campos.ajudar}
           {campos.contatos}
           {sujo && <p role="status" className="text-sm text-suave">Mudanças não salvas</p>}
-          <Botao type="submit" carregando={busy}>Salvar e continuar</Botao>
+          <Botao type="submit" carregando={busy} disabled={fotoBusy}>Salvar e continuar</Botao>
         </form>
         </Formulario>
       </Pagina>
@@ -310,10 +343,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
             <FotoPerfil
               iniciais={iniciais}
               previaAtual={fotoAtual}
-              aoMudar={(f) => {
-                setFoto(f);
-                setSemFoto(f === null);
-              }}
+              aoMudar={salvarFoto}
             />
           </div>
         </div>
@@ -322,18 +352,17 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     {
       id: "hoje",
       titulo: "Você hoje",
-      completa: !e.situacao && !e.area && d.interesses.length > 0,
+      completa: !e.situacao && !e.area,
       conteudo: (
         <div className="space-y-6">
           <div className="grid items-start gap-6 sm:grid-cols-2">
             {campos.situacao}
             {campos.area}
           </div>
-          {campos.interesses}
         </div>
       ),
     },
-    { id: "ajudar", titulo: "Como você pode ajudar", completa: true, conteudo: campos.ajudar },
+    { id: "ajudar", titulo: "Como você pode ajudar", completa: !d.available || d.habilidades.length > 0, conteudo: campos.ajudar },
     { id: "contatos", titulo: "Contatos", completa: d.channels.length > 0 && !e.linkedin && !e.whatsapp && !e.email, conteudo: campos.contatos },
     {
       id: "privacidade",
@@ -354,12 +383,12 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       {avisoRascunho}
       {recuperacao && <SenhaPerfil />}
       {/* índice (200px) + formulário (até 760px), ocupando o container */}
-      <div className="lg:grid lg:grid-cols-[200px_minmax(0,760px)] lg:gap-8">
-        <nav aria-label="Seções do perfil" className="hidden lg:block">
-          <ul className="sticky top-24 -ml-3 space-y-1 text-sm">
+      <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-8">
+        <nav aria-label="Seções do perfil" className="sticky top-16 z-20 -mx-5 mb-5 border-b border-linha bg-fundo px-5 py-2 lg:relative lg:top-auto lg:mx-0 lg:mb-0 lg:border-0 lg:p-0">
+          <ul className="flex gap-1 overflow-x-auto text-sm lg:sticky lg:top-24 lg:-ml-3 lg:block lg:space-y-1">
             {[...secoes, { id: "conta", titulo: "Conta" }].map((s) => (
-              <li key={s.id}>
-                <a href={`#${s.id}`} className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-superficie">
+              <li key={s.id} className="shrink-0">
+                <a href={`#${s.id}`} aria-current={secaoAtual === s.id ? "location" : undefined} className={`flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-superficie ${secaoAtual === s.id ? "bg-superficie font-semibold text-destaque" : "text-suave"}`}>
                   <span aria-hidden className={`h-2 w-2 rounded-full ${"completa" in s ? (s.completa ? "bg-destaque" : "border border-campo") : "bg-linha"}`} />
                   {s.titulo}
                 </a>
@@ -396,13 +425,13 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           </section>
           {/* barra de salvar no mesmo container "form" (960px) da página */}
           <div className="fixed inset-x-0 bottom-16 z-30 border-t border-linha bg-fundo/95 backdrop-blur sm:bottom-0">
-            <div className={`${CONTAINER} py-3 lg:grid lg:grid-cols-[200px_minmax(0,760px)] lg:gap-8`}>
+            <div className={`${CONTAINER} py-3 lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-8`}>
               <span className="hidden lg:block" aria-hidden />
               <div className="flex items-center justify-between gap-4">
                 <p className="text-sm text-suave" aria-live="polite">
                   {sujo ? "Mudanças não salvas · " : ""}{feitas} de {secoes.length} seções completas
                 </p>
-                <Botao type="submit" carregando={busy}>Salvar</Botao>
+                <Botao type="submit" carregando={busy} disabled={fotoBusy}>Salvar</Botao>
               </div>
             </div>
           </div>

@@ -87,6 +87,7 @@ let requests = [],
 const calls = [];
 const ci = (value) =>
   new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+let objective = null;
 let jobState = "sem_ia";
 const browser = await chromium.launch({
   headless: true,
@@ -116,9 +117,9 @@ try {
   await g.getByText("© 2026 Kemily Diniz", { exact: true }).waitFor();
   assert.equal(await g.locator('a[href="/forum"]').count(), 0);
   assert.deepEqual(await g.locator("main section[aria-labelledby]").evaluateAll(nodes=>nodes.map(n=>n.getAttribute("aria-labelledby"))),["hero-title","why-title","solution-title","audience-title","faq-title","final-title"]);
-  await g.getByText("Receba uma indicação feita pela IA, pelas habilidades de quem pode ajudar.",{exact:true}).waitFor();
+  await g.getByText("Escreva seu objetivo, revise as habilidades sugeridas pela IA e encontre quem pode ajudar.",{exact:true}).waitFor();
   await g.getByText("Quem cuida da comunidade?",{exact:false}).click();
-  await g.getByText("As embaixadoras: aliadas que revisam perfis novos e acompanham denúncias. O papel é por convite.",{exact:true}).waitFor();
+  await g.getByText("As embaixadoras: aliadas que acolhem a comunidade e acompanham denúncias. O papel é por convite.",{exact:true}).waitFor();
   const { mkdir: pastaLanding }=await import("node:fs/promises");
   await pastaLanding(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B3"}`,{recursive:true});
   for(const width of [390,1440]) { await g.setViewportSize({width,height:1000}); await g.evaluate(()=>scrollTo(0,0)); await g.waitForTimeout(200);await g.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B3"}/landing-${width}.png`,fullPage:true}); }
@@ -228,6 +229,19 @@ try {
         review_profiles: false,
         handle_reports: false,
       };
+    if (endpoint === "conversation_objectives") data = objective && !(url.searchParams.get("confirmed_at")==="is.null" && objective.confirmed_at) ? [objective] : [];
+    if (endpoint === "mvp_start_objective") {
+      objective = { id: "38000000-0000-4000-8000-000000000001", description: body.description, suggested_skills: body.use_ai ? ["networking", "planejamento_carreira"] : [], selected_skills: [], state: "pronta", mode: body.use_ai ? "ia" : "regra", attempts: 1, confirmed_at: null, ai_authorized: body.use_ai };
+      data = objective.id;
+    }
+    if (endpoint === "mvp_retry_objective") { objective = {...objective, attempts: objective.attempts+1, suggested_skills:["transicao_carreira"]}; data = null; }
+    if (endpoint === "mvp_manual_objective") { objective = {...objective, mode:"regra", state:"pronta", suggested_skills:[]}; data = null; }
+    if (endpoint === "mvp_find_for_objective") {
+      objective.selected_skills = body.skills; objective.confirmed_at = new Date().toISOString();
+      if (!professional.channels.length) data = {complete_profile:true};
+      else { requests = [{...request, objective_id: objective.id, description:objective.description, habilidades_necessarias:body.skills}]; data = {request_id:request.id}; }
+    }
+    if (endpoint === "mvp_save_photo") { profile.foto_path = body.photo; data = null; }
     if (endpoint === "mvp_create_request") {
       requests = [request];
       data = request.id;
@@ -270,7 +284,7 @@ try {
   p.setDefaultTimeout(9000);
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
-  jobState = "executando";
+  jobState = "sem_ia";
   await p.goto(base+"/sobre");
   await p.getByRole("navigation",{name:"Principal"}).first().getByRole("link",{name:"Alianças",exact:true}).waitFor();
   await p.getByRole("heading",{name:"Uma conversa pode abrir novos caminhos."}).waitFor();
@@ -279,25 +293,23 @@ try {
   console.log("PASSOU: /sobre logada mostra landing e CTA leva ao Início");
   await p.goto(base);
   await p.getByRole("heading", { level: 1, name: /Olá/ }).waitFor();
-  // o objetivo é escolhido na busca, sem pré-seleção vinda do perfil
-  const objetivo = p.getByRole("combobox", { name: "Qual é o objetivo da sua próxima conversa?" });
-  assert.equal(await objetivo.inputValue(), "", "começa em 'Escolha um objetivo'");
-  assert(await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).isDisabled(), "sem objetivo, não busca");
-  await p.getByRole("textbox", { name: "Em que você precisa de apoio?" }).waitFor();
-  await objetivo.selectOption("outro");
-  await p.getByRole("textbox", { name: "Em que você precisa de apoio?" }).waitFor();
-  await objetivo.selectOption("carreira");
-  await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).click();
+  // Texto livre -> IA sugere habilidades -> revisão humana -> só então busca.
+  const objetivo = p.getByRole("textbox", { name: "Qual é o objetivo da sua próxima conversa?" });
+  assert.equal(await objetivo.inputValue(), "");
+  assert(await p.getByRole("button", { name: "Escolher habilidades sem IA" }).isDisabled());
+  await objetivo.fill("Quero ampliar minha rede profissional");
+  await p.getByRole("checkbox", { name: /Autorizo a IA a sugerir/ }).check();
+  await p.getByRole("button", { name: "Descobrir habilidades com IA" }).click();
+  await p.getByText("A IA sugere estas habilidades. Quais fazem sentido para você?", {exact:true}).waitFor();
+  for (const width of [390,1440]) {await p.setViewportSize({width,height:1000});await p.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A3"}/objetivo-habilidades-${width}.png`,fullPage:true});}
+  assert.equal(calls.filter(c=>c.endpoint==="mvp_find_for_objective").length,0,"IA não busca pessoas antes da confirmação");
+  await p.getByRole("checkbox", { name: "Planejamento de carreira", exact:true }).uncheck();
+  await p.getByRole("button", { name: "Encontrar minha aliada", exact:true }).click();
   await p.getByRole("heading", { name: "Sua indicação" }).waitFor();
-  assert.equal(await p.getByText("Próximas conversas").count(), 0, "Início sem histórico nem agenda");
-  await p.getByText("A IA está procurando quem pode ajudar…", { exact: true }).waitFor();
-  assert(!calls.some((x) => x.endpoint === "mvp_invite_reviewed"));
-  assert.equal(await p.getByText("Recomendada pela IA", { exact: true }).count(), 0);
-  assert.deepEqual(calls.find((x) => x.endpoint === "mvp_create_request").body, { goal: "carreira", description: "" });
-  requests = [{ ...request, mode: "ia", questions: ["NÃO MOSTRAR PERGUNTA ANTIGA"], draft: "NÃO MOSTRAR RASCUNHO ANTIGO" }];
-  jobState = "concluida";
-  await p.getByText("aliada de teste", { exact: true }).waitFor({ timeout: 15000 });
-  await p.getByText("Recomendada pela IA", { exact: true }).waitFor();
+  assert.deepEqual(calls.find(c=>c.endpoint==="mvp_find_for_objective").body.skills,["networking"]);
+  assert.equal(calls.filter(c=>c.endpoint==="mvp_create_request").length,0);
+  assert.equal(await p.getByText("Recomendada pela IA", { exact: true }).count(), 0,"cruzamento determinístico não se apresenta como IA");
+  await p.getByText("aliada de teste", { exact: true }).waitFor();
   assert.equal(await p.getByText("NÃO MOSTRAR PERGUNTA ANTIGA").count(), 0);
   assert.equal(await p.getByText("NÃO MOSTRAR RASCUNHO ANTIGO").count(), 0);
   assert.match(await p.getByRole("textbox", { name: "Sua mensagem" }).inputValue(), /Vi na aliadas.*Networking/);
@@ -311,7 +323,7 @@ try {
     await p.waitForTimeout(250);
     await p.screenshot({ path: `/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A3"}/indicacao-${width}.png`, fullPage: true });
   }
-  console.log("PASSOU: IA indica por habilidades, sem justificativa, perguntas ou rascunho gerado; convite revisado");
+  console.log("PASSOU: objetivo escrito, habilidades por IA, confirmação humana antes da busca, sem falsa IA na escolha da pessoa");
   const antes = calls.filter((x) => x.endpoint === "mvp_create_request").length;
   await p.getByRole("button", { name: "Ver outra indicação" }).click();
   await p.waitForTimeout(300);
@@ -409,6 +421,12 @@ try {
   );
   assert.equal(await p.getByText("Link da minha sala de chamada (opcional)").count(), 0, "sem sala de chamada");
   assert.equal(await p.getByText("Quando você costuma ter tempo").count(), 0, "sem grade de disponibilidade");
+  for (const width of [390,1440]) {await p.setViewportSize({width,height:1000});await p.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A3"}/perfil-menu-fechado-${width}.png`,fullPage:true});}
+  await p.locator("summary").filter({hasText:"Escolher habilidades"}).click();
+  await p.locator("#contatos").scrollIntoViewIfNeeded();
+  await p.evaluate(()=>document.getElementById("contatos").scrollIntoView());
+  await p.waitForTimeout(250);
+  assert.equal(await p.getByRole("navigation",{name:"Seções do perfil"}).locator('[aria-current="location"]').innerText(),"Contatos","índice acompanha a rolagem");
   const antesFoco = calls.filter(x => x.endpoint === "professional_profiles").length;
   await p.getByRole("checkbox", { name: /^Networking/ }).click();
   await p.evaluate(() => window.dispatchEvent(new Event("focus")));
@@ -426,6 +444,7 @@ try {
   assert(new URL(p.url()).pathname === "/meu-perfil");
   await p.reload();
   await p.getByText("Recuperamos o que você não tinha salvado.").waitFor();
+  await p.locator("summary").filter({hasText:"Escolher habilidades"}).click();
   assert(await p.getByRole("checkbox", { name: /^Networking/ }).isChecked());
   await p.getByRole("button", { name: "Descartar", exact: true }).click();
   p.off("dialog", resolverAviso);
@@ -455,15 +474,21 @@ try {
   for (const fora of ["Quero conversar sobre", "Como você quer participar agora?"])
     assert.equal(await p.getByText(fora, { exact: true }).count(), 0, `sem ${fora}`);
   await p.getByText("Escolha o que você sabe fazer e toparia compartilhar numa conversa.", { exact: true }).waitFor();
+  if (!(await p.getByRole("textbox",{name:"Buscar habilidades"}).isVisible())) await p.locator("summary").filter({hasText:"Escolher habilidades"}).click();
   await p.getByRole("checkbox", { name: /^Preparação para entrevistas/ }).click();
+  await p.getByRole("checkbox",{name:"Disponível para receber convites",exact:true}).uncheck();
   await p.getByRole("button", { name: "Salvar", exact: true }).click();
   await p.getByText("Perfil salvo.").last().waitFor();
   const ultimo = calls.filter((x) => x.endpoint === "mvp_save_profile").at(-1).body;
   assert.deepEqual(ultimo.p.habilidades, [], "habilidades opcionais: pode só buscar");
   assert.deepEqual(ultimo.p.can_help, ["entrevista"], "preserva temas legados durante a transição");
+  assert.equal(await p.getByRole("textbox",{name:"Buscar habilidades"}).count(),0,"sem habilidades exigidas quando indisponível");
+  await p.getByRole("checkbox",{name:"Disponível para receber convites",exact:true}).check();
+  await p.locator("summary").filter({hasText:"Escolher habilidades"}).click();
   await p.getByRole("textbox", { name: "Buscar habilidades" }).fill("processo seletivo");
   await p.getByRole("checkbox", { name: /^Preparação para entrevistas/ }).waitFor();
   assert.equal(await p.getByRole("checkbox", { name: /^Networking/ }).count(), 0);
+  await p.getByRole("checkbox", { name: /^Preparação para entrevistas/ }).check();
   await p.getByRole("textbox", { name: "Buscar habilidades" }).fill("");
   assert(!("want_talk" in ultimo.p) && !("modos" in ultimo.p));
   console.log("PASSOU: 'Como você pode ajudar' só com 'Posso ajudar com', opcional");
@@ -488,7 +513,7 @@ try {
   const uploads = [];
   await context.route("**/storage/v1/object/**", async (route) => {
     const r = route.request();
-    if (r.method() === "POST") {
+    if (r.method() === "POST" && !r.url().includes("/object/sign/")) {
       // o supabase-js envia em multipart: o arquivo é a parte que começa em RIFF....WEBP
       const corpo = r.postDataBuffer() ?? Buffer.alloc(0);
       const ini = corpo.indexOf("RIFF"), fim = corpo.lastIndexOf("\r\n--");
@@ -499,7 +524,7 @@ try {
   });
   await p.goto(base + "/meu-perfil");
   await p.getByText("Do celular ou do computador. Você pode ajustar o enquadramento.").waitFor();
-  await p.getByRole("textbox", { name: "E-mail para contato" }).fill("contato@exemplo.invalid");
+  await p.getByRole("textbox", { name: "E-mail para contato" }).fill("email-invalido");
   assert.equal(await p.getByText(/JPG, PNG ou WebP até 2 MB/).count(), 0, "texto antigo da foto saiu");
   const entrada = p.locator('input[type="file"]');
   assert.equal(await entrada.getAttribute("accept"), "image/*");
@@ -516,12 +541,12 @@ try {
   await p.getByRole("slider", { name: "Zoom" }).fill("1.5");
   await p.getByRole("button", { name: "Usar esta foto" }).click();
   await p.getByRole("img", { name: "Prévia da foto" }).waitFor();
-  await p.getByRole("button", { name: "Salvar", exact: true }).click();
-  await p.getByText("Perfil salvo.").last().waitFor();
+  assert(calls.some(c=>c.endpoint==="mvp_save_photo"),"foto salva mesmo com e-mail incompleto no formulário");
   assert.equal(uploads.length, 1);
   assert.equal(uploads[0].tipo, "image/webp");
   assert(uploads[0].tamanho > 0 && uploads[0].tamanho <= 2 * 1024 * 1024, `foto final até 2 MB (${uploads[0].tamanho})`);
-  assert.match(calls.filter((x) => x.endpoint === "mvp_save_profile").at(-1).body.p.photo, new RegExp(`^${uid}/[0-9a-f-]{36}\\.webp$`));
+  assert.match(calls.filter((x) => x.endpoint === "mvp_save_photo").at(-1).body.photo, new RegExp(`^${uid}/[0-9a-f-]{36}\\.webp$`));
+  await p.evaluate(()=>{window.createImageBitmap=async()=>{throw Error("Simula navegador sem ImageBitmap");};});
   // PNG com transparência, por colar (Ctrl/Cmd+V com a área focada)
   const transparente = png(300, 200).toString("base64");
   await p.getByRole("group", { name: "Foto (opcional)" }).focus();
@@ -544,9 +569,11 @@ try {
   }, transparente);
   await p.getByRole("dialog", { name: "Ajuste o enquadramento" }).waitFor();
   await p.getByRole("button", { name: "Usar esta foto" }).click();
+  await p.getByRole("dialog",{name:"Ajuste o enquadramento"}).waitFor({state:"detached"});
+  await p.getByRole("textbox", { name: "E-mail para contato" }).fill("contato@exemplo.invalid");
   await p.getByRole("button", { name: "Salvar", exact: true }).click();
   await p.getByText("Perfil salvo.").last().waitFor();
-  assert.equal(uploads.length, 2);
+  assert.equal(uploads.length, 3);
   assert.equal(uploads[1].tipo, "image/webp");
   assert(uploads[1].tamanho <= 2 * 1024 * 1024);
   console.log("PASSOU: foto de 8 MB reduzida a WebP ≤ 2 MB, PNG transparente por colar e arrastar, não imagem recusada");
@@ -610,19 +637,20 @@ try {
   const completo = { ...professional };
   Object.assign(professional, { channels: [], interesses: [] });
   await p.goto(base + "/");
-  await p.getByRole("combobox", { name: "Qual é o objetivo da sua próxima conversa?" }).selectOption("carreira");
+  await p.getByRole("textbox", { name: "Qual é o objetivo da sua próxima conversa?" }).fill("Quero ampliar minha rede profissional");
+  await p.getByRole("checkbox", {name:/Autorizo a IA a sugerir/}).check();
+  await p.getByRole("button",{name:"Descobrir habilidades com IA"}).click();
   await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).click();
-  await p.waitForURL(/\/completar-perfil\?buscar=carreira/);
+  await p.waitForURL(/\/completar-perfil\?objetivo=/);
   await p.getByRole("heading", { name: "Falta pouco para sua primeira conversa" }).waitFor();
-  await p.locator("label.chip", { hasText: "Saúde" }).click();
   await p.locator("label.chip", { hasText: "E-mail" }).click();
   await p.getByRole("textbox", { name: "E-mail para contato" }).fill("contato@exemplo.invalid");
   Object.assign(professional, completo);
-  const antesBusca = calls.filter((x) => x.endpoint === "mvp_create_request").length;
+  const antesBusca = calls.filter((x) => x.endpoint === "mvp_find_for_objective").length;
   await p.getByRole("button", { name: "Salvar e continuar" }).click();
   await p.waitForURL(base + "/");
   await p.waitForTimeout(800);
-  assert.equal(calls.filter((x) => x.endpoint === "mvp_create_request").length, antesBusca + 1, "a busca continua de onde parou");
+  assert.equal(calls.filter((x) => x.endpoint === "mvp_find_for_objective").length, antesBusca + 1, "a busca continua de onde parou");
   console.log("PASSOU: 'Falta pouco' só quando precisa e a busca continua depois de salvar");
   for (const width of [375, 390, 768, 1440])
     for (const theme of ["light", "dark"]) {

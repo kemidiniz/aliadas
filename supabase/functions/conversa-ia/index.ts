@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.119.0";
 import { segredoConfere } from "../_shared/http.ts";
 import { geminiBody, geminiUrl, readGemini, providerError } from "./core.ts";
+import { objectiveBody, readObjective } from "./objective.ts";
 const db = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -18,14 +19,16 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
   if (secretError || !secret || !segredoConfere(supplied, secret))
     return response(401, "nao_autorizado");
   let id: string;
+  let objective = false;
   try {
     const body = await req.json();
-    id = body.request_id;
+    objective = typeof body.objective_id === "string";
+    id = objective ? body.objective_id : body.request_id;
     if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) throw Error();
   } catch {
     return response(400, "pedido_invalido");
   }
-  const { data: job, error } = await db.rpc("mvp_claim_job", { request: id });
+  const { data: job, error } = await db.rpc(objective ? "mvp_claim_objective" : "mvp_claim_job", objective ? { objective: id } : { request: id });
   if (error) return response(503, "banco_indisponivel");
   if (!job) return response(200, "ja_processada_ou_sem_consentimento");
   let result = null,
@@ -43,12 +46,12 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
       signal: AbortSignal.timeout(14000),
-      body: JSON.stringify(geminiBody(job)),
+      body: JSON.stringify(objective ? objectiveBody(job) : geminiBody(job)),
     });
     if (!resp.ok) throw Error(providerError(resp.status));
     const body = await resp.json();
     try {
-      const read = readGemini(body, job);
+      const read = objective ? readObjective(body, job) : readGemini(body, job);
       input = read.usage.input;
       output = read.usage.output;
       result = read.result;
@@ -83,7 +86,7 @@ Deno.serve({ port: Number(Deno.env.get("PORT") || 8000) }, async (req) => {
           ? e.message
           : "falha_ia";
   }
-  const { error: saveError } = await db.rpc("mvp_finish_job", {
+  const { error: saveError } = await db.rpc(objective ? "mvp_finish_objective" : "mvp_finish_job", {
     job: job.job_id,
     result,
     model: model || "nao_configurado",

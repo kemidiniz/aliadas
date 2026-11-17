@@ -8,19 +8,26 @@ export const ERRO_ABRIR = 'Não conseguimos abrir essa foto. Tente uma JPG ou PN
 
 // Aceita qualquer imagem que o navegador consiga abrir (inclui HEIC onde houver suporte).
 export function validarFoto(f: Blob): string | null {
-  if (f.type && !f.type.startsWith('image/')) return ERRO_ABRIR
+  if (f.type && f.type !== 'application/octet-stream' && !f.type.startsWith('image/')) return ERRO_ABRIR
   if (f.size > MAX_ORIGINAL) return 'A foto precisa ter até 15 MB.'
   return null
 }
 
-export async function abrirFoto(f: Blob): Promise<ImageBitmap> {
+export type FotoAberta = ImageBitmap | HTMLImageElement
+export async function abrirFoto(f: Blob): Promise<FotoAberta> {
   const erro = validarFoto(f)
   if (erro) throw new Error(erro)
+  try { return await createImageBitmap(f) } catch { /* Alguns celulares só decodificam via <img>. */ }
+  const url = URL.createObjectURL(f)
   try {
-    return await createImageBitmap(f)
-  } catch {
-    throw new Error(ERRO_ABRIR)
-  }
+    const img = new Image()
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => img.naturalWidth > 0 ? resolve() : reject(Error(ERRO_ABRIR))
+      img.onerror = () => reject(Error(ERRO_ABRIR))
+      img.src = url
+    })
+    return img
+  } finally { URL.revokeObjectURL(url) }
 }
 
 // Recorte quadrado: zoom (1 = a imagem inteira cabe no lado menor) e posição
@@ -33,7 +40,7 @@ export function areaDoRecorte(w: number, h: number, e: Enquadramento) {
   const sy = (h - lado) / 2 + (e.y * (h - lado)) / 2
   return { sx, sy, lado }
 }
-export async function recortarFoto(img: ImageBitmap, e: Enquadramento): Promise<Blob> {
+export async function recortarFoto(img: FotoAberta, e: Enquadramento): Promise<Blob> {
   const { sx, sy, lado } = areaDoRecorte(img.width, img.height, e)
   const saida = Math.min(LADO_FOTO, Math.round(lado))
   const canvas = document.createElement('canvas')

@@ -1,6 +1,9 @@
 // Parte manual da validação, não comprova o gatilho automático em produção.
 // Usa exatamente o prompt, esquema, minimização e validação da Edge Function.
-import { geminiBody, geminiUrl, PROMPTS, providerError, readGemini, fallback } from "../supabase/functions/conversa-ia/core.ts";
+import { geminiUrl, providerError, sanitizeSupport } from "../supabase/functions/conversa-ia/core.ts";
+import { objectiveBody as geminiBody, readObjective as readGemini, SYSTEM, SYSTEM_V2 } from "../supabase/functions/conversa-ia/objective.ts";
+import { HABILIDADES } from "../supabase/functions/_shared/habilidades.ts";
+const PROMPTS: Record<string,string> = { v1: SYSTEM, v2: SYSTEM_V2 };
 import { nomeHabilidade, IDS_HABILIDADES } from "../supabase/functions/_shared/habilidades.ts";
 import { AREAS_PRO, GOALS_PRO, SITUACAO_PRO } from "../src/lib/professional.ts";
 import { args, escreverCsv, lerCsv } from "./csv.ts";
@@ -32,7 +35,7 @@ const caseCodes = new Set<string>();
 for (const c of casos) {
  if (!/^[A-Z0-9_-]{1,30}$/.test(c.caso) || caseCodes.has(c.caso) || c.apoio_texto.length>300) fail("use códigos anônimos únicos (ex.: CASO01) e textos de até 300 caracteres.");
  caseCodes.add(c.caso);
- geminiBody({goal:c.objetivo,description:c.apoio_texto,a:{situacao:c.pede_situacao,area_principal:c.pede_area,interesses:split(c.pede_interesses),ai_consent:true},candidates},PROMPTS[versao]);
+ geminiBody({goal:c.objetivo,description:c.apoio_texto || GOALS_PRO[c.objetivo as keyof typeof GOALS_PRO] || c.objetivo,a:{situacao:c.pede_situacao,area_principal:c.pede_area,ai_consent:true},candidates},PROMPTS[versao]);
 }
 await Deno.mkdir(pasta, { recursive: true });
 const destino = `${pasta}/avaliacao-rodada-${rodada}.csv`;
@@ -48,12 +51,14 @@ if ((ledger[hoje] || 0)+usoProduto+casos.length>30) fail("a rodada excederia 30 
 const rot = (m: Record<string,string>, k: string) => m[k] ?? k;
 const nomeSkills = (s: string[]) => s.map(nomeHabilidade).join(" · ");
 const descrever = (rs: {codigo:string;habilidades_que_ajudam:string[]}[]) => rs.map((r,i)=>`${i+1}. ${r.codigo} — ${nomeSkills(r.habilidades_que_ajudam)}`).join(" | ") || "Ninguém compatível";
+// Este cruzamento é local, após as habilidades sugeridas; NÃO é decisão da IA.
+const cruzar = (needs: string[]) => candidates.map((c,i)=>({codigo:c.codigo,habilidades_que_ajudam:c.habilidades.filter(h=>needs.includes(h)),i})).filter(c=>c.habilidades_que_ajudam.length).sort((a,b)=>b.habilidades_que_ajudam.length-a.habilidades_que_ajudam.length||a.i-b.i).slice(0,3);
 const linhas: Record<string,unknown>[] = [], logs: Record<string,unknown>[] = [];
 for (const c of casos) {
  if (c.apoio_texto.length>300) fail(`caso ${c.caso}: limite de 300 caracteres.`);
- const job = {goal:c.objetivo,description:c.apoio_texto,a:{situacao:c.pede_situacao,area_principal:c.pede_area,interesses:split(c.pede_interesses),ai_consent:true},candidates};
+ const job = {goal:c.objetivo,description:c.apoio_texto || GOALS_PRO[c.objetivo as keyof typeof GOALS_PRO] || c.objetivo,a:{situacao:c.pede_situacao,area_principal:c.pede_area,ai_consent:true},candidates};
  const body = geminiBody(job,PROMPTS[versao]); // valida tudo antes da chamada
- const linha: Record<string,unknown> = {caso:c.caso,objetivo:rot(GOALS_PRO,c.objetivo),apoio_texto:c.apoio_texto,situacao:rot(SITUACAO_PRO,c.pede_situacao),area:rot(AREAS_PRO,c.pede_area),interesses:split(c.pede_interesses).map(x=>rot(AREAS_PRO,x)).join(" · "),pool:candidates.map(p=>`${p.codigo}: ${rot(SITUACAO_PRO,p.situacao)} / ${rot(AREAS_PRO,p.area_principal)} / ${nomeSkills(p.habilidades)}`).join(" | "),habilidades_necessarias:"",indicacoes_IA:"",indicacoes_plano_B:descrever(fallback(job).recomendadas),observacao:c.observacao,erro:"",versao_prompt:versao};
+ const linha: Record<string,unknown> = {caso:c.caso,objetivo:rot(GOALS_PRO,c.objetivo),apoio_texto:c.apoio_texto,situacao:rot(SITUACAO_PRO,c.pede_situacao),area:rot(AREAS_PRO,c.pede_area),pool:candidates.map(p=>`${p.codigo}: ${rot(SITUACAO_PRO,p.situacao)} / ${rot(AREAS_PRO,p.area_principal)} / ${nomeSkills(p.habilidades)}`).join(" | "),habilidades_necessarias:"",indicacoes_IA:"",indicacoes_plano_B:descrever(cruzar(HABILIDADES.filter(h=>sanitizeSupport(job.description).split("; ").includes(h.nome)).map(h=>h.id))),observacao:c.observacao,erro:"",versao_prompt:versao};
  const log: Record<string,unknown> = {caso:c.caso,modelo:model,versao_prompt:versao,data_hora:new Date().toISOString(),tokens_enviados:0,tokens_recebidos:0,erro:""};
  try {
   ledger[hoje]=(ledger[hoje]||0)+1;
@@ -62,8 +67,8 @@ for (const c of casos) {
   if(!res.ok) throw Error(providerError(res.status));
   const parsed=readGemini(await res.json(),job);
   log.tokens_enviados=parsed.usage.input;log.tokens_recebidos=parsed.usage.output;
-  linha.habilidades_necessarias=nomeSkills(parsed.result.habilidades_necessarias);
-  linha.indicacoes_IA=descrever(parsed.result.recomendadas);
+  linha.habilidades_necessarias=nomeSkills(parsed.result.habilidades_sugeridas);
+  linha.indicacoes_IA=descrever(cruzar(parsed.result.habilidades_sugeridas));
  } catch(e) {
   const permitidos=["limite_provedor","acesso_provedor","modelo_indisponivel","configuracao_provedor","falha_provedor","saida_invalida","saida_truncada","bloqueado_provedor"];
   const code=e instanceof Error && permitidos.includes(e.message)?e.message:"falha_ia";

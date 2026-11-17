@@ -41,3 +41,12 @@ Na expansão, o limite interno de trinta chamadas/dia restringiria a IA antes de
 Acesso essencial gratuito durante o MVP. Contribuições voluntárias e apoio institucional podem ser estudados no futuro, sem influenciar recomendações, acesso, avaliações ou prioridade. Não implementar pagamento agora.
 
 Avaliar receita quando medições demonstrarem ultrapassagem persistente de cotas ou custos operacionais que não caibam nos planos atuais; não há data ou receita mínima calculável sem medições. Antes de contribuições ou monetização, conferir https://vercel.com/docs/limits/fair-use-guidelines e os termos comerciais vigentes do plano Vercel. Não presumir que doações sejam permitidas no Hobby. Reduzir chamadas ou limitar o piloto são alternativas sem novos gastos.
+
+
+## Atualização 037–039 — 17/11/2026
+
+A nova IA apenas sugere habilidades: sem pool de candidatas na entrada, até 200 tokens de saída, até duas novas sugestões por objetivo. Máximo de três objetivos/pessoa/24h e trinta gerações iniciadas/24h globalmente, incluindo tentativas e falhas. Consultas de estado param após até seis consultas/~15s. Sem IA, há escolha manual. Trocar a pessoa indicada não chama o provedor.
+
+As projeções anteriores de uma geração/pedido são hipóteses: na jornada nova, o intervalo é de uma a três chamadas por objetivo que use IA, conforme pedidos de alternativas. No cenário 10×, multiplicar usuários ativos × objetivos/usuária × média **medida** de tentativas × tokens **medidos** por chamada. Não reaproveitar a média do ranking antigo. Consulta anterior à publicação encontrou zero jobs/tokens, portanto ainda não existe média real desta finalidade. Nenhum faturamento foi ativado.
+
+Fontes oficiais de preços/termos Gemini continuam vinculadas na política de privacidade. A nova tentativa de abrir ai.google.dev a partir deste ambiente recebeu HTTP 403 do proxy; não foi apresentada como nova conferência dos termos/cotas. A situação sem faturamento foi confirmada pela titular anteriormente.

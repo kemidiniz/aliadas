@@ -11,14 +11,14 @@ import { mensagemAmigavel } from "../lib/erros";
 // Nenhum perfil é listado antes da busca; o e-mail chega mascarado do servidor.
 export const PERMISSOES = {
   ver_visao_geral: "Visão geral",
-  avaliar_perfis: "Avaliar perfis",
+  avaliar_perfis: "Gerenciar contas",
   tratar_denuncias: "Tratar denúncias",
   ver_feedback: "Ver feedback",
   ver_ia_automacoes: "Ver IA e automações",
 } as const;
 const DESCRICOES = {
  ver_visao_geral: "Mostra os indicadores e onde faltam habilidades na comunidade.",
- avaliar_perfis: "Permite revisar, aprovar ou não aprovar novos perfis.",
+ avaliar_perfis: "Permite consultar participantes e pausar ou reativar contas.",
  tratar_denuncias: "Permite consultar denúncias e acompanhar o tratamento.",
  ver_feedback: "Mostra avaliações das conversas, feedback e dúvidas do site.",
  ver_ia_automacoes: "Mostra execuções da IA, consumo, erros e exportações.",

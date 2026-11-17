@@ -1,9 +1,9 @@
 // Perguntas rápidas da landing (também abrem a página de Ajuda).
 export const FAQ = [
-  { q: "Quem cuida da comunidade?", a: "As embaixadoras: aliadas que revisam perfis novos e acompanham denúncias. O papel é por convite." },
+  { q: "Quem cuida da comunidade?", a: "As embaixadoras: aliadas que acolhem a comunidade e acompanham denúncias. O papel é por convite." },
   {
     q: "A IA vê meus dados?",
-    a: "Só se você autorizar e, mesmo assim, ela recebe apenas categorias: objetivo, situação, área, interesses e habilidades, incluindo expressões profissionais extraídas do apoio. Nunca nome, contatos, foto ou ids reais. No plano gratuito, o Google pode usar os dados enviados para melhorar seus produtos. Consulte os detalhes em Termos e privacidade.",
+    a: "Só se você autorizar e, mesmo assim, ela recebe apenas sua situação, área e expressões profissionais extraídas do objetivo para sugerir habilidades. Nenhuma informação de outra participante vai para a IA. Nunca nome, contatos, foto ou ids reais. No plano gratuito, o Google pode usar os dados enviados para melhorar seus produtos. Consulte os detalhes em Termos e privacidade.",
   },
   {
     q: "Quando meus contatos aparecem?",
@@ -32,7 +32,7 @@ export const FAQ_AJUDA = [
   },
   {
     q: "Por que ainda não recebi uma indicação?",
-    a: "Seu perfil precisa estar aprovado e completo. Outra participante precisa ter habilidades úteis para o seu objetivo e um canal em comum; se ninguém combinar agora, tente outro objetivo ou volte em alguns dias.",
+    a: "Confirme as habilidades para seu objetivo e escolha um contato no perfil. Outra participante precisa oferecer uma dessas habilidades e ter um canal em comum; se ninguém combinar agora, tente outro objetivo ou volte em alguns dias.",
   },
   {
     q: "O que acontece depois que eu aceito um convite?",

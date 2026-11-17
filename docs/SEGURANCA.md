@@ -1,5 +1,7 @@
 # segurança e LGPD da aliadas
 
+> Regra vigente em 037–039: cadastro sem aprovação prévia; pendente/aprovado são contas ativas, pausado/reprovado continuam restritos. O restante desta documentação conserva contexto histórico; as funções legadas não descrevem a jornada atual. Consulte [a atualização do perfil e objetivo](ATUALIZACAO-PERFIL-E-OBJETIVO.md). A IA recebe somente categorias próprias e vocabulário profissional permitido, nunca pool de pessoas; consentimento continua obrigatório. Contatos após aceite mútuo e bloqueios permanecem no banco.
+
 ## as políticas de acesso (RLS), em português simples
 
 O RLS é uma regra **dentro do banco**: mesmo que alguém pegue a anon key e chame a API direto, o banco só devolve o que a política permite. Além do RLS, cada tabela tem **permissão por coluna**: a pessoa só consegue escrever nas colunas que fazem sentido (por exemplo, ninguém consegue escrever o próprio `status`, o `codigo` ou o `resumo` da IA).

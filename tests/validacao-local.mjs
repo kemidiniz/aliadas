@@ -15,7 +15,7 @@ const srv=createServer(async(req,res)=>{
  let raw="";for await(const chunk of req)raw+=chunk;
  pedidos.push(JSON.parse(raw));
  res.setHeader("Content-Type","application/json");
- res.end(JSON.stringify({usageMetadata:{promptTokenCount:15,candidatesTokenCount:10},candidates:[{content:{parts:[{text:JSON.stringify({habilidades_necessarias:["entrevistas"],recomendadas:[{codigo:"C2",habilidades_que_ajudam:["entrevistas"]}]})}]}}]}));
+ res.end(JSON.stringify({usageMetadata:{promptTokenCount:15,candidatesTokenCount:10},candidates:[{content:{parts:[{text:JSON.stringify({habilidades_sugeridas:["entrevistas"]})}]}}]}));
 });
 await new Promise(r=>srv.listen(0,"127.0.0.1",r));
 try {
@@ -36,6 +36,6 @@ try {
  const result=readFileSync(join(dir,"resultado.md"),"utf8");
  assert.match(result,/\+100,0 pontos percentuais/);assert.match(result,/IA aprovada onde a regra não foi: 1/);assert.match(result,/Comentários agrupados/);
  assert(!JSON.stringify(pedidos).includes("OBSERVACAO_NAO_ENVIAR"));
- assert.equal(pedidos.length,2);assert.equal(pedidos[0].generationConfig.temperature,0.2);
+ assert.equal(pedidos.length,2);assert(!JSON.stringify(pedidos).includes("C1"));assert(!JSON.stringify(pedidos).includes("C2"));assert.equal(pedidos[0].generationConfig.temperature,0.2);
  console.log("PASSOU: pool, casos, mesmo prompt/esquema, plano B, duas rodadas, maioria 2/3, diferença em pontos percentuais e agrupamento; tudo com stub local.");
 } finally {await new Promise(r=>srv.close(r));rmSync(dir,{recursive:true,force:true});}

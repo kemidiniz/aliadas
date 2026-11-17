@@ -14,6 +14,7 @@ const server = http.createServer(async (req, res) => {
   paths.push(path);
   let body;
   if (path === "mvp_worker_secret") body = secret;
+  else if (path === "mvp_claim_objective") { body = {job_id:"38000000-0000-4000-8000-000000000001",description:"Preparar entrevista",a:{ai_consent:true,situacao:"buscando",area_principal:"saude"},excluded_skills:[]}; }
   else if (path === "mvp_claim_job") {
     body = claimed
       ? null
@@ -24,7 +25,7 @@ const server = http.createServer(async (req, res) => {
           b: { areas: ["saude"], moment: "experiente", themes: ["carreira"] },
         };
     claimed = true;
-  } else if (path === "mvp_finish_job") {
+  } else if ((path === "mvp_finish_job" || path === "mvp_finish_objective")) {
     finished = JSON.parse(raw);
     body = null;
   } else {
@@ -106,6 +107,10 @@ try {
     }),
   });
   assert.equal((await again.json()).code, "ja_processada_ou_sem_consentimento");
+  const objective = await fetch(`http://127.0.0.1:${port}`, {method:"POST",headers:{"Content-Type":"application/json","x-mvp-secret":secret},body:JSON.stringify({objective_id:"38000000-0000-4000-8000-000000000001"})});
+  assert.equal(objective.status,200);assert.equal((await objective.json()).code,"ia_nao_configurada");
+  assert(paths.includes("mvp_claim_objective") && paths.includes("mvp_finish_objective"));
+  assert.equal(finished.input_tokens,0);
   console.log(
     "PASSOU: autenticação interna, configuração gratuita ausente, zero tokens e replay sem nova geração; rede externa proibida.",
   );

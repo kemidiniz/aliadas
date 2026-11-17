@@ -1,5 +1,7 @@
 # Aliadas — MVP por habilidades
 
+> Atualização 17/11 (037–039): objetivo escrito → IA sugere habilidades → confirmação humana → busca determinística → convite revisado. Cadastro sem aprovação prévia; habilidades só obrigatórias para receber convites. [Detalhes atuais](ATUALIZACAO-PERFIL-E-OBJETIVO.md). Trechos de ranking de pessoas por IA abaixo são históricos.
+
 Atualizado em 17/11/2026. Reaproveita o projeto React/Vite/TypeScript/Supabase existente; não cria rede social, mentoria formal ou chat próprio. Inclusão: mulheres cis e trans e pessoas não binárias, de todas as áreas e momentos de carreira.
 
 ## Jornada

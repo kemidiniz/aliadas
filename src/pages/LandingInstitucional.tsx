@@ -106,7 +106,7 @@ export default function LandingInstitucional() {
           </p>
         </div>
         <ol className="steps-list">
-          {["Escolha o objetivo.", "Receba uma indicação feita pela IA, pelas habilidades de quem pode ajudar.", "Depois do aceite, conversem por onde preferirem."].map((passo, i) => (
+          {["Escolha o objetivo.", "Escreva seu objetivo, revise as habilidades sugeridas pela IA e encontre quem pode ajudar.", "Depois do aceite, conversem por onde preferirem."].map((passo, i) => (
             <li key={passo}>
               <span className="step-number" aria-hidden>
                 {String(i + 1).padStart(2, "0")}

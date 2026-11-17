@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
-import { abrirFoto, areaDoRecorte, recortarFoto, type Enquadramento } from "../lib/fotos";
+import { abrirFoto, areaDoRecorte, recortarFoto, type FotoAberta, type Enquadramento } from "../lib/fotos";
 import { rotuloCampo } from "./Campo";
 
 // Foto de perfil de qualquer lugar: escolher (no celular abre câmera, fototeca e
@@ -16,14 +16,15 @@ export function FotoPerfil({
 }: {
   previaAtual?: string | null;
   iniciais: string;
-  aoMudar: (foto: Blob | null) => void; // null = remover
+  aoMudar: (foto: Blob | null) => void | Promise<void>; // null = remover
 }) {
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
-  const [img, setImg] = useState<ImageBitmap | null>(null);
+  const [img, setImg] = useState<FotoAberta | null>(null);
   const [enq, setEnq] = useState<Enquadramento>({ zoom: 1, x: 0, y: 0 });
   const [previa, setPrevia] = useState<string | null>(null);
   const [removida, setRemovida] = useState(false);
+  const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [arrastando, setArrastando] = useState(false);
   const [camera, setCamera] = useState(false);
@@ -44,17 +45,18 @@ export function FotoPerfil({
     }
   }
   async function confirmar() {
-    if (!img) return;
+    if (!img || salvando) return;
+    setErro(""); setSalvando(true);
     try {
       const blob = await recortarFoto(img, enq);
+      await aoMudar(blob);
       if (previa) URL.revokeObjectURL(previa);
       setPrevia(URL.createObjectURL(blob));
       setRemovida(false);
-      aoMudar(blob);
       setImg(null);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não conseguimos usar essa foto.");
-    }
+      setErro(e instanceof Error ? e.message : "Não conseguimos salvar essa foto. Tente novamente.");
+    } finally { setSalvando(false); }
   }
   function soltar(e: DragEvent) {
     e.preventDefault();
@@ -118,11 +120,14 @@ export function FotoPerfil({
         {src && (
           <button
             type="button"
-            onClick={() => {
+            disabled={salvando}
+            onClick={async () => {
+              setSalvando(true); setErro("");
+              try { await aoMudar(null);
               if (previa) URL.revokeObjectURL(previa);
               setPrevia(null);
               setRemovida(true);
-              aoMudar(null);
+              } catch { setErro("Não conseguimos remover sua foto. Tente novamente."); } finally { setSalvando(false); }
             }}
             className={discreto}
           >
@@ -146,7 +151,7 @@ export function FotoPerfil({
           }}
         />
       )}
-      {img && <Recorte img={img} enq={enq} setEnq={setEnq} aoConfirmar={confirmar} aoCancelar={() => setImg(null)} />}
+      {img && <Recorte img={img} enq={enq} setEnq={setEnq} aoConfirmar={confirmar} aoCancelar={() => { if (!salvando) setImg(null); }} salvando={salvando} />}
     </div>
   );
 }
@@ -157,12 +162,14 @@ function Recorte({
   setEnq,
   aoConfirmar,
   aoCancelar,
+  salvando,
 }: {
-  img: ImageBitmap;
+  img: FotoAberta;
   enq: Enquadramento;
   setEnq: (e: Enquadramento) => void;
   aoConfirmar: () => void;
   aoCancelar: () => void;
+  salvando: boolean;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -199,10 +206,10 @@ function Recorte({
         </div>
       </div>
       <div className="flex flex-wrap gap-3">
-        <button type="button" onClick={aoConfirmar} className="inline-flex h-12 items-center rounded-xl bg-destaque px-5 font-semibold text-sobre-destaque">
-          Usar esta foto
+        <button type="button" onClick={aoConfirmar} disabled={salvando} className="inline-flex h-12 items-center rounded-xl bg-destaque px-5 font-semibold text-sobre-destaque">
+          {salvando ? "Salvando foto…" : "Usar esta foto"}
         </button>
-        <button type="button" onClick={aoCancelar} className={discreto}>
+        <button type="button" onClick={aoCancelar} disabled={salvando} className={discreto}>
           Cancelar
         </button>
       </div>

@@ -232,12 +232,12 @@ a {
   border-top: 1px solid var(--linha);
 }
 .institutional-section h2 {
-  max-width: 45rem;
+  max-width: 100%;
   color: var(--destaque);
 }
 .editorial-copy {
   margin-top: 1.5rem;
-  max-width: 45rem;
+  max-width: 100%;
   color: var(--texto-suave);
   font-size: var(--text-corpo);
 }

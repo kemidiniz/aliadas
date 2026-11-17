@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { Pagina, Titulo } from "../components/Pagina";
+import { CampoTexto, CampoSelect } from "../components/Campo";
+import { nomeHabilidade } from "../lib/habilidades";
 import { Botao } from "../components/Botao";
 import { Aviso, Carregando } from "../components/Aviso";
 import { mensagemAmigavel } from "../lib/erros";
-import { AREAS_PRO, SITUACAO_PRO, GOALS_PRO, label } from "../lib/professional";
+import { AREAS_PRO, SITUACAO_PRO, label } from "../lib/professional";
 import { MetricasHabilidades } from "../components/MetricasHabilidades";
 import IAAutomacoes from "./IAAutomacoes";
 import FeedbackPainel from "./FeedbackPainel";
@@ -25,7 +27,7 @@ export default function Curadoria() {
   }, [tab]);
   const tabs: { id: Tab; label: string }[] = [];
   if (adminAccess.ver_visao_geral) tabs.push({ id: "visao", label: "Visão geral" });
-  if (adminAccess.review_profiles) tabs.push({ id: "perfis", label: "Perfis" });
+  if (adminAccess.review_profiles) tabs.push({ id: "perfis", label: "Participantes" });
   if (adminAccess.handle_reports) tabs.push({ id: "denuncias", label: "Denúncias" });
   if (adminAccess.ver_feedback) tabs.push({ id: "feedback", label: "Avaliações e feedback" });
   if (adminAccess.ver_ia_automacoes) tabs.push({ id: "ia", label: "IA e automações" });
@@ -37,7 +39,7 @@ export default function Curadoria() {
   };
   return (
     <Pagina titulo="Painel das embaixadoras">
-      <Titulo sub="Cada aba aparece de acordo com os acessos da sua conta.">Painel das embaixadoras</Titulo>
+      <Titulo sub="Acompanhe dúvidas e denúncias, cuide das contas e veja os resultados da comunidade.">Painel das embaixadoras</Titulo>
       <div role="tablist" aria-label="Áreas administrativas" className="mb-8 flex flex-wrap gap-3">
         {tabs.map((t) => (
           <button
@@ -62,7 +64,7 @@ export default function Curadoria() {
       <section role="tabpanel" className="min-h-[60vh]" id={`admin-${active}`} aria-labelledby={`tab-${active}`}>
         {active === "visao" && <VisaoGeral ir={ir} pode={(t) => tabs.some((x) => x.id === t)} />}
         {active === "perfis" && <Profiles />}
-        {active === "denuncias" && <Reports />}
+        {active === "denuncias" && <><h2 className="mb-2 text-xl">Denúncias</h2><p className="mb-5 text-sm text-suave">Acompanhe cada ocorrência e atualize seu andamento. Se precisar pausar uma conta, use Participantes.</p><Reports /></>}
         {active === "feedback" && (
           <div className="space-y-12">
             <div>
@@ -84,7 +86,8 @@ export default function Curadoria() {
 }
 
 type Visao = {
-  pending_profiles: number;
+  active_profiles: number;
+  available_profiles: number;
   pending_invites: number;
   conversations_happened: number;
   useful_rate: number | null;
@@ -105,7 +108,7 @@ function VisaoGeral({ ir, pode }: { ir: (t: Tab) => void; pode: (t: Tab) => bool
   if (erro) return <Aviso tipo="erro">{erro}</Aviso>;
   if (!m) return <Carregando />;
   const cards: [string, string | number, Tab][] = [
-    ["Perfis aguardando aprovação", m.pending_profiles, "perfis"],
+    ["Participantes ativas", m.active_profiles ?? 0, "perfis"],
     ["Convites esperando resposta", m.pending_invites, "ia"],
     ["Conversas que aconteceram", m.conversations_happened, "feedback"],
     ["Conversas úteis", pct(m.useful_rate), "feedback"],
@@ -113,7 +116,6 @@ function VisaoGeral({ ir, pode }: { ir: (t: Tab) => void; pode: (t: Tab) => bool
     ["Feedbacks novos", m.feedback_new, "feedback"],
   ];
   const tarefas: [string, number, Tab][] = [
-    ["Perfis aguardando aprovação", m.pending_profiles, "perfis"],
     ["Denúncias abertas", m.open_reports, "denuncias"],
     ["Dúvidas sem resposta", m.unanswered_questions ?? 0, "feedback"],
   ].filter(([, n, destino]) => Number(n)>0 && pode(destino as Tab)) as [string,number,Tab][];
@@ -152,108 +154,32 @@ function VisaoGeral({ ir, pode }: { ir: (t: Tab) => void; pode: (t: Tab) => bool
   </div>);
 }
 
-type Profile = {
-  id: string;
-  name: string;
-  status: string;
-  situacao: string | null;
-  area_principal: string | null;
-  interesses: string[] | null;
-  can_help: string[] | null;
-};
-// Só os perfis que aguardam aprovação, com aprovar ou recusar.
+type Profile = { id: string; name: string; status: string; situacao: string | null; area_principal: string | null; habilidades: string[] | null; available: boolean };
 function Profiles() {
-  const { session, recarregar } = useAuth();
+  const { session } = useAuth();
   const [rows, setRows] = useState<Profile[] | null>(null);
-  const [error, setError] = useState("");
+  const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState("todos");
+  const [erro, setErro] = useState("");
   const [busy, setBusy] = useState(false);
-  const [recusa, setRecusa] = useState<string | null>(null);
-  const [motivo, setMotivo] = useState("");
-  async function load() {
-    const { data, error } = await supabase.rpc("mvp_admin_profiles", { filter_status: "pendente" });
-    if (error) {
-      setError(mensagemAmigavel(error, "Não foi possível carregar os perfis."));
-      setRows([]);
-    } else {
-      setRows(data);
-      setError("");
-    }
+  async function load(ev?: FormEvent) {
+    ev?.preventDefault(); setErro("");
+    const { data, error } = await supabase.rpc("mvp_admin_participants", { q: busca, filter_status: filtro });
+    if (error) { setErro(mensagemAmigavel(error)); setRows([]); } else setRows(data);
   }
-  useEffect(() => {
-    load();
-  }, []);
-  async function review(id: string, status: string) {
+  useEffect(() => { load(); }, [filtro]);
+  async function alterar(p: Profile, ativa: boolean) {
+    if (!window.confirm(`${ativa ? "Reativar" : "Pausar"} a conta de ${p.name}?`)) return;
     setBusy(true);
-    const { error } = await supabase.rpc("mvp_admin_review_with_reason", { target: id, new_status: status, reason: status === "reprovado" ? motivo : "" });
+    const { error } = await supabase.rpc("mvp_admin_set_active", { target: p.id, active: ativa });
     setBusy(false);
-    if (error) {
-      setError(mensagemAmigavel(error));
-      await recarregar();
-    } else { setRecusa(null); setMotivo(""); await load(); }
+    if (error) setErro(mensagemAmigavel(error)); else await load();
   }
-  return (
-    <>
-      <h2 className="mb-2 text-xl">Revisão humana</h2>
-      <p className="mb-5 text-sm text-suave">Nenhum perfil recebe indicações antes desta aprovação.</p>
-      {error && <Aviso tipo="erro">{error}</Aviso>}
-      {!rows ? (
-        <Carregando />
-      ) : !rows.length ? (
-        <p className="text-suave">Nenhum perfil aguardando aprovação.</p>
-      ) : (
-        <ul className="space-y-5">
-          {rows.map((p) => (
-            <li key={p.id} className="rounded-2xl border border-linha p-6">
-              <h3 className="text-lg">{p.name}</h3>
-              <dl className="mt-3 space-y-1 text-sm">
-                {p.situacao && (
-                  <div>
-                    <dt className="inline text-suave">Hoje: </dt>
-                    <dd className="inline">{label(SITUACAO_PRO, p.situacao)}</dd>
-                  </div>
-                )}
-                {p.area_principal && (
-                  <div>
-                    <dt className="inline text-suave">Área: </dt>
-                    <dd className="inline">{label(AREAS_PRO, p.area_principal)}</dd>
-                  </div>
-                )}
-                {!!p.interesses?.length && (
-                  <div>
-                    <dt className="inline text-suave">Interesses: </dt>
-                    <dd className="inline">{p.interesses.map((x) => label(AREAS_PRO, x)).join(", ")}</dd>
-                  </div>
-                )}
-                {!!p.can_help?.length && (
-                  <div>
-                    <dt className="inline text-suave">Pode ajudar com: </dt>
-                    <dd className="inline">{p.can_help.map((x) => label(GOALS_PRO, x)).join("; ")}</dd>
-                  </div>
-                )}
-                {!p.situacao && <p className="text-suave">Ainda não completou o primeiro acesso.</p>}
-              </dl>
-              {p.id === session?.user.id ? (
-                <p className="mt-4 text-sm text-suave">Seu perfil deve ser avaliado por outra embaixadora.</p>
-              ) : (
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <Botao carregando={busy} onClick={() => review(p.id, "aprovado")}>
-                    Aprovar
-                  </Botao>
-                  <Botao variante="secundario" carregando={busy} onClick={() => { setRecusa(p.id); setMotivo(""); }}>
-                    Não aprovar
-                  </Botao>
-                </div>
-              )}
-              {recusa === p.id && <div className="mt-4 space-y-3">
-                <label className="block text-sm font-semibold">Motivo (opcional)<textarea className="mt-2 w-full rounded-xl border-2 border-campo bg-fundo p-3" value={motivo} maxLength={500} onChange={e => setMotivo(e.target.value)} /></label>
-                <div className="flex gap-3"><Botao carregando={busy} onClick={() => review(p.id, "reprovado")}>Confirmar decisão</Botao><Botao variante="discreto" onClick={() => setRecusa(null)}>Cancelar</Botao></div>
-              </div>}
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
-  );
+  return <section className="space-y-5"><div><h2 className="text-xl">Participantes</h2><p className="mt-2 text-sm text-suave">O cadastro já libera a busca. Esta área serve para pausar ou reativar contas quando necessário; contatos privados não são exibidos.</p></div>
+    <form onSubmit={load} className="flex flex-wrap items-end gap-4"><div className="min-w-48 flex-1"><CampoTexto rotulo="Buscar participante" value={busca} onChange={e => setBusca(e.target.value)} maxLength={80} /></div><CampoSelect rotulo="Contas" value={filtro} onChange={e => setFiltro(e.target.value)} opcoes={[{valor:"todos",rotulo:"Todas"},{valor:"ativas",rotulo:"Ativas"},{valor:"restritas",rotulo:"Pausadas ou restritas"}]} /><Botao type="submit">Buscar</Botao></form>
+    {erro && <Aviso tipo="erro">{erro}</Aviso>}
+    {!rows ? <Carregando /> : !rows.length ? <p>Nenhuma participante encontrada.</p> : <ul className="divide-y divide-linha">{rows.map(p => {const ativa = ["pendente", "aprovado"].includes(p.status); return <li key={p.id} className="flex flex-wrap items-start justify-between gap-4 py-5"><div className="min-w-0 flex-1"><h3 className="text-lg">{p.name}</h3><p className="mt-1 text-sm text-suave">{ativa ? "Conta ativa" : "Conta pausada ou restrita"}{p.situacao ? ` · ${label(SITUACAO_PRO,p.situacao)}` : ""}{p.area_principal ? ` · ${label(AREAS_PRO,p.area_principal)}` : ""}</p><p className="mt-2 text-sm">{p.available ? (p.habilidades?.length ? p.habilidades.map(nomeHabilidade).join(" · ") : "Ainda não escolheu habilidades para receber convites.") : "Busca apoio, sem receber novos convites."}</p></div>{p.id !== session?.user.id && <Botao variante="secundario" carregando={busy} onClick={() => alterar(p,!ativa)}>{ativa ? "Pausar conta" : "Reativar conta"}</Botao>}</li>;})}</ul>}
+  </section>;
 }
 type Report = {
   id: string;

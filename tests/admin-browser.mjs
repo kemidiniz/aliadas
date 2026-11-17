@@ -30,10 +30,10 @@ try {
     principal: TODAS,
   };
   const esperado = {
-    reviewer: ["Perfis"],
+    reviewer: ["Participantes"],
     reports: ["Denúncias"],
     feedback: ["Avaliações e feedback"],
-    principal: ["Visão geral", "Perfis", "Denúncias", "Avaliações e feedback", "IA e automações", "Acessos"],
+    principal: ["Visão geral", "Participantes", "Denúncias", "Avaliações e feedback", "IA e automações", "Acessos"],
   };
   for (const kind of Object.keys(perfis)) {
     let access = { principal: kind === "principal", legacy: false, ...perfis[kind] };
@@ -62,8 +62,8 @@ try {
       if (endpoint === "profiles") data = [{ id: uid, apelido: "Conta de teste", status: "aprovado", areas: [], formas_conexao: [], foto_path: null }];
       if (endpoint === "mvp_admin_access") data = access;
       if (endpoint === "mvp_admin_counts") data = { perfis: 1 };
-      if (endpoint === "mvp_metrics") data = { pending_profiles: 1, pending_invites: 2, conversations_happened: 3, useful_rate: 0.6667, open_reports: 0, feedback_new: 4, unanswered_questions: 1 };
-      if (endpoint === "mvp_admin_profiles") data = [{ id: target, name: "Karina Teste", status: "pendente", situacao: "trabalho", area_principal: "tecnologia", interesses: ["saude"], can_help: ["carreira"] }];
+      if (endpoint === "mvp_metrics") data = { active_profiles: 11, available_profiles: 7, pending_invites: 2, conversations_happened: 3, useful_rate: 0.6667, open_reports: 0, feedback_new: 4, unanswered_questions: 1 };
+      if (endpoint === "mvp_admin_participants") data = [{ id: target, name: "Karina Teste", status: "pendente", situacao: "trabalho", area_principal: "tecnologia", interesses: ["saude"], can_help: ["carreira"] }];
       if (endpoint === "mvp_feedback_metrics") data = { por_tipo: {}, nota_media: null, notas: 0, conectou: {}, problemas_por_pagina: {}, novos: 0, respondidos: 0 };
       if (endpoint === "mvp_conversation_metrics") data = { conversations_happened: 3, useful_rate: 0.6667, top_marks: {}, feedback_requests_pending: 1, expired_invites: 0 };
       if (endpoint === "mvp_skill_metrics") data = { first_choice_rate:0.5,ia:2,regra:2,sem_compativel:1,habilidades:[{id:"entrevistas",nome:"Preparação para entrevistas",pedidas:3,oferecidas:1}] };
@@ -85,16 +85,14 @@ try {
     assert.deepEqual(abas, esperado[kind], `${kind}: abas`);
     assert(await p.getByRole("link", { name: "Painel" }).count() >= 1, "quem tem atribuição vê o Painel");
     if (kind === "reviewer") {
-      await p.getByRole("heading", { name: "Revisão humana" }).waitFor();
-      await p.getByRole("button", { name: "Não aprovar" }).waitFor();
-      assert.equal(await p.getByRole("combobox", { name: /Mostrar perfis/ }).count(), 0, "sem lista de todos os perfis");
-      await p.getByRole("button", { name: "Não aprovar" }).click();
-      await p.getByRole("textbox", { name: "Motivo (opcional)" }).fill("Complete suas informações profissionais.");
-      await p.getByRole("button", { name: "Confirmar decisão" }).click();
-      await p.waitForTimeout(100);
-      assert.equal(calls.find(c=>c.endpoint==="mvp_admin_review_with_reason").body.reason,"Complete suas informações profissionais.");
-      const proibidas = ["mvp_metrics", "mvp_feedback_metrics", "feedback", "mvp_ai_metrics", "conversation_jobs", "mvp_admin_search", "mvp_admin_ambassadors"];
-      assert(!calls.some((c) => proibidas.includes(c.endpoint)), "só Avaliar perfis: nenhuma chamada de outras abas");
+      await p.getByRole("heading",{name:"Participantes",exact:true}).waitFor();
+      await p.getByText("O cadastro já libera a busca.",{exact:false}).waitFor();
+      assert.equal(await p.getByRole("button",{name:"Aprovar",exact:true}).count(),0);
+      const confirmacao = async d => d.accept();
+      p.once("dialog",confirmacao);
+      await p.getByRole("button",{name:"Pausar conta",exact:true}).click();
+      await p.waitForTimeout(200);
+      assert(calls.some(c=>c.endpoint==="mvp_admin_set_active" && c.body.active===false));
     }
     if (kind === "principal") {
       assert.equal(await p.getByRole("tab", { name: "Visão geral" }).getAttribute("aria-selected"), "true", "Visão geral é a primeira aba");
@@ -111,8 +109,8 @@ try {
       assert.equal(await p.getByRole("tab", { name: /IA e automações/ }).getAttribute("aria-selected"),"true","convites levam à aba com o detalhamento");
       await p.getByRole("heading", { name: "Convites esperando resposta",exact:true }).waitFor();
       await p.getByRole("tab", { name: "Visão geral" }).click();
-      await p.getByRole("button", { name: /Perfis aguardando aprovação/ }).click();
-      assert.equal(await p.getByRole("tab", { name: /Perfis/ }).getAttribute("aria-selected"), "true", "card leva à aba de detalhe");
+      await p.getByRole("button", { name: /Participantes ativas/ }).click();
+      assert.equal(await p.getByRole("tab", { name: /Participantes/ }).getAttribute("aria-selected"), "true", "card leva à aba de detalhe");
       await p.getByRole("tab", { name: /Avaliações e feedback/ }).click();
       await p.getByRole("heading", { name: "Feedback do site" }).waitFor();
       await p.getByRole("heading", { name: "Avaliação das conversas" }).waitFor();
@@ -141,9 +139,9 @@ try {
       await p.getByText(target).waitFor();
       await p.getByRole("button", { name: "Escolher" }).click();
       const regiao = p.getByRole("region", { name: "Acessos de Karina Teste" });
-      for (const k of ["Visão geral", "Avaliar perfis", "Tratar denúncias", "Ver feedback", "Ver IA e automações"])
+      for (const k of ["Visão geral", "Gerenciar contas", "Tratar denúncias", "Ver feedback", "Ver IA e automações"])
         await regiao.getByRole("checkbox", { name: k }).waitFor();
-      await regiao.getByRole("checkbox", { name: "Avaliar perfis" }).check();
+      await regiao.getByRole("checkbox", { name: "Gerenciar contas" }).check();
       await regiao.getByRole("checkbox", { name: "Ver feedback" }).check();
       await regiao.getByRole("button", { name: "Salvar acessos" }).click();
       await p.getByText("Acessos salvos e registrados na auditoria.").waitFor();

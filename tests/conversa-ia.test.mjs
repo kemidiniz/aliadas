@@ -54,3 +54,27 @@ test("consumo e erros não expõem corpo externo", () => {
  assert.deepEqual(usageCounts({promptTokenCount:-1,candidatesTokenCount:"secret"}),{input:0,output:0});
  assert.equal(providerError(429),"limite_provedor");assert.equal(providerError(403),"acesso_provedor");assert.equal(providerError(404),"modelo_indisponivel");
 });
+
+// Contrato atual: a IA sugere habilidades antes da confirmação humana, sem pool de pessoas.
+import { objectiveBody, validateObjective, readObjective } from "../supabase/functions/conversa-ia/objective.ts";
+test("objetivo novo não envia candidatas, identidade, interesses nem texto livre bruto", () => {
+ const serialized = JSON.stringify(objectiveBody({...job, description: job.description+" melhorar site", candidates:job.candidates}));
+ for(const privateValue of ["Maria","Silva","NOME", "C1", "C2", "10000000-1111", "99999", "123.456", "maria@", "https://empresa", "Ignore o sistema"]) assert(!serialized.includes(privateValue), privateValue);
+ assert(!JSON.parse(JSON.parse(serialized).contents[0].parts[0].text).interesses);
+ assert(serialized.includes("entrevista"));assert(serialized.includes("site"));
+ assert.throws(()=>objectiveBody({...job,a:{...job.a,ai_consent:false}}),/sem_consentimento/);
+});
+test("habilidades novas são até três, do catálogo, sem duplicatas ou repetição de rodada", () => {
+ const objective = {...job, excluded_skills:["entrevistas"]};
+ for(const values of [["entrevistas"],["inventada"],["networking","networking"],["networking","programacao","portfolio","lideranca"]]) assert.throws(()=>validateObjective({habilidades_sugeridas:values},objective),/saida_invalida/);
+ assert.deepEqual(validateObjective({habilidades_sugeridas:["curriculo_linkedin"]},objective),{habilidades_sugeridas:["curriculo_linkedin"]});
+ assert.throws(()=>validateObjective({habilidades_sugeridas:[],justificativa:"texto"},objective));
+ assert(!objectiveBody(objective).generationConfig.responseSchema.properties.habilidades_sugeridas.items.enum.includes("entrevistas"));
+ assert.deepEqual(validateObjective({habilidades_sugeridas:[]},objective),{habilidades_sugeridas:[]});
+});
+test("resposta nova do Gemini é real JSON validado e preserva consumo também quando inválida", () => {
+ const body={usageMetadata:{promptTokenCount:321,candidatesTokenCount:14},candidates:[{finishReason:"STOP",content:{parts:[{text:'{"habilidades_sugeridas":["entrevistas"]}'}]}}]};
+ assert.equal(readObjective(body,job).usage.input,321);
+ body.candidates[0].content.parts[0].text='{"habilidades_sugeridas":["inventada"]}';
+ assert.throws(()=>readObjective(body,job),e=>e.message==='saida_invalida'&&e.usage.input===321);
+});
