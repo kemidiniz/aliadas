@@ -329,6 +329,12 @@ try {
   await p.goto(base + "/meu-perfil");
   await p.getByRole("heading", { name: "Meu perfil", exact: true }).waitFor();
   await p.getByText("de 5 seções completas").waitFor();
+  assert.equal(await p.getByText("Minhas buscas").count(), 0, "sem Minhas buscas no perfil");
+  assert.deepEqual(
+    await p.locator("main section > h2").allInnerTexts(),
+    ["Sobre você", "Você hoje", "Como você pode ajudar", "Contatos", "Privacidade", "Conta"],
+    "o perfil tem 6 seções",
+  );
   assert.equal(await p.getByText("Link da minha sala de chamada (opcional)").count(), 0, "sem sala de chamada");
   assert.equal(await p.getByText("Quando você costuma ter tempo").count(), 0, "sem grade de disponibilidade");
   await p.getByRole("button", { name: "Salvar", exact: true }).click();

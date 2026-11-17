@@ -5,7 +5,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CONTAINER, Formulario, Pagina, Titulo } from "../components/Pagina";
 import { Caixinha, CampoSelect, CampoTexto, MultiEscolha } from "../components/Campo";
 import { Botao } from "../components/Botao";
-import { MinhasBuscas } from "../components/MinhasBuscas";
 import { CartaoCarregando } from "../components/ui";
 import { useToast } from "../components/Toast";
 import { supabase } from "../lib/supabase";
@@ -320,7 +319,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       <div className="lg:grid lg:grid-cols-[200px_minmax(0,760px)] lg:gap-8">
         <nav aria-label="Seções do perfil" className="hidden lg:block">
           <ul className="sticky top-24 -ml-3 space-y-1 text-sm">
-            {[...secoes, { id: "buscas", titulo: "Minhas buscas" }, { id: "conta", titulo: "Conta" }].map((s) => (
+            {[...secoes, { id: "conta", titulo: "Conta" }].map((s) => (
               <li key={s.id}>
                 <a href={`#${s.id}`} className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-superficie">
                   <span aria-hidden className={`h-2 w-2 rounded-full ${"completa" in s ? (s.completa ? "bg-destaque" : "border border-campo") : "bg-linha"}`} />
@@ -337,10 +336,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
               {s.conteudo}
             </section>
           ))}
-          <section id="buscas" aria-labelledby="t-buscas" className="scroll-mt-24 space-y-3 rounded-3xl border border-linha p-5 sm:p-6">
-            <h2 id="t-buscas" className="text-xl">Minhas buscas</h2>
-            <MinhasBuscas eu={session!.user.id} />
-          </section>
           <section id="conta" aria-labelledby="t-conta" className="scroll-mt-24 space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
             <h2 id="t-conta" className="text-xl">Conta</h2>
             {!recuperacao && <SenhaPerfil />}
