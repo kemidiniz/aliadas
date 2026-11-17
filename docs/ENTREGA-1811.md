@@ -78,3 +78,11 @@ A rede desta sessão bloqueia jitsi.org, então não foi possível conferir na d
 5. Security Advisor. Esperado: `conversation_expiry_runs` com RLS e política de curadoria; nenhuma tabela sem RLS.
 6. Frontend: publicar na Vercel a partir da branch `claude/new-session-39k0a4`. A Vercel não publica sozinha a cada push; o deploy é disparado manualmente.
 7. Conferir em produção a rotina agendada (`select jobname, schedule from cron.job`).
+
+### Registro do deploy (17/11, autorizado)
+
+- Migrations 018, 019, 020 e 021 aplicadas. pg_cron instalado, com a rotina `aliadas-expirar-convites` agendada para `7 6 * * *` (03:07 de Brasília).
+- Gatilho `feedback_novo_avisa_make` ativo e segredo `make_feedback_novo_url` presente no Vault (valor não exibido).
+- `conversa-ia` republicada (versão 9), com o mesmo comportamento.
+- Security Advisor: nenhuma tabela sem RLS e nenhum aviso novo.
+- Site publicado a partir do commit cb1fc8b (rodapé com © 2026 Kemily Diniz).
