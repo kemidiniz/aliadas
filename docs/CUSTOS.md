@@ -1,52 +1,41 @@
-# custos e sustentabilidade — 15/11/2026
+# Custos e sustentabilidade
 
-Objetivo: **nenhum novo gasto**. Não foram ativados billing, pagamentos, planos, cartões, créditos ou serviços novos. Não temos faturas nem consumo do painel nesta entrega: “não medido” não significa zero de custo anterior. Valores em USD somente quando há fonte verificada.
+Atualização: 17/11/2026. Objetivo do MVP: **não acrescentar gastos**. Não foram habilitados planos, cobrança, créditos, pagamentos ou cartões. Faturas da titular não foram auditadas; “não medido” não significa ausência de custo anterior.
 
-## ferramentas e fontes
+| Ferramenta | Plano e limite gratuito | Custo observado | Fonte oficial / consulta |
+|---|---|---|---|
+| Vercel | Manter plano atual; plano/consumo da conta não confirmados | Nenhuma compra nesta tarefa | https://vercel.com/docs/plans/hobby — consulta anterior em 15/11; revalidar cotas da conta |
+| Supabase | Plano existente; sem upgrade. Banco/Auth/Storage/Edge e pg_net usam cotas do projeto | Sem mudança de plano; fatura não consultada | https://supabase.com/pricing e https://supabase.com/docs/guides/platform/billing-on-supabase — confirmar no painel |
+| Gemini | Modelo configurado gemini-2.5-flash-lite; titular confirmou projeto sem faturamento | Zero tokens registrados nas consultas anteriores à publicação desta rodada; não é auditoria Google Billing | https://ai.google.dev/gemini-api/docs/pricing / https://ai.google.dev/gemini-api/docs/rate-limits / https://ai.google.dev/gemini-api/terms — tentativa em 17/11 bloqueada pelo proxy (HTTP 403) |
+| Automação | Postgres + pg_net + Edge; rotina diária pg_cron existente, sem nova integração externa | Nenhum serviço contratado | https://supabase.com/docs/guides/database/extensions/pg_net e https://supabase.com/docs/guides/cron |
+| Domínio | Subdomínio existente vercel.app | Sem domínio novo | https://vercel.com/docs/domains |
+| E-mails/Make legado | Manter configuração existente de ajuda e Auth | Fatura/cotas não consultadas; sem contratação | Painéis da titular; Make não participa da recomendação nova |
+| Bibliotecas | React/Vite/TypeScript/Supabase existentes; sem API paga adicionada | Nenhuma dependência paga contratada | package.json e lockfile |
 
-| ferramenta | plano/limite/custo atual | fonte oficial e consulta |
-|---|---|---|
-| Vercel, frontend estático | docs confirmam Hobby gratuito: 100 GB Fast Data Transfer e 10 GB Fast Origin Transfer/mês, 100 deploys/dia. Plano e consumo reais da conta não inspecionados | https://vercel.com/docs/plans/hobby — acessível em 15/11/2026 |
-| Supabase, DB/Auth/Storage/Edge Functions | plano, cotas e consumo reais não verificados nesta tarefa. Continuar plano existente, sem upgrade | https://supabase.com/pricing e https://supabase.com/docs/guides/platform/billing-on-supabase — acesso bloqueado no ambiente em 15/11/2026; confirmar antes de ativar |
-| Gemini API | secrets presentes; modelo gemini-2.5-flash-lite identificado; titular confirmou projeto sem faturamento. Cota/termos atuais e resposta real ainda NÃO comprovados. Não há jobs nem tokens registrados nesta jornada | https://ai.google.dev/gemini-api/docs/pricing, https://ai.google.dev/gemini-api/docs/rate-limits, https://ai.google.dev/gemini-api/terms — acesso bloqueado em 15/11/2026 |
-| automação | gatilho Postgres + pg_net + Edge Function nas mesmas cotas Supabase; não há Make no fluxo novo nem Cron ativado. Sem serviço adicional contratado | https://supabase.com/docs/guides/database/extensions/pg_net e https://supabase.com/docs/guides/cron — disponibilidade e cotas no projeto devem ser verificadas |
-| domínio | usa subdomínio existente `vercel.app`; não foi registrado domínio novo. Custo eventual de domínio próprio não medido | https://vercel.com/docs/domains — confirmar condições futuras |
-| dependências | não foram adicionadas dependências pagas. Bibliotecas e ferramentas locais não comprovam ausência de custos de hospedagem | package.json e lockfile do projeto |
+No plano gratuito Gemini, os dados enviados podem ser usados pelo Google para melhorar seus produtos. O consentimento e a página legal informam isso e apontam as fontes oficiais. O acesso a essas páginas foi bloqueado neste ambiente; não afirmar que os termos atuais ou a cota gratuita efetiva foram verificados independentemente. A função só chama a API com `GEMINI_FREE_TIER_CONFIRMED=true`. Não se deve habilitar faturamento para resolver erro de cota.
 
-As páginas oficiais do Gemini e Supabase foram tentadas e bloqueadas pela rede. Não usamos números antigos da memória para alegar cota gratuita ou preço atual. Revalidar as fontes e salvar evidências antes do teste remoto. A chave deve pertencer a projeto sem billing; não contar apenas com a presença de “free tier” no nome do modelo.
+## Medições reais disponíveis
 
-## medições reais disponíveis
+Consulta de produção, somente leitura, em 17/11 antes desta publicação: banco com **13.702.835 bytes**, zero objetos no bucket de fotos e zero bytes de fotos; zero jobs e zero tokens enviados/recebidos registrados. Seis perfis foram vistos na primeira consulta e sete disponíveis em consulta seguinte: o banco está em uso e essas fotografias não são número de usuárias ativas mensais. Tráfego, invocações gerais e faturas ainda não foram medidos.
 
-Consulta de produção somente de leitura nesta finalização: 0 perfis profissionais, 0 solicitações, 0 jobs, soma de tokens de entrada e saída igual a 0. É consumo registrado pelo Aliadas, não auditoria de toda a conta Google ou faturas. A tentativa de ler o plano da equipe Vercel foi recusada com HTTP 403; não solicitamos permissões extras nem inferimos o plano.
+O novo worker registra modelo, tokens enviados/recebidos (incluindo raciocínio informado), erros e datas. Não registra apoio livre ou dados pessoais. Limites do produto: três pedidos/pessoa/24h, trinta chamadas iniciadas/24h globalmente, 700 tokens máximos de saída e timeout de 14s; plano B depois de 15s. A interface faz até cinco consultas automáticas de estado por ciclo. Trocar indicação não chama IA nem cria novo pedido.
 
-Os testes locais registram tokens **sintéticos** apenas para validar persistência. Não representam consumo real de IA. O build local gera `dist/`; seu tamanho não é tráfego mensal. Ainda faltam exportações do consumo real de banco, storage, funções e tráfego. Instrumentação preparada: `conversation_jobs.input_tokens`, `output_tokens`, `state`, `error_code`, `model`, timestamps.
+## Projeções — hipóteses, não resultados
 
-## projeções com hipóteses explícitas (não são resultados)
+Hipótese de planejamento: duas solicitações por pessoa ativa/mês, uma geração por pedido, consentimento/compatibilidade em todos. Os números de pessoas abaixo são cenários propostos, não medições de uso. Definir `T_in` e `T_out` pelas três execuções reais antes de estimar tokens ou custo. O catálogo com 26 habilidades e o pool de até 15 aumentam entrada; não reaproveitar consumo médio da IA antiga.
 
-Hipótese ilustrativa: 2 solicitações por pessoa ativa/mês; até uma chamada de IA por solicitação; 100% das duplas consentem. Tokens médios de entrada `T_in` e saída `T_out` serão medidos nas três execuções reais. Fotos: `S_foto` médio medido, até 2 MB por upload; tráfego: `B_visita` medido em navegador.
-
-| cenário hipotético | pessoas ativas | solicitações/mês | chamadas máximas antes do limite global | tokens projetados |
+| Cenário | Pessoas ativas hipotéticas | Pedidos/mês | Chamadas máximas | Tokens estimados |
 |---|---:|---:|---:|---|
-| piloto | 10 | 20 | 20 | 20 × (`T_in` + `T_out`) |
-| 10× | 100 | 200 | 200 | 200 × (`T_in` + `T_out`) |
-| expansão | 1.000 | 2.000 | até 900 em 30 dias, com limite de 30/24h | até 900 × (`T_in` + `T_out`) |
+| Piloto | 10 | 20 | 20 | 20 × (T_in + T_out) |
+| 10× | 100 | 200 | 200 | 200 × (T_in + T_out) |
+| Expansão | 1.000 | 2.000 | Até 900 em 30 dias, distribuídos | Até 900 × (T_in + T_out) |
 
-Distribuição temporal importa: mesmo 20 pedidos no mesmo minuto podem exceder a cota por minuto do provedor. O limite global de 30 por dia pode ser alcançado primeiro na expansão; não é possível afirmar se ele precederá as cotas reais do Gemini/Supabase enquanto elas não forem verificadas. Ao atingi-lo, continua a compatibilidade básica, sem habilitar cobrança. O limite de 700 tokens de saída é técnico, não uma estimativa de consumo médio.
+Até cinco consultas por pedido implicam, por hipótese, 100/1.000/10.000 consultas de status nesses cenários, além das leituras normais. Não são gerações. Fotos futuras: perfis com foto × tamanho médio, limitado a 2MB por foto; não multiplicar o tamanho total do banco linearmente, pois inclui estrutura fixa. Tráfego = visitas × bytes medidos por visita + fotos. Execuções = jobs + funções de conta; medir nos painéis.
 
-Armazenamento estimado = perfis × `S_foto` + tamanho real das tabelas. Tráfego = visitas × `B_visita` + downloads de fotos. Funções = trabalhos acionados + exclusões de conta. Comparar essas fórmulas com cotas oficiais confirmadas; não extrapolar valores de fatura sem medições.
+Na expansão, o limite interno de trinta chamadas/dia restringiria a IA antes de atender dois mil pedidos/mês. Uma cota Gemini por minuto ou limite Supabase/Vercel pode chegar antes: sem cotas atuais e consumo real, não há evidência para ordenar esses limites externos. Planejar a validação em dias diferentes e continuar com o plano B ao atingir cotas, sem compra automática.
 
-## sustentabilidade futura
+## Sustentabilidade
 
-A experiência essencial permanece gratuita. Contribuições voluntárias e apoio institucional podem financiar manutenção, desde que não influenciem recomendação, avaliações, prioridade ou acesso. Nenhum pagamento será implementado no MVP.
+Acesso essencial gratuito durante o MVP. Contribuições voluntárias e apoio institucional podem ser estudados no futuro, sem influenciar recomendações, acesso, avaliações ou prioridade. Não implementar pagamento agora.
 
-Antes de receber contribuições ou monetizar, revisar https://vercel.com/docs/limits/fair-use-guidelines e os termos comerciais vigentes. A página Hobby foi consultada, mas não basta para concluir que doações ou exploração comercial são permitidas. Sem confirmação, não aceitar contribuições nesse plano.
-
-A plataforma precisará avaliar receita quando medições mostrarem ultrapassagem persistente de cotas gratuitas ou necessidade operacional de plano pago. A decisão exige faturas/cotas atuais e orçamento autorizado, não apenas crescimento hipotético. Alternativas: reduzir chamadas, limitar piloto ou manter fallback antes de contratar planos.
-
-## Atualização de consumo e interface
-
-A titular confirmou que o projeto Google da chave não tem faturamento habilitado; esse é um relato da titular, não uma leitura independente do Google Cloud Billing. Nenhum meio de pagamento foi adicionado. O modelo confirmado por metadados é `gemini-2.5-flash-lite`; a chave não foi lida ou exibida. Falta uma chamada real para confirmar validade/cota/modelo.
-
-O frontend consulta o estado de um job no máximo oito vezes por ciclo, durante aproximadamente 30 segundos. Pausa se a página estiver oculta e exige atualização explícita depois do limite. No cenário hipotético de 200 solicitações/mês, são até 1.600 consultas de estado por ciclo automático, além de leituras normais; isso não é consumo medido. São operações de banco, não 1.600 gerações de IA.
-
-A função preparada passa a registrar tokens de raciocínio junto aos tokens de saída quando o provedor os informar. A função foi atualizada após autorização, mas esse consumo ainda não foi medido em uma geração real. A fonte Inter é servida pelo próprio site, sem API de fontes, serviço ou cobrança adicional.
+Avaliar receita quando medições demonstrarem ultrapassagem persistente de cotas ou custos operacionais que não caibam nos planos atuais; não há data ou receita mínima calculável sem medições. Antes de contribuições ou monetização, conferir https://vercel.com/docs/limits/fair-use-guidelines e os termos comerciais vigentes do plano Vercel. Não presumir que doações sejam permitidas no Hobby. Reduzir chamadas ou limitar o piloto são alternativas sem novos gastos.

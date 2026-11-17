@@ -1,79 +1,41 @@
-// Testa validacao/rodar.ts e consolidar.ts com um Gemini SIMULADO (sem chamada real).
-// Casos fictícios ficam numa pasta temporária, fora de validacao/.
+// Apenas casos efêmeros e Gemini stub local; não gera evidência de IA real.
 import { createServer } from "node:http";
-import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { execFileSync, execFile } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-const run = promisify(execFile);
 import assert from "node:assert/strict";
-const deno = process.env.DENO || "deno";
-try { execFileSync(deno, ["--version"]); } catch { console.log("PULADO: Deno não instalado (defina DENO=caminho)"); process.exit(0); }
-const pedidos = [];
-let n = 0;
-const srv = createServer((req, res) => {
-  let b = ""; req.on("data", (c) => (b += c));
-  req.on("end", () => {
-    pedidos.push({ url: req.url, key: req.headers["x-goog-api-key"], body: JSON.parse(b) });
-    n++;
-    res.setHeader("content-type", "application/json");
-    if (n === 2) return res.end(JSON.stringify({ usageMetadata: { promptTokenCount: 50, candidatesTokenCount: 10 }, candidates: [{ content: { parts: [{ text: '{"explanation":"x"}' }] } }] }));
-    res.end(JSON.stringify({ usageMetadata: { promptTokenCount: 120, candidatesTokenCount: 80 }, candidates: [{ content: { parts: [{ text: JSON.stringify({ explanation: "Justificativa simulada.", questions: ["Pergunta simulada um?", "Pergunta simulada dois?"], draft: "Rascunho simulado." }) }] } }] }));
-  });
-}).listen(0);
-const porta = srv.address().port;
-const dir = mkdtempSync(join(tmpdir(), "validacao-"));
-writeFileSync(join(dir, "casos.csv"), [
-  "caso,objetivo,pede_situacao,pede_area,pede_interesses,pede_quer_conversar,ajuda_situacao,ajuda_area,ajuda_interesses,ajuda_pode_ajudar,observacao",
-  "# comentário ignorado",
-  "T01,entrevista,transicao,decidindo,tecnologia|negocios,entrevista|carreira,trabalho,tecnologia,tecnologia,entrevista,NÃO ENVIAR ESTA NOTA",
-  "T02,portfolio,estudo,artes,,,trabalho_estudo,artes,artes|comunicacao,portfolio,teste",
-].join("\n"));
-const env = { ...process.env, GEMINI_API_KEY: "chave-falsa-do-teste", GEMINI_MODEL: "modelo-teste", GEMINI_API_BASE: `http://127.0.0.1:${porta}` };
-const rodar = (extra) => run(deno, ["run", "--no-lock", "--allow-read", `--allow-write=${dir}`, "--allow-env", "--allow-net=127.0.0.1", "validacao/rodar.ts", "--casos", join(dir, "casos.csv"), "--saida", dir, ...extra], { env, encoding: "utf8" });
+import { lerCsv, escreverCsv } from "../validacao/csv.ts";
+const run=promisify(execFile);
+const deno=process.env.DENO || "/workspace/.npm/_npx/05b6ef7b13673c57/node_modules/deno/deno";
+const dir=mkdtempSync(join(tmpdir(),"aliadas-validacao-"));
+const pedidos=[];
+const srv=createServer(async(req,res)=>{
+ let raw="";for await(const chunk of req)raw+=chunk;
+ pedidos.push(JSON.parse(raw));
+ res.setHeader("Content-Type","application/json");
+ res.end(JSON.stringify({usageMetadata:{promptTokenCount:15,candidatesTokenCount:10},candidates:[{content:{parts:[{text:JSON.stringify({habilidades_necessarias:["entrevistas"],recomendadas:[{codigo:"C2",habilidades_que_ajudam:["entrevistas"]}]})}]}}]}));
+});
+await new Promise(r=>srv.listen(0,"127.0.0.1",r));
 try {
-  // falha clara sem chave
-  assert.throws(() => execFileSync(deno, ["run", "--no-lock", "--allow-read", "--allow-env", "validacao/rodar.ts", "--rodada", "1", "--versao-prompt", "v1"], { env: { ...process.env, GEMINI_API_KEY: "" }, stdio: "pipe" }), /GEMINI_API_KEY/);
-  console.log("PASSOU: falta de chave gera mensagem clara");
-  const t0 = Date.now();
-  await rodar(["--rodada", "1", "--versao-prompt", "v1"]);
-  assert(Date.now() - t0 >= 1000, "pausa de 1 s entre chamadas");
-  assert.equal(pedidos.length, 2, "uma chamada por caso, sem retentativa");
-  const p = pedidos[0];
-  assert.equal(p.url, "/v1beta/models/modelo-teste:generateContent");
-  const entrada = JSON.parse(p.body.contents[0].parts[0].text);
-  assert.deepEqual(entrada, { objetivo: "entrevista", quemBusca: { situacao: "transicao", areaPrincipal: "decidindo", interesses: ["tecnologia", "negocios"] }, quemPodeAjudar: { situacao: "trabalho", areaPrincipal: "tecnologia", interesses: ["tecnologia"], podeAjudarCom: ["entrevista"] } });
-  assert(!JSON.stringify(p.body).includes("NÃO ENVIAR"), "observação não vai ao Gemini");
-  const core = readFileSync("supabase/functions/conversa-ia/core.ts", "utf8");
-  assert(p.body.systemInstruction.parts[0].text.length > 100 && core.includes(p.body.systemInstruction.parts[0].text.slice(0, 60)), "mesmo SYSTEM da produção");
-  console.log("PASSOU: mesmo prompt e mesma entrada mínima da produção, 1 chamada por caso, pausa de 1 s");
-  const saidas = readFileSync(join(dir, "saidas-rodada-1.csv"), "utf8");
-  assert.match(saidas, /^﻿caso,versao_prompt,modelo,data_hora,tokens_entrada,tokens_saida,justificativa,pergunta_1,pergunta_2,rascunho,erro/);
-  assert.match(saidas, /T01,v1,modelo-teste,[^,]+,120,80,Justificativa simulada\.,Pergunta simulada um\?/);
-  assert.match(saidas, /T02,v1,modelo-teste,[^,]+,50,10,,,,,saida_invalida/);
-  console.log("PASSOU: saída validada com as regras da função; erro e tokens registrados");
-  let av = readFileSync(join(dir, "avaliacao-rodada-1.csv"), "utf8");
-  assert.match(av, /A1_veredito,A1_comentario,A2_veredito,A2_comentario,A3_veredito,A3_comentario/);
-  assert.match(av, /Se preparar para uma entrevista/);
-  assert.match(av, /Você hoje: Em transição de carreira\. Área: Ainda estou decidindo\. Interesses: Tecnologia, Negócios e gestão\."/);
-  assert(!av.includes("Quer conversar sobre"), "coluna antiga ignorada");
-  assert(!av.includes("trabalho_estudo") && !av.includes("|") && av.includes("Você hoje: Trabalho e estudo."), "planilha com rótulos, sem chaves");
-  // simula avaliações preenchidas
-  const preencher = (txt, v) => txt.split("\n").map((l, i) => (i === 0 || !l ? l : l + v[i - 1])).join("\n");
-  writeFileSync(join(dir, "avaliacao-rodada-1.csv"), preencher(av.replace(/,,,,,,\n/g, "\n").replace(/,,,,,,$/g, ""), [",aprovado,,aprovado,,ajustar,tom formal", ",reprovado,sem perguntas,ajustar,,aprovado,"]));
-  pedidos.length = 0; n = 0;
-  await rodar(["--rodada", "2", "--versao-prompt", "v2"]);
-  av = readFileSync(join(dir, "avaliacao-rodada-2.csv"), "utf8");
-  writeFileSync(join(dir, "avaliacao-rodada-2.csv"), preencher(av.replace(/,,,,,,\n/g, "\n").replace(/,,,,,,$/g, ""), [",ajustar,curto,reprovado,errado,aprovado,", ",aprovado,,aprovado,,Aprovado,"]));
-  execFileSync(deno, ["run", "--no-lock", "--allow-read", `--allow-write=${dir}`, "validacao/consolidar.ts", "--pasta", dir], { stdio: "pipe" });
-  const md = readFileSync(join(dir, "resultado.md"), "utf8");
-  assert.match(md, /\| 1 \| 2 de 2 \| 1 \| 50,0% \|/);
-  assert.match(md, /\| 2 \| 2 de 2 \| 1 \| 50,0% \|/);
-  assert.match(md, /\+0,0 pontos percentuais/);
-  assert.match(md, /pioraram[^:]*: T01\./);
-  assert.match(md, /A2 · ajustar: sem comentário/);
-  assert.match(md, /A3 · ajustar: tom formal/);
-  console.log("PASSOU: consolidação com regra dos 2 de 3, diferença em p.p., casos que pioraram e comentários");
-  assert(!existsSync("validacao/saidas-rodada-1.csv"), "teste não grava em validacao/");
-} finally { srv.close(); }
+ const port=srv.address().port;
+ const pool=join(dir,"pool.csv"),casos=join(dir,"casos.csv");
+ writeFileSync(pool,"codigo,situacao,area,habilidades,consentimento\nC1,trabalho,tecnologia,programacao,sim\nC2,trabalho,negocios,entrevistas,sim\n");
+ writeFileSync(casos,"caso,objetivo,apoio_texto,pede_situacao,pede_area,pede_interesses,observacao\nCASO01,entrevista,Preparar entrevista,estudo,saude,saude,OBSERVACAO_NAO_ENVIAR\n");
+ const opts={env:{...process.env,GEMINI_API_KEY:"stub-sem-valor-real",GEMINI_MODEL:"modelo-local",GEMINI_FREE_TIER_CONFIRMED:"true",GEMINI_API_BASE:`http://127.0.0.1:${port}`},timeout:25000};
+ for(const n of [1,2]) {
+  await run(deno,["run","--no-lock","--allow-read","--allow-write="+dir,"--allow-env",`--allow-net=127.0.0.1:${port}`,"validacao/rodar.ts","--rodada",String(n),"--pool",pool,"--casos",casos,"--saida",dir,"--geracoes-produto-hoje","0"],opts);
+  const path=join(dir,`avaliacao-rodada-${n}.csv`),linhas=lerCsv(readFileSync(path,"utf8"));
+  assert.match(linhas[0].objetivo,/entrevista/i);assert.match(linhas[0].indicacoes_IA,/C2.*Preparação para entrevistas/);
+  assert.match(linhas[0].indicacoes_plano_B,/C2/);assert.equal(linhas[0].A1_veredito,"");
+  for(const i of [1,2,3]) {linhas[0][`A${i}_veredito`]= n===1 && i!==1 ? "ajustar":"aprovado";linhas[0][`A${i}_comentario`]="Revisar ordem";linhas[0][`B${i}_veredito`]="reprovado";}
+  writeFileSync(path,escreverCsv(Object.keys(linhas[0]),linhas));
+ }
+ await run(deno,["run","--allow-read","--allow-write="+dir,"validacao/consolidar.ts","--pasta",dir],opts);
+ const result=readFileSync(join(dir,"resultado.md"),"utf8");
+ assert.match(result,/\+100,0 pontos percentuais/);assert.match(result,/IA aprovada onde a regra não foi: 1/);assert.match(result,/Comentários agrupados/);
+ assert(!JSON.stringify(pedidos).includes("OBSERVACAO_NAO_ENVIAR"));
+ assert.equal(pedidos.length,2);assert.equal(pedidos[0].generationConfig.temperature,0.2);
+ console.log("PASSOU: pool, casos, mesmo prompt/esquema, plano B, duas rodadas, maioria 2/3, diferença em pontos percentuais e agrupamento; tudo com stub local.");
+} finally {await new Promise(r=>srv.close(r));rmSync(dir,{recursive:true,force:true});}

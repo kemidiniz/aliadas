@@ -268,6 +268,8 @@ try {
   await criarPasta(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A3"}`, { recursive: true });
   for (const width of [390, 1440]) {
     await p.setViewportSize({ width, height: 900 });
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.waitForTimeout(250);
     await p.screenshot({ path: `/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A3"}/indicacao-${width}.png`, fullPage: true });
   }
   console.log("PASSOU: IA indica por habilidades, sem justificativa, perguntas ou rascunho gerado; convite revisado");
@@ -364,6 +366,8 @@ try {
   await mkdir(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A2"}`, { recursive: true });
   for (const width of [390, 1440]) {
     await p.setViewportSize({ width, height: 900 });
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.waitForTimeout(250);
     await p.screenshot({ path: `/workspace/aliadas-review/${process.env.REVIEW_STAGE || "A2"}/perfil-${width}.png`, fullPage: true });
   }
   console.log("PASSOU: foco preserva marcações, navegação avisa, rascunho restaura e descarta");

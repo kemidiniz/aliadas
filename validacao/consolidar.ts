@@ -7,7 +7,7 @@ const a = args(Deno.args);
 const pasta = a["pasta"] || "validacao";
 const VALIDOS = ["aprovado", "ajustar", "reprovado"];
 const norm = (v: string) => v.normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
-type Caso = { caso: string; vereditos: string[]; comentarios: string[]; aprovado: boolean; completo: boolean };
+type Caso = { basicoAprovado: boolean; basicoCompleto: boolean; caso: string; vereditos: string[]; comentarios: string[]; aprovado: boolean; completo: boolean };
 
 async function ler(n: number): Promise<Caso[] | null> {
   let txt: string;
@@ -17,6 +17,8 @@ async function ler(n: number): Promise<Caso[] | null> {
     const comentarios = [1, 2, 3].map((i) => (l[`A${i}_comentario`] ?? "").trim());
     return {
       caso: l.caso, vereditos, comentarios,
+      basicoAprovado: [1,2,3].filter(i => norm(l[`B${i}_veredito`] ?? "") === "aprovado").length >= 2,
+      basicoCompleto: [1,2,3].every(i => VALIDOS.includes(norm(l[`B${i}_veredito`] ?? ""))),
       completo: vereditos.every((v) => VALIDOS.includes(v)),
       aprovado: vereditos.filter((v) => v === "aprovado").length >= 2,
     };
@@ -45,6 +47,15 @@ if (incompletos.length) md.push("", `Atenção: vereditos faltando ou fora de ap
 for (const [n, r] of [[1, r1], [2, r2]] as const) {
   if (!r) continue;
   md.push("", `## Comentários da rodada ${n} (casos com "ajustar" ou "reprovado")`, "");
+  const comparaveis = r.filter(c => c.completo && c.basicoCompleto);
+  const ganho = comparaveis.filter(c => c.aprovado && !c.basicoAprovado);
+  const regressao = comparaveis.filter(c => !c.aprovado && c.basicoAprovado);
+  md.push(`Comparação com plano B: ${comparaveis.length} casos com avaliações completas dos dois métodos. IA aprovada onde a regra não foi: ${ganho.length}. Regra aprovada onde a IA não foi: ${regressao.length}.`);
+  if (ganho.length) md.push(`Casos de ganho: ${ganho.map(c=>c.caso).join(", ")}.`);
+  const grupos = new Map<string, string[]>();
+  for (const c of r) for (const comentario of c.comentarios) if (comentario) grupos.set(comentario, [...(grupos.get(comentario) ?? []), c.caso]);
+  md.push("", "Comentários agrupados:");
+  for (const [comentario, ids] of grupos) md.push(`- ${comentario}: ${[...new Set(ids)].join(", ")}`);
   const com = r.filter((c) => c.vereditos.some((v) => v === "ajustar" || v === "reprovado"));
   if (!com.length) md.push("Nenhum.");
   for (const c of com) {

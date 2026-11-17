@@ -332,7 +332,7 @@ function Indicacao({
           Recomendada pela IA
         </span>
       )}
-      <Chips rotulo="Por que ela:" itens={(r.habilidades_que_ajudam ?? []).map(nomeHabilidade)} />
+      <div className="space-y-2"><h4 className="text-sm font-semibold">Por que ela:</h4><Chips rotulo="Habilidades que ajudam" itens={(r.habilidades_que_ajudam ?? []).map(nomeHabilidade)} /></div>
       {!r.habilidades_que_ajudam?.length && <p className="text-sm text-suave">Ela informou que pode conversar sobre esse objetivo. As habilidades do perfil ainda serão atualizadas.</p>}
       <p className="text-xs text-suave">Você precisa de: {(r.habilidades_necessarias ?? []).map(nomeHabilidade).join(" · ")}</p>
       {status && <p className="text-xs text-suave" role="status">{status}</p>}

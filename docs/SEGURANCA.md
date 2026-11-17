@@ -128,3 +128,15 @@ Embaixadoras não recebem is_curadora=true: esse helper está ligado a capacidad
 A identidade principal é protegida contra exclusão acidental por FK RESTRICT. A eventual exclusão/transferência da conta principal exige procedimento administrativo verificado, não o botão comum de embaixadoras; participantes comuns continuam com exclusão de conta preservada.
 
 `mvp_job_status` retorna apenas estado, modo e código seguro da solicitação da própria pessoa. Não libera logs ou ids de terceiros. O helper mvp_blocked também foi limitado para não informar bloqueios entre outras pessoas. Após a revisão local, a titular autorizou expressamente a migration e o bootstrap; ambos foram aplicados e auditados, sem promover outras contas.
+
+## Revisão 031 — 17/11/2026
+
+A nova finalidade da IA é recomendar por habilidades; exige consentimento `habilidades-v1`, registrado ao salvar o perfil com o novo texto. Consentimentos e habilidades não são atribuídos a outras pessoas durante a migração. Perfis legados continuam no plano B.
+
+O apoio original só fica no pedido. Leitura direta limitada à dona; a destinatária lê por `mvp_invite_context`, que exige participação no convite e ausência de bloqueio. Administradoras recebem agregados e logs sem apoio livre. O mapa C1…C15 → pessoa e a ordem completa ficam em tabela privada com RLS, sem grants a participantes. Antes de chamar Gemini, o worker remove contatos/documentos e transmite apenas expressões profissionais presentes no catálogo: nomes e instruções arbitrárias não atravessam a lista permitida.
+
+A resposta é validada no worker e no banco: códigos do pool, habilidades existentes e realmente oferecidas, até três recomendações sem repetição. Consentimento, aprovação, disponibilidade, bloqueios e elegibilidade são rechecados no claim/finalização/convite. A revisão humana impede publicar uma resposta atrasada sobre uma indicação que já foi trocada ou convidada. O plano B não se apresenta como IA.
+
+Testes locais incluem acesso por UUID conhecido, terceiros, pool privado, contatos antes/depois do aceite, manipulação de saída, revogação, limites, não repetição e 15 candidatas. Stubs não são evidência de geração remota.
+
+Consulta de configuração Auth em 17/11 encontrou `password_hibp_enabled=false`. Conferir Authentication › Settings › Password security e ativar proteção contra senhas vazadas **se disponível no plano atual sem custo**. Nenhum upgrade ou faturamento será ativado. A situação do Security Advisor será registrada no relatório de publicação; não revogar funções em massa para silenciar alertas.

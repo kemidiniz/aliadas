@@ -1,171 +1,119 @@
-# validação do projeto final
+# Validação da recomendação por habilidades
 
-## situação honesta da entrega
+Revisão: 17/11/2026. Entrega: 18/11 às 12h de Brasília. Os resultados abaixo distinguem implementação, teste local e comprovação com pessoas reais.
 
-A versão MVP anterior está publicada. Esta finalização foi preparada e testada localmente e, depois, a titular autorizou expressamente o deploy completo e a migration 015 com sua conta principal. O backend administrativo foi aplicado e auditado; nenhuma outra conta foi promovida. Prazo informado: **18/11/2026 às 12h, horário de Brasília**.
+## O que está sendo validado
 
-Diagnóstico atual, somente de leitura: os secrets `GEMINI_API_KEY`, `GEMINI_MODEL` e `GEMINI_FREE_TIER_CONFIRMED` existem; o modelo foi identificado como `gemini-2.5-flash-lite` por comparação de metadados, sem revelar a chave. A confirmação gratuita está verdadeira e a titular confirmou que o projeto Google não tem faturamento habilitado. Isso não comprova uma resposta válida do Gemini nem as cotas atuais.
+A IA escolhe até três habilidades necessárias e ordena até três aliadas pelas habilidades oferecidas. Não gera justificativa, perguntas nem mensagem. A mensagem do convite usa um modelo fixo editável. A decisão de enviar continua humana.
 
-A consulta atual encontrou **0 perfis profissionais, 0 solicitações e 0 jobs**. Nenhuma geração real foi observada. Não foram criadas contas fictícias na produção. Há pg_net, função ACTIVE e os dois segredos internos do Vault configurados; faltam duas participantes reais elegíveis e consentindo para percorrer a jornada.
+Problema: o acesso a redes profissionais pode dificultar encontrar uma pessoa para uma troca objetiva. Público: mulheres cis e trans e pessoas não binárias de diferentes áreas e momentos de carreira. Os estudos históricos da landing contextualizam o problema; não comprovam a necessidade nem a eficácia da aliadas.
 
-### evidências locais
+Linha de base do produto: mapa fixo de objetivo → habilidades; ordenação por quantidade de habilidades em comum, menos convites recentes e sorteio. A área de formação não determina quem pode ajudar. Perfis antigos com `can_help` continuam no plano B até escolherem habilidades; não recebem habilidades ou consentimentos inventados.
 
-- `npm run build`: TypeScript e build Vite.
-- `npm run test:rls`: recria Postgres LOCAL descartável; suíte antiga preservada e ajustada para não exigir disparo pago, mais suíte nova `mvp_test.sql`. Inclui RLS, terceiros, contatos antes/depois do aceite, canal não autorizado, fraude de aceite/avaliação/claim, bloqueio, limites, consentimento revogado e trigger com pg_net stub.
-- `node --test tests/conversa-ia.test.mjs`: cinco testes com várias asserções de minimização, injeção, tamanho, estrutura e exclusão de contatos. Não chama provedor.
-- `deno check --no-lock supabase/functions/conversa-ia/index.ts supabase/functions/recomendar/index.ts`: tipos das funções. Não valida disponibilidade do Gemini.
-- `node tests/mvp-browser.mjs`: Auth/API simulados localmente; três itens de menu, fórum redirecionado, solicitação, não envio automático, mensagem revisada, contatos por canal, feedback e cadastro sem copiar e-mail/consentimento, 375, 390, 768 e 1440px, nos temas claro e escuro, sem overflow ou erros JS. Não é teste real de SMTP/Supabase/IA.
+## Critérios definidos antes das rodadas
 
-Resultado local da finalização: **207 verificações SQL passaram** (incluindo permissões de embaixadoras), cinco testes Node de IA passaram, build e typecheck das funções passaram. `node tests/worker-local.mjs` também passou: executa a função Deno real com banco HTTP local simulado, autenticação interna, replay e configuração ausente; runtime sem permissão de rede externa, zero tokens. Não usar registros sintéticos dessas suítes como “execuções reais”.
+Cada avaliadora considera os cinco critérios em conjunto:
 
-## problema, público e linha de base
+1. As habilidades necessárias fazem sentido para o objetivo.
+2. A primeira recomendada ajudaria de verdade.
+3. A ordem faz sentido, considerando o pool disponível.
+4. Só aparecem habilidades da lista e presentes nas candidatas.
+5. Nenhum dado pessoal aparece.
 
-Hipótese de problema: mulheres universitárias e profissionais podem ter dificuldade para encontrar uma pessoa relevante para uma conversa profissional objetiva. Isso precisa ser confirmado por entrevistas/questionário autorizados; não há porcentagem ou pesquisa inventada nesta entrega. A inclusão de mulheres cis/trans e pessoas não binárias foi mantida.
+Vereditos: **aprovado**, **ajustar** ou **reprovado**, com comentário. Caso aprovado = pelo menos **duas de três avaliadoras** marcaram aprovado. Taxas só incluem casos com três vereditos válidos; ausências são pendências. Meta proposta: 80% de casos aprovados, sem incidente de privacidade; não é resultado medido.
 
-Linha de base técnica verificável: versão anterior tinha cadastro de oito etapas, fórum e múltiplas áreas na navegação; código histórico Git preserva essa evidência. Nova jornada tem três itens no menu e cadastro em uma página. Tempo para completar perfil, satisfação e taxa de encontros ainda não foram medidos com pessoas reais. Não apresentar redução de tempo ou melhoria percentual sem coleta.
+## Preencher os arquivos
 
-## quatro peças obrigatórias
+- `validacao/pool.csv`: até 15 perfis reais, autorizados e anonimizados. Código C1…C15, situação, área, até oito ids de habilidades separados por `|` e consentimento `sim`. Não colocar nomes, fotos, contatos ou ids Supabase. O arquivo não faz concessão de consentimento por si só: guarde a autorização fora do repositório público.
+- `validacao/casos.csv`: 20 casos reais higienizados, com código CASO01…CASO20, objetivo, apoio até 300 caracteres, situação, área, interesses e observação. Incluir três ou quatro difíceis: Outro, texto vago, necessidade sem habilidade no pool. A observação não vai à IA.
+- Os dois arquivos contêm somente cabeçalho e uma linha-modelo comentada. Dados fictícios dos testes ficam em diretório temporário e são apagados.
+- Chaves permitidas: `src/lib/professional.ts`; catálogo e mapa: `src/lib/habilidades.ts`, reexportados do arquivo compartilhado com o worker.
 
-1. **Banco:** registra perfil, objetivo, convite, consentimentos e feedback; RLS controla acesso.
-2. **Automação:** INSERT de solicitação → filtro determinístico → candidata → job e pg_net.
-3. **IA generativa:** Gemini em Edge Function para justificar a dupla e produzir duas perguntas/rascunho, apenas com consentimento; pendente validação real gratuita.
-4. **Validação humana:** usuária revisa/edita o rascunho e decide se convida; destinatária decide aceitar; ambas avaliam separadamente. Avaliadoras externas testam qualidade.
+## Rodar sem alterar produção
 
-Prompt completo e versão no arquivo `supabase/functions/conversa-ia/core.ts` (`SYSTEM`). Inputs externos: apenas o objetivo e, de cada participante, situação ("Você hoje"), área principal e interesses (até 5), e ainda o "posso ajudar com" de quem ajuda, todos categóricos. O objetivo é escolhido na busca; "quero conversar sobre" saiu do perfil e da entrada da IA. Não são enviados nomes, nome completo, códigos de perfil, ids, contatos, texto livre, o texto de "Outro" ou a conversa. O prompt pede que as duas sejam tratadas como iguais, lado a lado.
+O script usa o **mesmo SYSTEM, responseSchema com enums, minimização e validação** da Edge Function. O apoio bruto não sai para o Google: após retirar contatos/documentos, só são transmitidas expressões do catálogo. Isso protege nomes que um filtro de telefones não reconheceria, mas pode perder nuances; avaliar também essa limitação.
 
-## critérios definidos ANTES dos testes humanos
+Configure a chave apenas no ambiente seguro local, nunca no CSV, Git ou chat. Use o mesmo modelo publicado, em projeto Google sem faturamento, e `GEMINI_FREE_TIER_CONFIRMED=true`.
 
-- Segurança: 100% dos testes de acesso proibido precisam passar. Uma exposição de contato reprova a rodada.
-- Uma sugestão só é elegível se não há bloqueio, ambas estão aprovadas e disponíveis, o objetivo do pedido está no "posso ajudar com" da outra pessoa e há pelo menos um canal de contato em comum. Pontuação: +4 se a área principal de quem ajuda está nos interesses de quem pede (ou se as duas têm a mesma área principal) e +2 por interesse em comum; empate decidido por menos convites recebidos em 14 dias e sorteio.
-- Justificativa: escala 1–5 para relevância ao objetivo e fidelidade às categorias. Não pode inventar fatos.
-- Perguntas: duas, claras e úteis para o objetivo (1–5).
-- Rascunho: editável, respeitoso e sem envio automático; clareza/utilidade 1–5.
-- **Critérios de cada caso** (a avaliadora considera todos ao dar o veredito):
-  1. a indicação faz sentido para o objetivo;
-  2. a justificativa é fiel às categorias, sem inventar nada;
-  3. as perguntas ajudam a começar a conversa;
-  4. o tom trata as duas como iguais (ninguém é mentora ou "mais experiente");
-  5. nenhum dado pessoal aparece.
-- **Caso aprovado (regra do edital): pelo menos 2 das 3 avaliadoras marcam "aprovado".** Cada avaliadora dá um veredito por caso: aprovado, ajustar ou reprovado. A régua de notas acima (1 a 5) serve de apoio para o comentário, não decide sozinha. Dado inventado ou problema de segurança leva a "reprovado". Meta proposta para a rodada: >=80% dos casos aprovados; é meta, não resultado.
-- Usabilidade: a participante identifica a ação principal e conclui o fluxo sem ajuda. Registrar tempo e obstáculos; não definir baseline retrospectivamente para favorecer resultado.
+```bash
+deno run --allow-read --allow-write=validacao --allow-env \
+  --allow-net=generativelanguage.googleapis.com \
+  validacao/rodar.ts --rodada 1 --versao-prompt v1 --geracoes-produto-hoje 0
 
-## três execuções REAIS da automação — pendentes
+deno run --allow-read --allow-write=validacao --allow-env \
+  --allow-net=generativelanguage.googleapis.com \
+  validacao/rodar.ts --rodada 2 --versao-prompt v2 --geracoes-produto-hoje 0
 
-Depois de autorização para staging e validação de key/termos gratuitos:
+deno run --allow-read --allow-write=validacao validacao/consolidar.ts
+```
 
-1. Preparar duas participantes autorizadas e consentindo, categorias de teste e contas aprovadas. Não usar dados pessoais em Gemini.
-2. Criar uma solicitação pelo site. Guardar id de solicitação/job, timestamps, entrega HTTP pg_net e versão do modelo/prompt. Não registrar tokens secretos ou payloads pessoais.
-3. Confirmar `conversation_jobs.state=concluida`, contagens reais de tokens, modo generativa, justificativa/duas perguntas e rascunho validados. Aguardar revisão humana antes de convidar.
-4. Repetir para mais dois objetivos com consentimento. Conferir que há três execuções distintas reais; não duplicar registro ou reutilizar saída estática.
-5. Capturar evidência higienizada das três, com revisão das participantes. Se falhar ou cota acabar, registrar falha e o resultado básico, nunca simular IA.
+Substitua `0` pelo número real de gerações do produto naquele dia, conferido no painel. Some outras pastas/rodadas manuais. O script limita o consumo local e não deve ser executado em paralelo; não controla sozinho a soma de outros computadores e produção. Distribua 40 casos das duas rodadas em dias distintos para respeitar o limite de 30 gerações/dia e as cotas gratuitas reais. Não habilite cobrança. O script é **parte manual declarada**, não substitui as três execuções do gatilho pelo site.
 
-| execução | data | solicitação/job higienizados | modelo | tokens entrada/saída | resultado real | evidência |
-|---|---|---|---|---|---|---|
-| 1 | pendente | | | | não executada | |
-| 2 | pendente | | | | não executada | |
-| 3 | pendente | | | | não executada | |
+Saídas: `avaliacao-rodada-N.csv`, com objetivo, apoio, habilidades, pool e indicação ordenada em português, colunas A1/A2/A3; `saidas-rodada-N.csv`, só código de caso, modelo, versão, tokens, hora e código de erro. Salva incrementalmente e não sobrescreve rodadas existentes.
 
-## vinte casos reais, três avaliadoras e duas rodadas — pendentes
+SYSTEM_V2 está preparado e ainda é igual ao SYSTEM. Ajustá-lo depois dos comentários reais da rodada 1 e registrar a mudança. Usar os mesmos casos/pool na rodada 2; se mudarem, explicar a comparabilidade. Não fabricar melhoria.
 
-`docs/casos-validacao.csv` foi **substituído** por `validacao/casos.csv` (entrada do script abaixo); fica só como histórico. Nenhum caso foi apresentado como realizado. Coletar casos reais higienizados ou autorizados, com finalidade e consentimento separados. Não registrar nomes/contatos/empresas, relatos sensíveis nem conteúdos de conversa. Manter somente categorias, ids locais e evidências minimizadas. A autorização da desenvolvedora não substitui a das participantes.
+## O que se perde sem a IA
 
-Convidar três avaliadoras além da desenvolvedora; registrar A1/A2/A3, sem divulgar identidades. Na primeira rodada, cada caso é avaliado usando a mesma rubrica. Calcular aprovação = casos aprovados / casos avaliados; registrar denominador, notas, falhas e comentários higienizados. Alterar prompt/interface após os resultados; versionar mudanças. Na segunda rodada repetir os mesmos critérios e conjunto comparável, identificar o que mudou e calcular diferença em pontos percentuais. Relatar também regressões, não apenas médias melhores.
+O script gera `indicacoes_plano_B` para os mesmos casos sem nova chamada externa. As três avaliadoras registram também B1/B2/B3_veredito e comentário, usando os mesmos critérios. A consolidação informa:
 
-| rodada | avaliadoras | casos executados | aprovados | taxa | incidentes de segurança | versão |
-|---|---|---|---|---|---|---|
-| 1 | pendente | não executada | — | — | não avaliado | — |
-| 2 | pendente | não executada | — | — | não avaliado | — |
+- Taxa de aprovação de cada rodada e diferença em pontos percentuais.
+- Casos em que a IA foi aprovada e a regra não foi, entre casos com ambos os métodos completamente avaliados.
+- Casos em que a regra foi aprovada e a IA não foi; regressões entre rodadas.
+- Comentários agrupados e vereditos faltantes.
 
-## Script da validação (parte manual declarada)
+No pitch, usar “A IA ajudou em X de Y casos comparáveis em que a regra não foi aprovada” **somente depois da avaliação real**. A hipótese é interpretar a necessidade para além do mapa fixo, não escrever mensagens mais bonitas.
 
-As 20 situações × 2 rodadas somam 40 gerações, e o produto limita a 30 gerações por dia no total e a 3 pedidos por pessoa a cada 24 h. Por isso os casos rodam num script separado: **parte manual declarada: mesmo prompt e mesmo modelo da produção, rodado fora do limite diário do produto.** O script importa de `supabase/functions/conversa-ia/core.ts` o `SYSTEM`, a montagem da entrada mínima e a validação da saída; não há cópia do prompt. As 3 execuções da automação continuam acontecendo pelo site.
+## Três execuções reais da automação
 
-- Entrada: `validacao/casos.csv`, só categorias (as mesmas chaves de `src/lib/professional.ts`): `caso, objetivo, pede_situacao, pede_area, pede_interesses, ajuda_situacao, ajuda_area, ajuda_interesses, ajuda_pode_ajudar, observacao`. A coluna `observacao` nunca vai para o Gemini. Uma coluna antiga `pede_quer_conversar`, se aparecer, é ignorada sem erro. A planilha das avaliadoras mostra a entrada em português (rótulos), não as chaves.
-- 1 chamada por caso, 1 s de pausa, sem retentativa. Erros ficam registrados na coluna `erro`; nada é simulado.
-- Saídas: `validacao/saidas-rodada-N.csv` (log com tokens, modelo, data e hora) e `validacao/avaliacao-rodada-N.csv` (planilha para as avaliadoras).
-- 2ª rodada: prompt ajustado em `SYSTEM_V2` (core.ts), com comentário do que mudou e por quê. Só vai para a função publicada com autorização da titular.
-- Consolidação: `validacao/resultado.md`, com taxa por rodada, diferença em pontos percentuais, casos que pioraram e comentários dos casos em "ajustar" ou "reprovado".
+Após publicação autorizada, duas ou mais participantes reais precisam: perfil aprovado/completo, habilidades, disponibilidade/canal compatíveis e consentimento novo de IA. Criar pedido pelo site → banco filtra → pg_net chama worker → Gemini ordena → resultado é salvo → usuária revisa → convite depende de clique. Não criar contas fictícias nem alterar habilidades/consentimento de outra pessoa para destravar uma demonstração.
 
-### Passo a passo
+Em Painel › IA e automações, guardar exportação higienizada de três jobs distintos: data, estado concluído, modelo, tokens, erro vazio e ids de execução/pedido (nunca ids de pessoas). Conferir modo `ia`, habilidades e candidata antes do convite. `regra`, falhas, stubs locais e aceite sem feedback não comprovam geração ou encontro.
 
-1. Instale o Deno: `curl -fsSL https://deno.land/install.sh | sh` (ou `brew install deno`).
-2. Preencha `validacao/casos.csv` com os 20 casos (apague as linhas com `#`).
-3. No terminal, na pasta do projeto, defina a chave só nesta sessão (nunca em arquivo versionado):
-   `export GEMINI_API_KEY=...` e `export GEMINI_MODEL=gemini-2.5-flash-lite` (o mesmo da produção).
-4. Rodada 1: `deno run --allow-read --allow-write=validacao --allow-env --allow-net=generativelanguage.googleapis.com validacao/rodar.ts --rodada 1 --versao-prompt v1`
-5. Importe `validacao/avaliacao-rodada-1.csv` numa planilha, compartilhe com A1, A2 e A3 e peça um veredito (aprovado, ajustar ou reprovado) e um comentário por caso. Baixe de volta como CSV com o mesmo nome.
-6. Ajuste `SYSTEM_V2` com base nos comentários e descreva a mudança no comentário acima dele.
-7. Rodada 2: o mesmo comando com `--rodada 2 --versao-prompt v2`, e repita o passo 5.
-8. Consolide: `deno run --allow-read --allow-write=validacao validacao/consolidar.ts` e leia `validacao/resultado.md`.
+| Execução | Resultado real | Evidência |
+|---|---|---|
+| 1 | Pendente de pool elegível com habilidades e consentimento | Não realizada nesta rodada |
+| 2 | Pendente | Não realizada |
+| 3 | Pendente | Não realizada |
 
-O teste local (`npm run test:validacao`) usa um Gemini simulado e 2 casos fictícios numa pasta temporária; não serve como evidência.
+## Entrevistas e demonstração
 
-## roteiro da demonstração (até dois minutos)
+Entrevistas: quando precisou de uma conversa profissional; como buscou ajuda; se conseguiu; tempo gasto; o que tornaria a troca útil. Colher consentimento e só guardar síntese higienizada. Ainda não há resultados de entrevistas, linha de base de tempo ou benefício mensurado.
 
-- 0:00–0:20: problema, participante já autorizada e perfil curto.
-- 0:20–0:45: escolher objetivo, registrar pedido e mostrar log do gatilho.
-- 0:45–1:10: uma sugestão, justificativa, perguntas e rascunho gerados REALMENTE; revisar e aprovar convite.
-- 1:10–1:35: segunda participante aceita; canais autorizados e combinação manual.
-- 1:35–2:00: confirmar encontro/avaliar utilidade e mostrar indicadores agregados.
-
-Se a IA ainda estiver bloqueada, declarar isso e demonstrar o fallback sem chamá-lo de IA. Não acelerar artificialmente status nem usar mocks como prova real.
-
-## pitch (até cinco minutos)
-
-Até 1 min: problema e público com evidências coletadas. Até 2 min: demonstração acima. Até 1 min: resultados reais das duas rodadas e critérios. Até 1 min: custos medidos, projeção 10×, riscos LGPD e próximos passos. Enquanto evidências não existem, deixar campos pendentes; não afirmar que o projeto foi validado.
-
-## Tabela final de requisitos — finalização
-
-| Requisito | Implementado | Comprovado | Pendente | Próxima ação |
-|---|---|---|---|---|
-| Landing institucional e duas fontes | Sim, local | Conteúdo, links, contexto histórico e oito combinações de largura/tema testadas; fontes fornecidas pela titular | Verificação independente do conteúdo das páginas (rede bloqueou acesso), aprovação de publicação | Revisar prévias e autorizar deploy |
-| Perfil e jornada profissional | Sim | Build, testes SQL e navegador com API simulada | Duas contas reais completarem perfil/consentimentos e percorrerem produção | Completar Meu perfil nas contas autorizadas |
-| Banco e proteção dos dados | Sim | Backend anterior aplicado; 207 verificações locais; diagnóstico atual de esquema/contagens | Dataset profissional real | Completar perfis e consentimentos com participantes reais |
-| IA generativa real | Integração implementada | Secrets presentes e modelo identificado; validação de payload/JSON local | Resposta REAL do Gemini, cota atual e tokens reais; não há jobs | Usar duas contas reais consentindo, registrar solicitação e verificar worker |
-| Automação por gatilho | Sim | Trigger/claim/idempotência provados com stub local; pg_net e função existentes | Três execuções reais distintas com evidências | Registrar três solicitações elegíveis e coletar logs higienizados |
-| Revisão humana do convite | Sim | Teste confirma ausência de envio automático e preservação de mensagem editada durante polling | Demonstração por participantes reais | Revisar e enviar convite real, sem texto confidencial |
-| Administração e embaixadoras | Sim, backend aplicado | Permissões e auditoria testadas localmente; conta principal registrada e verificada no banco | Conferência visual autenticada da seção em produção; nenhuma embaixadora foi criada | A principal poderá delegar somente após conferir cada conta |
-| Entrevistas e validação da dor | Instrumentos preparados | Estudos históricos contextualizam desigualdade de redes; não comprovam necessidade do Aliadas | Entrevistas reais autorizadas | Coletar respostas sem informações pessoais/confidenciais |
-| Linha de base e benefício mensurável | Definidos, não medidos | Baseline técnica: três itens e perfil em uma página | Tempo até indicação, clareza e utilidade com pessoas reais | Registrar tempos, obstáculos e comparações usando a mesma metodologia |
-| 20 casos reais | Planilha vazia preparada | Nenhum caso apresentado como real | Coletar e higienizar 20 casos autorizados | Preencher casos-validacao.csv sem contatos ou nomes |
-| Três avaliadoras além da desenvolvedora | Planejado | Nenhuma avaliação inventada | Seleção e participação real de A1/A2/A3 | Convidar e obter autorização fora desta tarefa |
-| Duas rodadas e melhorias | Rubrica e meta >=80% preparadas | Critérios definidos antes das avaliações | Executar rodadas, versionar ajustes e medir diferença | Usar o mesmo conjunto comparável e relatar também regressões |
-| Custos, limites e cenário 10× | Documentado | Consumo registrado nesta jornada: 0 jobs e 0 tokens; não equivale à fatura global | Cotas/preços atuais verificáveis e consumo real após piloto | Rever fontes/painéis; não habilitar billing |
-| Segurança e LGPD | Implementadas e revisadas | RLS, contatos, bloqueio, minimização, permissões e ledger individual | Proteção de senhas vazadas e análise jurídica/termos atuais do Gemini | Verificar disponibilidade no plano sem contratar upgrade |
-| Diagrama da solução | Sim | Fluxo documentado abaixo | Evidências de execução real | Vincular ids de jobs higienizados às três execuções |
-| Pitch até 5 min / demo até 2 min | Roteiros preparados | Não gravados nem cronometrados com a titular | Ensaio e gravação reais | Executar roteiro e declarar qualquer fallback sem chamá-lo de IA |
-
-## Diagrama da solução
+Pitch até cinco minutos: problema/público e evidência (45s), solução e quatro componentes (45s), demonstração até dois minutos, comparação IA × regra e validação (45s), custos/limitações/próximo passo (45s). Não apresentar metas como resultados.
 
 ```mermaid
 flowchart LR
-  A[Perfil e consentimentos] --> B[Objetivo da conversa]
-  B --> C[Solicitação no Postgres]
-  C --> D[Compatibilidade determinística]
-  D --> E{Dupla elegível e ambas consentem?}
-  E -->|Não| F[Compatibilidade básica identificada]
-  E -->|Sim| G[Job e pg_net]
-  G --> H[Edge Function conversa-ia]
-  H --> I[Gemini: apenas categorias]
-  I --> J[Validação JSON e logs de consumo]
-  J --> K[Justificativa, duas perguntas e rascunho]
-  H -->|Falha ou limite| F
-  F --> L[Revisão humana]
-  K --> L
-  L --> M[Convite autorizado]
-  M --> N[Aceite da destinatária]
-  N --> O[Canais permitidos e combinação manual]
-  O --> P[Confirmação e utilidade por participante]
+ A[Perfil e consentimentos] --> B[Pedido com objetivo]
+ B --> C[Banco filtra candidatas]
+ C --> D[pg_net e Edge Function]
+ D --> E[Gemini escolhe por habilidades]
+ E --> F[Validação e resultado salvo]
+ D --> G[Plano B por habilidades]
+ F --> H[Revisão humana]
+ G --> H
+ H --> I[Convite por clique]
+ I --> J[Aceite e contatos autorizados]
+ J --> K[Conversa externa]
+ K --> L[Confirmação e utilidade]
 ```
 
-## Instrumento curto de entrevistas
+## Evidências e pendências
 
-Antes de demonstrar a solução: (1) quando foi a última vez que precisou conversar sobre um objetivo profissional? (2) como procurou alguém e o que dificultou? (3) conseguiu realizar a conversa? (4) quanto tempo levou? (5) o que seria uma conversa útil? Não sugerir respostas nem pedir histórias confidenciais. Após consentimento, registrar apenas categorias e síntese higienizada. Esses relatos serão evidência da hipótese, não porcentagens generalizáveis sem amostragem adequada.
+Consulta somente de leitura em 17/11: havia seis perfis profissionais e cinco com consentimento legado; consulta seguinte encontrou sete disponíveis. O conjunto pode mudar durante os testes. Não existiam jobs nem tokens registrados nessas consultas. Os três secrets estavam presentes. Presença de secrets e confirmação da titular de projeto sem faturamento não comprovam cota ou resposta Gemini.
 
-## Fontes da landing
+Testes locais: build/TypeScript, SQL/RLS, contratos de IA, worker Deno sem rede externa, navegador com Auth/API simulados, script com Gemini stub e duas rodadas sintéticas temporárias. Não equivalem a testes humanos nem a execução real da API.
 
-Os textos de 27% (Brasil, LinkedIn, 11/03/2020) e 97% (economias, WEF 2024) e seus URLs foram fornecidos pela titular. Os contextos foram preservados exatamente no produto. A tentativa de consultar as páginas foi bloqueada pela rede deste ambiente; a verificação independente fica marcada como pendente. Não usar esses números como medição de 2026 ou evidência da eficácia da plataforma.
-
-## Aprovação necessária
-
-A titular posteriormente aprovou expressamente o deploy completo. Foram aplicados em produção `20261116000015_administracao_e_estado.sql` e para `supabase/admin/bootstrap-principal.sql`, e a Edge Function foi atualizada; o frontend é a revisão autorizada para publicação. A nova interface administrativa e a consulta de estado do job dependem dessa migration. Não publicar o frontend isoladamente antes do backend correspondente.
+| Requisito | Implementado | Comprovado | Pendente | Próxima ação |
+|---|---|---|---|---|
+| Banco com RLS e contatos após aceite | Sim | Testes locais de autorização | Revisão pós-publicação | Conferir políticas remotas |
+| Automação por gatilho | Sim | Trigger/pg_net stub local | Três execuções reais | Participantes completarem habilidades |
+| IA por habilidades | Sim | Esquema, minimização e rejeição locais | Resposta real da nova função | Executar com pool real consentido |
+| Revisão humana antes do convite | Sim | Navegador simulado | Teste com participantes | Revisar e enviar pelo site |
+| 20 casos e três avaliadoras | Instrumentos prontos | Script testado com stub | Preenchimento/avaliação reais | Preencher pool/casos e convidar avaliadoras |
+| Duas rodadas e comparação IA × regra | Sim | Consolidação local | Resultados reais | Avaliar, ajustar SYSTEM_V2, repetir |
+| Entrevistas e linha de base | Roteiro pronto | Sem coleta | Dados reais | Realizar entrevistas autorizadas |
+| Benefício mensurável | Indicadores prontos | Sem resultado | Medições de utilidade/tempo | Coletar feedback sem presumir encontros |
+| Custos e cenário 10× | Sim | Consumo DB consultado | Cotas/faturas atuais | Conferir fontes/painéis |
+| LGPD e segurança | Controles/documentação | Testes locais | Configuração de senha vazada | Ver docs/SEGURANCA.md |
+| Pitch e demonstração | Roteiro pronto | Sem ensaio real | Gravação até 2min dentro de 5min | Ensaiar fluxo publicado |
