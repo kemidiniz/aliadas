@@ -90,6 +90,8 @@ export type ProCard = {
   situacao?: string;
   area_principal?: string;
   interesses?: string[];
+  conversas?: number;
+  marcas?: string[];
 };
 export type ProRequest = {
   id: string;

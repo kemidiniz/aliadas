@@ -9,6 +9,7 @@ import { CampoArea, CampoSelect, CampoTexto } from "../components/Campo";
 import { Avatar } from "../components/Avatar";
 import { CartaoCarregando, Chips, Vazio } from "../components/ui";
 import { useToast } from "../components/Toast";
+import { AvaliacaoConversa, MARCAS } from "../components/AvaliacaoConversa";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
@@ -36,6 +37,7 @@ export default function InicioProfissional() {
   const [atual, setAtual] = useState<ProRequest | null>(null);
   const [cards, setCards] = useState<ProCard[]>([]);
   const [convites, setConvites] = useState<ProInvite[]>([]);
+  const [pedidos, setPedidos] = useState<{ id: string; invite_id: string }[]>([]);
   const [busy, setBusy] = useState("");
   const [erro, setErro] = useState("");
   const { job, stalled, refresh } = useConversationJob(atual?.id, load);
@@ -48,7 +50,7 @@ export default function InicioProfissional() {
     const v = ++rev.current;
     if (!session) return setReady(true);
     const eu = session.user.id;
-    const [p, r, c, i] = await Promise.all([
+    const [p, r, c, i, fr] = await Promise.all([
       supabase.from("professional_profiles").select("*").eq("profile_id", eu).maybeSingle(),
       // só a busca mais recente dos últimos 7 dias; o histórico fica em Meu perfil
       supabase
@@ -64,6 +66,13 @@ export default function InicioProfissional() {
         .select("*")
         .or(`sender_id.eq.${eu},recipient_id.eq.${eu}`)
         .order("created_at", { ascending: false }),
+      // pedidos de avaliação criados pela rotina diária (5 dias depois do aceite)
+      supabase
+        .from("conversation_feedback_requests")
+        .select("id,invite_id")
+        .is("encerrado_em", null)
+        .lte("mostrar_a_partir", new Date().toISOString())
+        .order("criado_em"),
     ]);
     if (v !== rev.current) return;
     if (p.error || r.error || c.error || i.error) {
@@ -77,6 +86,7 @@ export default function InicioProfissional() {
     setAtual(ultima && !inv.some((x) => x.request_id === ultima.id) ? ultima : null);
     setCards((c.data as ProCard[]) ?? []);
     setConvites(inv);
+    setPedidos((fr.data as { id: string; invite_id: string }[]) ?? []);
     setReady(true);
   }
   // volta do "Falta pouco": continua a busca de onde parou
@@ -140,6 +150,15 @@ export default function InicioProfissional() {
   const eu = session.user.id;
   const esperando = convites.filter((x) => x.state === "pendente" && x.recipient_id === eu);
   const nomeDe = (id: string) => cards.find((c) => c.id === id)?.name ?? "Participante";
+  const pedido = pedidos.find((x) => convites.some((c) => c.id === x.invite_id && c.state === "aceita"));
+  const convitePedido = pedido && convites.find((c) => c.id === pedido.invite_id);
+  async function lembrarDepois() {
+    if (!pedido) return;
+    const { error } = await supabase.rpc("mvp_feedback_later", { pedido: pedido.id });
+    if (error) return toast(mensagemAmigavel(error), "erro");
+    toast("Combinado, perguntamos de novo em 3 dias.");
+    await load();
+  }
 
   return (
     <Pagina titulo="Início">
@@ -198,7 +217,18 @@ export default function InicioProfissional() {
           )}
         </div>
 
-        <aside>
+        <aside className="space-y-6">
+          {pedido && convitePedido && (
+            <section aria-labelledby="avaliar" className="space-y-4 rounded-3xl border-2 border-destaque p-5">
+              <h2 id="avaliar" className="text-lg">
+                Como foi sua conversa com {nomeDe(convitePedido.sender_id === eu ? convitePedido.recipient_id : convitePedido.sender_id)}?
+              </h2>
+              <AvaliacaoConversa invite={convitePedido.id} aoTerminar={load} />
+              <button type="button" onClick={lembrarDepois} className="text-sm font-semibold text-destaque underline underline-offset-4">
+                Lembrar depois
+              </button>
+            </section>
+          )}
           <section aria-labelledby="esperando" className="rounded-3xl bg-superficie p-5">
             <h2 id="esperando" className="flex items-center gap-2 text-lg">
               Convites esperando sua resposta
@@ -296,7 +326,13 @@ function Indicacao({
           </p>
         </div>
       </header>
-      <Chips rotulo="Áreas" itens={card.areas.map((a) => AREAS_PRO[a as keyof typeof AREAS_PRO] ?? a)} />
+      <Chips rotulo="Áreas de interesse" itens={(card.interesses?.length ? card.interesses : card.areas).map((a) => AREAS_PRO[a as keyof typeof AREAS_PRO] ?? a)} />
+      {(card.conversas ?? 0) > 0 && (
+        <p className="text-sm text-suave">
+          {card.conversas} {card.conversas === 1 ? "conversa realizada" : "conversas realizadas"}
+          {card.marcas?.length ? ` · ${card.marcas.map((m) => MARCAS[m] ?? m).join(" · ")}` : ""}
+        </p>
+      )}
       {r.mode === "generativa" && (
         <span className="inline-flex rounded-full border border-campo px-3 py-1 text-xs font-semibold text-suave">
           Sugerido pela IA

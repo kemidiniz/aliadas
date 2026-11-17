@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Pagina, Titulo } from "../components/Pagina";
 import { Botao, BotaoLink } from "../components/Botao";
-import { CampoArea, EscolhaChips, Nota1a5, rotuloCampo } from "../components/Campo";
+import { CampoArea, rotuloCampo } from "../components/Campo";
 import { Avatar } from "../components/Avatar";
 import { Abas, Badge, CartaoCarregando, Vazio, type EstadoConversa } from "../components/ui";
 import {
@@ -11,6 +11,7 @@ import {
   IconeWhatsapp,
 } from "../components/Icones";
 import { useToast } from "../components/Toast";
+import { AvaliacaoConversa } from "../components/AvaliacaoConversa";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
@@ -268,7 +269,7 @@ function Conversa({
           <Contatos c={contatos} />
           <p className="text-sm text-suave">Combinem a conversa por onde preferirem.</p>
           {avaliar && !feedback ? (
-            <Avaliacao invite={i.id} busy={busy} rpc={rpc} />
+            <AvaliacaoConversa invite={i.id} aoTerminar={reload} />
           ) : (
             !feedback && (
               <button type="button" className="text-sm font-semibold text-destaque underline underline-offset-4" onClick={() => setAvaliar(true)}>
@@ -399,70 +400,6 @@ function Contatos({ c }: { c: ProContacts | null }) {
         <p className="mt-1 text-sm text-suave">Ela ainda não liberou um contato.</p>
       )}
     </div>
-  );
-}
-
-function Avaliacao({
-  invite,
-  busy,
-  rpc,
-}: {
-  invite: string;
-  busy: boolean;
-  rpc: (n: string, a: Record<string, unknown>, ok: string) => Promise<boolean>;
-}) {
-  const [aconteceu, setAconteceu] = useState<"" | "sim" | "nao">("");
-  const [nota, setNota] = useState<number | null>(null);
-  const [resultado, setResultado] = useState<string>("");
-  return (
-    <section className="space-y-4 rounded-2xl bg-superficie p-4" aria-label="Avaliar a conversa">
-      <EscolhaChips
-        nome={`aconteceu-${invite}`}
-        rotulo="A conversa aconteceu?"
-        valor={aconteceu}
-        aoMudar={setAconteceu}
-        opcoes={[
-          { valor: "sim", rotulo: "Sim" },
-          { valor: "nao", rotulo: "Não" },
-        ]}
-      />
-      {aconteceu === "sim" && (
-        <>
-          <Nota1a5 rotulo="Quanto ajudou no seu objetivo?" valor={nota} aoMudar={setNota} />
-          <EscolhaChips
-            nome={`resultado-${invite}`}
-            rotulo="O que você levou da conversa?"
-            valor={resultado}
-            aoMudar={setResultado}
-            opcoes={[
-              { valor: "clareza", rotulo: "Mais clareza" },
-              { valor: "preparo", rotulo: "Preparo" },
-              { valor: "feedback", rotulo: "Feedback" },
-              { valor: "contato", rotulo: "Novo contato" },
-              { valor: "outro", rotulo: "Outro" },
-            ]}
-          />
-        </>
-      )}
-      <Botao
-        carregando={busy}
-        disabled={!aconteceu || (aconteceu === "sim" && (!nota || !resultado))}
-        onClick={() =>
-          rpc(
-            "mvp_feedback",
-            {
-              invite,
-              happened: aconteceu === "sim",
-              utility: aconteceu === "sim" ? nota : null,
-              outcome: aconteceu === "sim" ? resultado : "nao_aconteceu",
-            },
-            "Avaliação salva. Obrigada!",
-          )
-        }
-      >
-        Salvar avaliação
-      </Botao>
-    </section>
   );
 }
 

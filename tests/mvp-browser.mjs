@@ -74,6 +74,7 @@ const invite = {
   goal_text: null,
 };
 let proposals = [];
+let pedidos = [];
 let hasProfessional = true;
 let requests = [],
   invites = [],
@@ -199,8 +200,13 @@ try {
         nome_completo: "Aliada de Teste Completa",
         common_slots: ["1_tarde"],
       };
-    if (endpoint === "mvp_feedback") {
+    if (endpoint === "mvp_feedback" || endpoint === "mvp_feedback_v2") {
       feedback = body;
+      data = null;
+    }
+    if (endpoint === "conversation_feedback_requests") data = pedidos;
+    if (endpoint === "mvp_feedback_later") {
+      pedidos = [];
       data = null;
     }
     await route.fulfill({
@@ -280,14 +286,24 @@ try {
   assert.equal(await p.getByRole("menu").count(), 0);
   console.log("PASSOU: menu de bloqueio e denúncia acessível pelo teclado");
   await p.getByRole("button", { name: /Avaliar a conversa/ }).click();
-  await p.getByText("Sim", { exact: true }).click();
+  await p.getByText("Vocês conversaram?").waitFor();
+  await p.locator("label.chip", { hasText: "Sim" }).click();
   await p.getByRole("button", { name: "5", exact: true }).click();
-  await p.getByText("Mais clareza", { exact: true }).click();
-  await p.getByRole("button", { name: "Salvar avaliação" }).click();
-  await p.getByText("Avaliação salva. Obrigada!").waitFor();
-  assert.equal(feedback.utility, 5);
-  assert.equal(feedback.outcome, "clareza");
-  console.log("PASSOU: contatos autorizados e avaliação em botões");
+  await p.locator("label.chip", { hasText: "Escuta" }).click();
+  await p.locator("label.chip", { hasText: "Dica prática" }).click();
+  await p.getByRole("button", { name: "Enviar", exact: true }).click();
+  await p.getByText("Obrigada por contar!").waitFor();
+  assert.deepEqual(feedback, { invite: invite.id, resposta: "sim", utility: 5, marcas: ["escuta", "dica"] });
+  console.log("PASSOU: avaliação com 'Vocês conversaram?', nota e marcas");
+  // cartão no Início 5 dias depois do aceite
+  pedidos = [{ id: "50000000-0000-0000-0000-000000000001", invite_id: invite.id }];
+  await p.goto(base + "/");
+  await p.getByRole("heading", { name: "Como foi sua conversa com aliada de teste?" }).waitFor();
+  await p.getByRole("button", { name: "Lembrar depois" }).click();
+  await p.getByText("Combinado, perguntamos de novo em 3 dias.").waitFor();
+  assert.equal(calls.filter((x) => x.endpoint === "mvp_feedback_later").at(-1).body.pedido, pedidos[0]?.id ?? "50000000-0000-0000-0000-000000000001");
+  await p.getByRole("heading", { name: /Como foi sua conversa/ }).waitFor({ state: "detached" });
+  console.log("PASSOU: cartão 'Como foi sua conversa' no Início e 'Lembrar depois'");
   invites = [{ ...invite, state: "expirado", horario_confirmado: null }];
   await p.goto(base + "/minhas-conversas");
   await p.getByRole("tab", { name: /Concluídas/ }).click();

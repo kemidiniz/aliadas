@@ -328,3 +328,36 @@ select tst.ok((select intentions='{buscar}' and can_help='{}' and want_talk='{ca
 select public.mvp_create_request('carreira','') as completa \gset
 select tst.ok(:'completa' is not null,'depois de completar, a busca acontece');
 reset role;
+-- 025: pedidos de avaliação na rotina diária, respostas novas e regra das notas baixas.
+update public.conversation_invites set responded_at=now()-interval '6 days' where id=:'convite_nome';
+select public.mvp_expire_invites();
+select public.mvp_expire_invites();
+select tst.ok((select count(*) from public.conversation_feedback_requests where invite_id=:'convite_nome')=2,'rotina cria um pedido por participante, sem duplicar');
+select tst.ok((select pedidos_avaliacao=0 from public.conversation_expiry_runs order by id desc limit 1) and (select sum(pedidos_avaliacao)>=2 from public.conversation_expiry_runs),'log registra os pedidos criados');
+set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
+select tst.ok((select count(*) from public.conversation_feedback_requests)=1,'cada uma vê só o seu pedido');
+select id as pedido_e1 from public.conversation_feedback_requests \gset
+select public.mvp_feedback_later(:'pedido_e1');
+select tst.ok((select mostrar_a_partir>now()+interval '2 days' from public.conversation_feedback_requests where id=:'pedido_e1'),'lembrar depois esconde por 3 dias');
+select public.mvp_feedback_v2(:'convite_nome','ainda_nao');
+select public.mvp_feedback_v2(:'convite_nome','ainda_nao');
+select tst.ok((select ainda_nao=2 and encerrado_em is null from public.conversation_feedback_requests where id=:'pedido_e1'),'"ainda não" volta a perguntar até 2 vezes');
+select public.mvp_feedback_v2(:'convite_nome','ainda_nao');
+select tst.ok((select encerrado_em is not null from public.conversation_feedback_requests where id=:'pedido_e1'),'depois do limite, para de perguntar');
+select tst.bloqueia(format('select public.mvp_feedback_v2(%L,''sim'',null)', :'convite_nome'),'"sim" exige nota');
+select public.mvp_feedback_v2(:'convite_nome','sim',2::smallint,array['escuta','dica']);
+select tst.bloqueia(format('select public.mvp_feedback_later(%L)', (select id from public.conversation_feedback_requests where invite_id=:'convite_nome' and participante<>auth.uid())),'não mexe no pedido da outra');
+select set_config('request.jwt.claim.sub', :'e2', false);
+select tst.ok((select count(*) from public.conversation_feedback where invite_id=:'convite_nome')=0,'não lê a avaliação da outra');
+select public.mvp_feedback_v2(:'convite_nome','sim',5::smallint,array['escuta']);
+select tst.ok((select encerrado_em is not null from public.conversation_feedback_requests where participante=auth.uid() and invite_id=:'convite_nome'),'responder encerra o pedido');
+select set_config('request.jwt.claim.sub', :'e1', false);
+select tst.ok((select (x->>'conversas')::int=1 and x->'marcas'='["dica","escuta"]'::jsonb and not (x ? 'utility') from jsonb_array_elements(public.mvp_cards()) x where x->>'id'=:'e2'),'cartão mostra conversas realizadas e marcas, sem nota');
+reset role;
+update public.conversation_invites set state='recusada' where id=:'convite_nome';
+set role service_role;
+select tst.ok((select public.mvp_pick_candidate(:'e1','apresentacao',array[:'e3',:'e4']::uuid[])) is distinct from :'e2'::uuid,'par com nota 1 ou 2 não é indicado de novo');
+reset role;
+update public.conversation_invites set created_at=now()-interval '8 days' where state='pendente';
+select public.mvp_expire_invites();
+select tst.ok((select count(*) from public.conversation_invites where state='pendente')=0,'a expiração continua funcionando');
