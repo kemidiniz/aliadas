@@ -59,3 +59,22 @@ A rede desta sessão bloqueia jitsi.org, então não foi possível conferir na d
 - `conversa-ia` republicada (versão 8, `verify_jwt` desligado como antes).
 - Security Advisor: nenhuma tabela sem RLS. Avisos novos esperados: 4 RPCs de participantes (SECURITY DEFINER) e `conversation_suggestions` sem política (uso interno). Continua pendente ligar a proteção contra senhas vazadas no painel de Auth.
 - Site publicado na Vercel a partir do commit d140ad2 (aliadas-indol.vercel.app).
+
+## Correções da auditoria de 16/11 (locais, aguardando "autorizo")
+
+| Migration | O que faz |
+|---|---|
+| 018 `desempate_indicacao` | Desempate por menos convites recebidos em 14 dias e sorteio; quem tem 2 ou mais convites pendentes sai da seleção |
+| 019 `feedback_avisa_make` | Recria só o gatilho de feedback novo (aviso com tabela, evento e id) |
+| 020 `painel_administracao` | Amplia `mvp_metrics` com perfis aguardando, pedidos sem candidata por objetivo, convites parados, denúncias abertas, feedbacks, tokens e erros do mês |
+| 021 `convites_expiram` | Instala o pg_cron, cria o estado `expirado`, a rotina diária (03:07 de Brasília) e o log só para a curadoria |
+
+### Deploy, na ordem
+
+1. Backup: no painel do Supabase, em Database → Backups.
+2. Migrations 018, 019, 020 e 021, nessa ordem. O pg_cron está disponível no projeto (1.6.4) e é instalado pela 021.
+3. Vault: conferir se `make_feedback_novo_url` existe (`select name from vault.secrets where name = 'make_feedback_novo_url'`), sem mostrar o valor. Sem ele, o feedback é gravado sem aviso.
+4. Republicar `conversa-ia`: o `core.ts` e o `index.ts` foram reorganizados para o script da validação, com o mesmo comportamento. É opcional, mas mantém o código publicado igual ao do repositório.
+5. Security Advisor. Esperado: `conversation_expiry_runs` com RLS e política de curadoria; nenhuma tabela sem RLS.
+6. Frontend: publicar na Vercel a partir da branch `claude/new-session-39k0a4`. A Vercel não publica sozinha a cada push; o deploy é disparado manualmente.
+7. Conferir em produção a rotina agendada (`select jobname, schedule from cron.job`).
