@@ -111,8 +111,8 @@ export default function PerfilProfissional() {
       const d = pr.data as ProProfile | null;
       if (d)
         setP({
-          occupation: d.occupation,
-          moment: d.moment,
+          occupation: d.occupation ?? "",
+          moment: d.moment ?? "estudante",
           areas: d.areas,
           can_help: d.can_help ?? [],
           want_talk: d.want_talk ?? [],

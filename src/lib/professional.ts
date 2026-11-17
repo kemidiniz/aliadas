@@ -10,11 +10,20 @@ export const AREAS_PRO = {
   engenharia: "Engenharia",
   servicos: "Serviços",
   outras: "Outras áreas",
+  decidindo: "Ainda estou decidindo",
+};
+// "Você hoje" (escolha única); substitui o momento de carreira na tela
+export const SITUACAO_PRO = {
+  trabalho: "Trabalho",
+  estudo: "Estudo",
+  trabalho_estudo: "Trabalho e estudo",
+  transicao: "Em transição de carreira",
+  buscando: "Buscando trabalho",
 };
 // Objetivos de conversa (mesmas chaves do banco)
 export const GOALS_PRO = {
   situacao: "Uma situação no trabalho",
-  entrevista: "Preparar uma entrevista",
+  entrevista: "Se preparar para uma entrevista",
   apresentacao: "Treinar uma apresentação",
   portfolio: "Feedback de portfólio",
   carreira: "Dicas de carreira",
@@ -22,6 +31,7 @@ export const GOALS_PRO = {
   projeto: "Opinião sobre um projeto",
   outro: "Outro objetivo profissional",
 };
+// Legado: não aparece mais na tela (a situação substitui o momento)
 export const MOMENTS_PRO = {
   estudante: "Estudando ou em formação",
   inicio: "Começando a carreira",
@@ -49,9 +59,12 @@ export const slotsLabel = (slot: string) => {
 };
 export type ProProfile = {
   profile_id: string;
-  occupation: string;
-  moment: string;
+  occupation: string | null;
+  moment: string | null;
   areas: string[];
+  situacao: string;
+  area_principal: string;
+  interesses: string[];
   can_help: string[];
   want_talk: string[];
   channels: string[];
@@ -64,14 +77,18 @@ export type ProContacts = {
   whatsapp: string | null;
   email: string | null;
   meet: string | null;
+  nome_completo?: string | null;
   common_slots?: string[];
 };
 export type ProCard = {
   id: string;
   name: string;
-  occupation: string;
+  occupation: string | null;
   areas: string[];
-  moment: string;
+  moment: string | null;
+  situacao?: string;
+  area_principal?: string;
+  interesses?: string[];
 };
 export type ProRequest = {
   id: string;

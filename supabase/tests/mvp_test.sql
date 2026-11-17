@@ -236,3 +236,53 @@ select tst.ok(true,'expirado não bloqueia um novo convite entre as mesmas pesso
 set role authenticated;select set_config('request.jwt.claim.sub', :cur, false);
 select tst.ok((select count(*) from public.conversation_expiry_runs)>=1,'curadoria lê o log da rotina');
 reset role;
+-- 022: listas novas, conversão, nome completo após aceite e regra de indicação.
+select tst.ok(public.mvp_situacao_de('estudante')='estudo' and public.mvp_situacao_de('inicio')='trabalho' and public.mvp_situacao_de('transicao')='transicao' and public.mvp_situacao_de('experiente')='trabalho','conversão do momento para a situação');
+select tst.ok((select situacao='trabalho' and area_principal='saude' and interesses='{saude}' and areas='{saude}' and moment='inicio' from public.professional_profiles where profile_id=:'u1'),'perfil antigo convertido sem perder momento nem áreas');
+\set e1 '10000000-0000-0000-0000-000000000021'
+\set e2 '10000000-0000-0000-0000-000000000022'
+\set e3 '10000000-0000-0000-0000-000000000023'
+\set e4 '10000000-0000-0000-0000-000000000024'
+insert into auth.users(id,email) values(:'e1','e1@exemplo.invalid'),(:'e2','e2@exemplo.invalid'),(:'e3','e3@exemplo.invalid'),(:'e4','e4@exemplo.invalid');
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'e1', false);
+select public.mvp_save_profile('{"name":"pede um","situacao":"estudo","area_principal":"direito","interesses":["artes","comunicacao"],"can_help":[],"want_talk":["apresentacao"],"channels":["email"],"slots":["1_manha"]}', '{"email":"e1@exemplo.invalid"}', true);
+select tst.ok((select occupation is null and moment is null and situacao='estudo' and areas @> '{direito,artes,comunicacao}' from public.professional_profiles where profile_id=auth.uid()),'cadastro novo sem texto livre nem momento');
+select set_config('request.jwt.claim.sub', :'e2', false);
+select public.mvp_save_profile('{"name":"ajuda dois","situacao":"trabalho","area_principal":"saude","interesses":["saude"],"can_help":["apresentacao"],"want_talk":[],"channels":["email"],"slots":["5_noite"]}', '{"email":"e2@exemplo.invalid","nome_completo":"Ajuda Dois da Silva"}', true);
+reset role;
+update public.profiles set status='aprovado' where id in(:'e1',:'e2');
+set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
+select public.mvp_create_request('apresentacao','') as semhorario \gset
+select tst.ok((select candidate_id=:'e2' from public.conversation_requests where id=:'semhorario'),'sem horário em comum, indica quem tem canal em comum');
+reset role;
+-- e3 tem área principal nos interesses de e1; e4 não. Empate nas regras antigas.
+set role authenticated;
+select set_config('request.jwt.claim.sub', :'e3', false);
+select public.mvp_save_profile('{"name":"ajuda tres","situacao":"trabalho","area_principal":"artes","interesses":["engenharia"],"can_help":["apresentacao"],"want_talk":[],"channels":["email"],"slots":[]}', '{"email":"e3@exemplo.invalid"}', true);
+select set_config('request.jwt.claim.sub', :'e4', false);
+select public.mvp_save_profile('{"name":"ajuda quatro","situacao":"trabalho","area_principal":"engenharia","interesses":["engenharia"],"can_help":["apresentacao"],"want_talk":[],"channels":["email"],"slots":[]}', '{"email":"e4@exemplo.invalid"}', true);
+reset role;
+update public.profiles set status='aprovado' where id in(:'e3',:'e4');
+set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
+select public.mvp_next_suggestion(:'semhorario') as pontuada \gset
+select tst.ok(:'pontuada'=:'e3','pontuação escolhe quem tem a área de interesse de quem pede');
+reset role;
+-- nome completo: só depois do aceite
+set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
+select public.mvp_create_request('apresentacao','') as pedido_nome \gset
+select candidate_id as cand_nome from public.conversation_requests where id=:'pedido_nome' \gset
+select public.mvp_invite(:'pedido_nome','oi, vamos conversar?') as convite_nome \gset
+select tst.bloqueia(format('select public.mvp_shared_contacts(%L)', :'convite_nome'),'nome completo não aparece antes do aceite');
+select tst.ok((select count(*) from public.professional_contacts where profile_id=:'e2')=0,'nome completo não é legível direto na tabela');
+reset role;
+select tst.ok(:'cand_nome' in (:'e2',:'e3',:'e4'),'nova busca indica outra pessoa compatível');
+update public.conversation_invites set recipient_id=:'e2' where id=:'convite_nome' and recipient_id<>:'e2';
+set role authenticated;select set_config('request.jwt.claim.sub', :'e2', false);
+select public.mvp_respond(:'convite_nome',true);
+select set_config('request.jwt.claim.sub', :'e1', false);
+select tst.ok(public.mvp_shared_contacts(:'convite_nome')->>'nome_completo'='Ajuda Dois da Silva','nome completo liberado após o aceite');
+select set_config('request.jwt.claim.sub', :'e2', false);
+select public.mvp_save_profile('{"name":"ajuda dois","situacao":"trabalho","area_principal":"saude","interesses":["saude"],"can_help":["apresentacao"],"want_talk":[],"channels":["email"]}', '{"email":"e2@exemplo.invalid"}', true);
+select tst.ok((select nome_completo='Ajuda Dois da Silva' from public.professional_contacts where profile_id=auth.uid()) and (select slots='{5_noite}' from public.professional_profiles where profile_id=auth.uid()),'salvar sem os campos antigos não apaga nome, sala nem horários');
+reset role;
