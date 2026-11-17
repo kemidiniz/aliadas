@@ -96,3 +96,29 @@ A rede desta sessão bloqueia jitsi.org, então não foi possível conferir na d
 - Job `aliadas-expirar-convites` continua agendado, agora também criando os pedidos de avaliação.
 - Site publicado a partir do commit 480e769.
 - Make: falta atualizar o cenário para mostrar o texto da dúvida (tipo "duvida").
+
+## Rodada de 17/11 (etapas A a G)
+
+| Etapa | Resumo |
+|---|---|
+| A | O perfil só tem "Posso ajudar com" (opcional), na seção "Como você pode ajudar", com "Disponível para receber convites". O objetivo é escolhido na busca, sem nada pré-marcado. A IA não recebe mais "quero conversar sobre" |
+| B | Uma margem para o site todo (contêiner de 1200px, como o cabeçalho e o rodapé); leitura com 720px e formulários com 760px, alinhados à esquerda |
+| E | Rodapé com logo, links e © 2026 Kemily Diniz; "Quem somos" saiu do menu e da landing; "Como funciona" abre com o conceito |
+| F | Revisão dos textos (docs/TEXTOS-REVISAO.md) |
+| C | Foto: escolher, arrastar, colar e câmera no computador; recorte com zoom e posição; 640px em WebP sem metadados, até 2 MB |
+| D | Perfil com 6 seções, sem "Minhas buscas" |
+| G | Painel por permissão: Visão geral, Perfis, Denúncias, Feedback, IA e automações e Acessos |
+
+| Migration | O que faz |
+|---|---|
+| 029 `posso_ajudar_com` | Para buscar: situação, área, interesses e um contato. Para ser indicada: isso + o objetivo em "posso ajudar com". `want_talk` deixa de ser gravado. A IA recebe de quem pede só situação, área e interesses |
+| 030 `painel_por_permissao` | Permissões novas (visão geral, feedback, IA e automações); cada RPC e cada tabela das exportações checa a sua; a principal tem todas. Busca de pessoas só para a principal, com e-mail mascarado. Salvar acessos com auditoria |
+
+### Registro do deploy (17/11, autorizado)
+
+- Backup: as funções e políticas substituídas eram idênticas às das migrations 022 a 027 (conferido em produção antes de aplicar); o retorno é pelo histórico do git. O backup diário do Supabase continua valendo.
+- Migrations 029 e 030 aplicadas. A 028 **não** foi aplicada.
+- `conversa-ia` republicada (versão 11), com a entrada nova da IA.
+- Security Advisor: nenhuma tabela sem RLS. Avisos novos esperados (SECURITY DEFINER com checagem de permissão dentro): mvp_permissao, mvp_conversation_metrics, mvp_ai_metrics, mvp_admin_counts, mvp_admin_search, mvp_admin_ambassadors e mvp_salvar_acessos. Continua pendente ligar a proteção contra senhas vazadas no painel de Auth.
+- Conferido: as regras de perfil e foto em produção não usam as tabelas do fórum apagadas.
+- Site publicado a partir do commit e923066.
