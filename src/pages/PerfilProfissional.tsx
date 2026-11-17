@@ -14,30 +14,23 @@ import { enviarFoto, useFotoUrl, validarFoto } from "../lib/fotos";
 import { AREAS_PRO, CHANNELS_PRO, GOALS_PRO, SITUACAO_PRO, type ProContacts, type ProProfile } from "../lib/professional";
 
 const opcoes = (m: Record<string, string>) => Object.entries(m).map(([valor, rotulo]) => ({ valor, rotulo }));
-const MODOS = [
-  { valor: "ajudar", rotulo: "Topo ajudar alguém" },
-  { valor: "conversa", rotulo: "Quero uma conversa" },
-];
 type Dados = {
   nome: string;
   situacao: string;
   area: string;
   interesses: string[];
-  modos: string[];
   can_help: string[];
-  want_talk: string[];
   channels: string[];
   ai_consent: boolean;
   available: boolean;
 };
-const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], modos: [], can_help: [], want_talk: [], channels: [], ai_consent: false, available: true };
+const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], channels: [], ai_consent: false, available: true };
 
 function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
   const e: Record<string, string> = {};
   if (d.nome.trim().length < 2) e.nome = "Escreva como quer ser chamada.";
   if (!d.situacao) e.situacao = "Escolha uma opção.";
   if (!d.area) e.area = "Escolha uma opção.";
-  if (!d.modos.length) e.modos = "Escolha pelo menos uma forma de participar.";
   if (!termos) e.termos = "Confirme para continuar.";
   if (c.nome_completo && c.nome_completo.trim().length < 2) e.nome_completo = "Escreva o nome completo ou deixe em branco.";
   if (d.channels.includes("linkedin") && !/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(c.linkedin ?? ""))
@@ -46,8 +39,6 @@ function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
     e.whatsapp = "Use o código do país, sem espaços. Ex.: +5511999999999";
   if (d.channels.includes("email") && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email ?? "")) e.email = "Confira o e-mail.";
   if (completar) {
-    if (d.modos.includes("ajudar") && !d.can_help.length) e.can_help = "Escolha pelo menos um assunto.";
-    if (d.modos.includes("conversa") && !d.want_talk.length) e.want_talk = "Escolha pelo menos um assunto.";
     if (!d.interesses.length) e.interesses = "Escolha pelo menos uma área.";
     if (!d.channels.length) e.channels = "Escolha pelo menos um contato.";
   }
@@ -68,7 +59,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   const [semFoto, setSemFoto] = useState(false);
   const [termos, setTermos] = useState(false);
   const [mostrarErros, setMostrarErros] = useState(false);
-  const [avisoModo, setAvisoModo] = useState("");
   const [busy, setBusy] = useState(false);
   const [excluir, setExcluir] = useState(false);
   const fotoAtual = useFotoUrl(semFoto ? null : (perfil?.foto_path ?? null));
@@ -89,9 +79,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           situacao: p.situacao ?? "",
           area: p.area_principal ?? "",
           interesses: p.interesses ?? [],
-          modos: [...(p.intentions.includes("compartilhar") ? ["ajudar"] : []), ...(p.intentions.includes("buscar") ? ["conversa"] : [])],
           can_help: p.can_help ?? [],
-          want_talk: p.want_talk ?? [],
           channels: p.channels.filter((x) => x !== "meet"),
           ai_consent: p.ai_consent,
           available: p.available,
@@ -124,19 +112,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   const err = (k: string) => (mostrarErros ? e[k] : undefined);
   const set = (x: Partial<Dados>) => setD({ ...d, ...x });
 
-  function mudarModos(novos: string[]) {
-    setAvisoModo("");
-    const removido = d.modos.find((m) => !novos.includes(m));
-    if (removido) {
-      if (!novos.length) return setAvisoModo("Mantenha pelo menos uma opção marcada.");
-      const campo = removido === "ajudar" ? "can_help" : "want_talk";
-      const nomeLista = removido === "ajudar" ? "Posso ajudar com" : "Quero conversar sobre";
-      if (d[campo].length && !window.confirm(`Desmarcar limpa a lista "${nomeLista}". Pode limpar?`)) return;
-      return setD({ ...d, modos: novos, [campo]: [] });
-    }
-    set({ modos: novos });
-  }
-
   async function salvar(ev?: FormEvent) {
     ev?.preventDefault();
     if (Object.keys(e).length) {
@@ -159,9 +134,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           situacao: d.situacao,
           area_principal: d.area,
           interesses: d.interesses,
-          modos: d.modos,
           can_help: d.can_help,
-          want_talk: d.want_talk,
           channels: d.channels,
           ai_consent: d.ai_consent,
           available: d.available,
@@ -207,18 +180,19 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     interesses: (
       <MultiEscolha rotulo="Áreas de interesse" ajuda="Até 5." erro={err("interesses")} opcoes={opcoes(AREAS_PRO)} valores={d.interesses} max={5} aoMudar={(interesses) => set({ interesses })} />
     ),
-    modos: (
-      <MultiEscolha rotulo="Como você quer participar agora?" ajuda="Pode marcar as duas." erro={avisoModo || err("modos")} opcoes={MODOS} valores={d.modos} aoMudar={mudarModos} />
-    ),
-    listas: (
-      <>
-        {d.modos.includes("ajudar") && (
-          <MultiEscolha rotulo="Posso ajudar com" ajuda="Você será indicada para quem busca esses assuntos." erro={err("can_help")} opcoes={opcoes(GOALS_PRO)} valores={d.can_help} aoMudar={(can_help) => set({ can_help })} />
-        )}
-        {d.modos.includes("conversa") && (
-          <MultiEscolha rotulo="Quero conversar sobre" ajuda="Só deixa o objetivo pré-escolhido no início." erro={err("want_talk")} opcoes={opcoes(GOALS_PRO)} valores={d.want_talk} aoMudar={(want_talk) => set({ want_talk })} />
-        )}
-      </>
+    ajudar: (
+      <div className="space-y-6">
+        <MultiEscolha
+          rotulo="Posso ajudar com (opcional)"
+          ajuda="Se marcar algum assunto, você pode ser indicada para conversas sobre ele. Deixe em branco se agora você só quer buscar."
+          opcoes={opcoes(GOALS_PRO)}
+          valores={d.can_help}
+          aoMudar={(can_help) => set({ can_help })}
+        />
+        <Caixinha marcado={d.available} aoMudar={(available) => set({ available })}>
+          Disponível para receber convites
+        </Caixinha>
+      </div>
     ),
     contatos: (
       <div className="space-y-6">
@@ -264,7 +238,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
             {campos.situacao}
             {campos.area}
           </div>
-          {campos.modos}
           <div className="space-y-3">
             {campos.ia}
             {campos.termos}
@@ -280,7 +253,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       <Pagina titulo="Falta pouco" largura="form">
         <Titulo sub="Só mais isto para encontrarmos alguém para você.">Falta pouco para sua primeira conversa</Titulo>
         <form onSubmit={salvar} className="space-y-8" noValidate>
-          {campos.listas}
           {campos.interesses}
           {campos.contatos}
           <Botao type="submit" carregando={busy}>Salvar e continuar</Botao>
@@ -329,17 +301,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
         </div>
       ),
     },
-    {
-      id: "participar",
-      titulo: "Como quer participar",
-      completa: !e.modos && (!d.modos.includes("ajudar") || d.can_help.length > 0) && (!d.modos.includes("conversa") || d.want_talk.length > 0),
-      conteudo: (
-        <div className="space-y-6">
-          {campos.modos}
-          {campos.listas}
-        </div>
-      ),
-    },
+    { id: "ajudar", titulo: "Como você pode ajudar", completa: true, conteudo: campos.ajudar },
     { id: "contatos", titulo: "Contatos", completa: d.channels.length > 0 && !e.linkedin && !e.whatsapp && !e.email, conteudo: campos.contatos },
     {
       id: "privacidade",
@@ -348,9 +310,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       conteudo: (
         <div className="space-y-3">
           {campos.ia}
-          <Caixinha marcado={d.available} aoMudar={(available) => set({ available })}>
-            Disponível para indicações
-          </Caixinha>
         </div>
       ),
     },

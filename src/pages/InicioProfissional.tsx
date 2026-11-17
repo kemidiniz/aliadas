@@ -82,7 +82,6 @@ export default function InicioProfissional() {
     const inv = (i.data as ProInvite[]) ?? [];
     const ultima = (r.data as ProRequest[])?.[0];
     setPro(p.data);
-    if (p.data && !goal) setGoal(p.data.want_talk?.[0] ?? "carreira");
     setAtual(ultima && !inv.some((x) => x.request_id === ultima.id) ? ultima : null);
     setCards((c.data as ProCard[]) ?? []);
     setConvites(inv);
@@ -170,7 +169,7 @@ export default function InicioProfissional() {
             <CampoSelect
               rotulo="Qual é o objetivo da sua próxima conversa?"
               value={goal}
-              opcoes={OPCOES_OBJETIVO}
+              opcoes={[{ valor: "", rotulo: "Escolha um objetivo" }, ...OPCOES_OBJETIVO]}
               onChange={(e) => setGoal(e.target.value)}
             />
             {goal === "outro" && (
@@ -186,7 +185,7 @@ export default function InicioProfissional() {
             <Botao type="submit" carregando={busy === "criar"} disabled={!pro.available || !goal || (goal === "outro" && !outro.trim())}>
               Encontrar minha aliada
             </Botao>
-            {pro.intentions.includes("compartilhar") && !perfilCompleto(pro) && (
+            {pro.can_help.length > 0 && !perfilCompleto(pro) && (
               <p className="rounded-xl bg-superficie p-3 text-sm">
                 Para ser indicada para outras pessoas, <Link to="/completar-perfil" className="text-link">complete seu perfil</Link>.
               </p>

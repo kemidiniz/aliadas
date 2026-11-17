@@ -233,9 +233,10 @@ try {
   jobState = "executando";
   await p.goto(base);
   await p.getByRole("heading", { level: 1, name: /Olá/ }).waitFor();
-  // "Quero conversar sobre" só pré-seleciona o objetivo
+  // o objetivo é escolhido na busca, sem pré-seleção vinda do perfil
   const objetivo = p.getByRole("combobox", { name: "Qual é o objetivo da sua próxima conversa?" });
-  assert.equal(await objetivo.inputValue(), "carreira", "primeiro 'quero conversar sobre' vem pré-selecionado");
+  assert.equal(await objetivo.inputValue(), "", "começa em 'Escolha um objetivo'");
+  assert(await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).isDisabled(), "sem objetivo, não busca");
   assert.equal(await p.getByRole("textbox", { name: "Qual é o objetivo?" }).count(), 0, "sem campo de contexto fora de 'Outro'");
   await objetivo.selectOption("outro");
   await p.getByRole("textbox", { name: "Qual é o objetivo?" }).waitFor();
@@ -339,22 +340,17 @@ try {
   assert.deepEqual(savedProfile.p.can_help, ["entrevista"]);
   assert(!("meet" in savedProfile.c), "sala não é enviada");
   console.log("PASSOU: perfil com seções abertas, erro ao lado do campo, sem sala nem grade e sem consentimento automático de IA");
-  assert.equal(await p.getByRole("checkbox", { name: "Topo ajudar alguém" }).isChecked(), true, "estado inicial vem das listas");
-  assert.equal(await p.getByRole("checkbox", { name: "Quero uma conversa" }).isChecked(), true);
-  p.once("dialog", (d) => d.dismiss());
-  await p.locator("label.chip", { hasText: "Topo ajudar alguém" }).click();
-  assert.equal(await p.getByText("Posso ajudar com", { exact: true }).count(), 1, "cancelar mantém a lista");
-  p.once("dialog", (d) => d.accept());
-  await p.locator("label.chip", { hasText: "Topo ajudar alguém" }).click();
-  assert.equal(await p.getByText("Posso ajudar com", { exact: true }).count(), 0, "aceitar esconde e limpa a lista");
-  await p.locator("label.chip", { hasText: "Quero uma conversa" }).click();
-  await p.getByText("Mantenha pelo menos uma opção marcada.").waitFor();
+  await p.getByRole("heading", { name: "Como você pode ajudar" }).waitFor();
+  for (const fora of ["Quero conversar sobre", "Como você quer participar agora?"])
+    assert.equal(await p.getByText(fora, { exact: true }).count(), 0, `sem ${fora}`);
+  await p.getByText("Se marcar algum assunto, você pode ser indicada para conversas sobre ele.", { exact: false }).waitFor();
+  await p.locator("label.chip", { hasText: "Se preparar para uma entrevista" }).click();
   await p.getByRole("button", { name: "Salvar", exact: true }).click();
   await p.getByText("Perfil salvo.").last().waitFor();
   const ultimo = calls.filter((x) => x.endpoint === "mvp_save_profile").at(-1).body;
-  assert.deepEqual(ultimo.p.can_help, []);
-  assert.deepEqual(ultimo.p.want_talk, ["carreira"]);
-  console.log("PASSOU: 'Como você quer participar agora?' mostra as listas, confirma antes de limpar e exige uma opção");
+  assert.deepEqual(ultimo.p.can_help, [], "perfil sem nenhum assunto é válido: só busca");
+  assert(!("want_talk" in ultimo.p) && !("modos" in ultimo.p));
+  console.log("PASSOU: 'Como você pode ajudar' só com 'Posso ajudar com', opcional");
   await context.route("**/auth/v1/user", (route) =>
     route.fulfill({
       status: 200,
@@ -396,17 +392,16 @@ try {
   await p.getByRole("heading", { name: "Boas-vindas à aliadas" }).waitFor();
   assert.equal(await p.getByText("O que você faz ou estuda").count(), 0, "sem texto livre");
   assert.equal(await p.getByText("Posso ajudar com", { exact: true }).count(), 0, "listas ficam para depois");
+  assert.equal(await p.getByText("Como você quer participar agora?").count(), 0, "sem os chips de participação");
   await p.getByRole("button", { name: "Entrar na aliadas" }).click();
-  await p.getByText("Escolha pelo menos uma forma de participar.").waitFor();
+  await p.getByText("Escolha uma opção.").first().waitFor();
   await p.getByRole("combobox", { name: "Você hoje" }).selectOption("estudo");
   await p.getByRole("combobox", { name: "Sua área de atuação ou estudo" }).selectOption("decidindo");
-  await p.locator("label.chip", { hasText: "Quero uma conversa" }).click();
   await p.getByRole("checkbox", { name: /Sou mulher cis/ }).check();
   const antesNovo = calls.filter((x) => x.endpoint === "mvp_save_profile").length;
   await p.getByRole("button", { name: "Entrar na aliadas" }).click();
   await p.waitForURL(base + "/");
   const cad = calls.filter((x) => x.endpoint === "mvp_save_profile").slice(antesNovo)[0].body;
-  assert.deepEqual(cad.p.modos, ["conversa"]);
   assert.equal(cad.p.situacao, "estudo");
   assert.equal(cad.p.area_principal, "decidindo");
   assert.deepEqual(cad.p.channels, []);
@@ -416,6 +411,7 @@ try {
   const completo = { ...professional };
   Object.assign(professional, { channels: [], interesses: [] });
   await p.goto(base + "/");
+  await p.getByRole("combobox", { name: "Qual é o objetivo da sua próxima conversa?" }).selectOption("carreira");
   await p.getByRole("button", { name: "Encontrar minha aliada", exact: true }).click();
   await p.waitForURL(/\/completar-perfil\?buscar=carreira/);
   await p.getByRole("heading", { name: "Falta pouco para sua primeira conversa" }).waitFor();

@@ -43,7 +43,7 @@ try {
   const p = pedidos[0];
   assert.equal(p.url, "/v1beta/models/modelo-teste:generateContent");
   const entrada = JSON.parse(p.body.contents[0].parts[0].text);
-  assert.deepEqual(entrada, { objetivo: "entrevista", quemBusca: { situacao: "transicao", areaPrincipal: "decidindo", interesses: ["tecnologia", "negocios"], querConversarSobre: ["entrevista", "carreira"] }, quemPodeAjudar: { situacao: "trabalho", areaPrincipal: "tecnologia", interesses: ["tecnologia"], podeAjudarCom: ["entrevista"] } });
+  assert.deepEqual(entrada, { objetivo: "entrevista", quemBusca: { situacao: "transicao", areaPrincipal: "decidindo", interesses: ["tecnologia", "negocios"] }, quemPodeAjudar: { situacao: "trabalho", areaPrincipal: "tecnologia", interesses: ["tecnologia"], podeAjudarCom: ["entrevista"] } });
   assert(!JSON.stringify(p.body).includes("NÃO ENVIAR"), "observação não vai ao Gemini");
   const core = readFileSync("supabase/functions/conversa-ia/core.ts", "utf8");
   assert(p.body.systemInstruction.parts[0].text.length > 100 && core.includes(p.body.systemInstruction.parts[0].text.slice(0, 60)), "mesmo SYSTEM da produção");
@@ -56,7 +56,8 @@ try {
   let av = readFileSync(join(dir, "avaliacao-rodada-1.csv"), "utf8");
   assert.match(av, /A1_veredito,A1_comentario,A2_veredito,A2_comentario,A3_veredito,A3_comentario/);
   assert.match(av, /Se preparar para uma entrevista/);
-  assert.match(av, /Você hoje: Em transição de carreira\. Área: Ainda estou decidindo\. Interesses: Tecnologia, Negócios e gestão\. Quer conversar sobre: Se preparar para uma entrevista, Dicas de carreira\./);
+  assert.match(av, /Você hoje: Em transição de carreira\. Área: Ainda estou decidindo\. Interesses: Tecnologia, Negócios e gestão\."/);
+  assert(!av.includes("Quer conversar sobre"), "coluna antiga ignorada");
   assert(!av.includes("trabalho_estudo") && !av.includes("|") && av.includes("Você hoje: Trabalho e estudo."), "planilha com rótulos, sem chaves");
   // simula avaliações preenchidas
   const preencher = (txt, v) => txt.split("\n").map((l, i) => (i === 0 || !l ? l : l + v[i - 1])).join("\n");

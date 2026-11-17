@@ -39,8 +39,9 @@ const lista = (s: string) => s.split("|").map((x) => x.trim()).filter(Boolean);
 const rot = (m: Record<string, string>, l: string[]) => l.map((k) => m[k] ?? k).join(", ");
 // Entrada em português legível para as avaliadoras (rótulos, não chaves)
 const um = (m: Record<string, string>, k: string) => m[k] ?? k;
-const pessoa = (sit: string, area: string, inter: string, rotulo: string, assuntos: string) =>
-  `Você hoje: ${um(SITUACAO_PRO, sit)}. Área: ${um(AREAS_PRO, area)}. Interesses: ${rot(AREAS_PRO, lista(inter)) || "nenhum"}. ${rotulo}: ${rot(GOALS_PRO, lista(assuntos)) || "nenhum"}.`;
+const pessoa = (sit: string, area: string, inter: string, assuntos?: string) =>
+  `Você hoje: ${um(SITUACAO_PRO, sit)}. Área: ${um(AREAS_PRO, area)}. Interesses: ${rot(AREAS_PRO, lista(inter)) || "nenhum"}.` +
+  (assuntos === undefined ? "" : ` Pode ajudar com: ${rot(GOALS_PRO, lista(assuntos)) || "nenhum"}.`);
 const saidas: Record<string, unknown>[] = [];
 const avaliacao: Record<string, unknown>[] = [];
 
@@ -49,7 +50,8 @@ for (const [n, c] of casos.entries()) {
   // mesmo formato que o banco entrega à função (mvp_claim_job)
   const job = {
     goal: c.objetivo,
-    a: { situacao: c.pede_situacao, area_principal: c.pede_area, interesses: lista(c.pede_interesses), themes: lista(c.pede_quer_conversar) },
+    // pede_quer_conversar (formato antigo) é ignorada se vier no arquivo
+    a: { situacao: c.pede_situacao, area_principal: c.pede_area, interesses: lista(c.pede_interesses) },
     b: { situacao: c.ajuda_situacao, area_principal: c.ajuda_area, interesses: lista(c.ajuda_interesses), themes: lista(c.ajuda_pode_ajudar) },
   };
   const linha: Record<string, unknown> = {
@@ -82,8 +84,8 @@ for (const [n, c] of casos.entries()) {
   avaliacao.push({
     caso: c.caso,
     objetivo: GOALS_PRO[c.objetivo as keyof typeof GOALS_PRO] ?? c.objetivo,
-    quem_pede: pessoa(c.pede_situacao, c.pede_area, c.pede_interesses, "Quer conversar sobre", c.pede_quer_conversar),
-    quem_ajuda: pessoa(c.ajuda_situacao, c.ajuda_area, c.ajuda_interesses, "Pode ajudar com", c.ajuda_pode_ajudar),
+    quem_pede: pessoa(c.pede_situacao, c.pede_area, c.pede_interesses),
+    quem_ajuda: pessoa(c.ajuda_situacao, c.ajuda_area, c.ajuda_interesses, c.ajuda_pode_ajudar),
     justificativa: linha.justificativa, pergunta_1: linha.pergunta_1, pergunta_2: linha.pergunta_2,
     rascunho: linha.rascunho, erro: linha.erro,
     A1_veredito: "", A1_comentario: "", A2_veredito: "", A2_comentario: "", A3_veredito: "", A3_comentario: "",

@@ -31,7 +31,7 @@ Linha de base técnica verificável: versão anterior tinha cadastro de oito eta
 3. **IA generativa:** Gemini em Edge Function para justificar a dupla e produzir duas perguntas/rascunho, apenas com consentimento; pendente validação real gratuita.
 4. **Validação humana:** usuária revisa/edita o rascunho e decide se convida; destinatária decide aceitar; ambas avaliam separadamente. Avaliadoras externas testam qualidade.
 
-Prompt completo e versão no arquivo `supabase/functions/conversa-ia/core.ts` (`SYSTEM`). Inputs externos: apenas o objetivo e, de cada participante, situação ("Você hoje"), área principal, interesses (até 5) e assuntos ("quero conversar sobre" de quem pede, "posso ajudar com" de quem ajuda), todos categóricos. Não são enviados nomes, nome completo, códigos de perfil, ids, contatos, texto livre, o texto de "Outro" ou a conversa. O prompt pede que as duas sejam tratadas como iguais, lado a lado.
+Prompt completo e versão no arquivo `supabase/functions/conversa-ia/core.ts` (`SYSTEM`). Inputs externos: apenas o objetivo e, de cada participante, situação ("Você hoje"), área principal e interesses (até 5), e ainda o "posso ajudar com" de quem ajuda, todos categóricos. O objetivo é escolhido na busca; "quero conversar sobre" saiu do perfil e da entrada da IA. Não são enviados nomes, nome completo, códigos de perfil, ids, contatos, texto livre, o texto de "Outro" ou a conversa. O prompt pede que as duas sejam tratadas como iguais, lado a lado.
 
 ## critérios definidos ANTES dos testes humanos
 
@@ -80,7 +80,7 @@ Convidar três avaliadoras além da desenvolvedora; registrar A1/A2/A3, sem divu
 
 As 20 situações × 2 rodadas somam 40 gerações, e o produto limita a 30 gerações por dia no total e a 3 pedidos por pessoa a cada 24 h. Por isso os casos rodam num script separado: **parte manual declarada: mesmo prompt e mesmo modelo da produção, rodado fora do limite diário do produto.** O script importa de `supabase/functions/conversa-ia/core.ts` o `SYSTEM`, a montagem da entrada mínima e a validação da saída; não há cópia do prompt. As 3 execuções da automação continuam acontecendo pelo site.
 
-- Entrada: `validacao/casos.csv`, só categorias (as mesmas chaves de `src/lib/professional.ts`): `caso, objetivo, pede_situacao, pede_area, pede_interesses, pede_quer_conversar, ajuda_situacao, ajuda_area, ajuda_interesses, ajuda_pode_ajudar, observacao`. A coluna `observacao` nunca vai para o Gemini. A planilha das avaliadoras mostra a entrada em português (rótulos), não as chaves.
+- Entrada: `validacao/casos.csv`, só categorias (as mesmas chaves de `src/lib/professional.ts`): `caso, objetivo, pede_situacao, pede_area, pede_interesses, ajuda_situacao, ajuda_area, ajuda_interesses, ajuda_pode_ajudar, observacao`. A coluna `observacao` nunca vai para o Gemini. Uma coluna antiga `pede_quer_conversar`, se aparecer, é ignorada sem erro. A planilha das avaliadoras mostra a entrada em português (rótulos), não as chaves.
 - 1 chamada por caso, 1 s de pausa, sem retentativa. Erros ficam registrados na coluna `erro`; nada é simulado.
 - Saídas: `validacao/saidas-rodada-N.csv` (log com tokens, modelo, data e hora) e `validacao/avaliacao-rodada-N.csv` (planilha para as avaliadoras).
 - 2ª rodada: prompt ajustado em `SYSTEM_V2` (core.ts), com comentário do que mudou e por quê. Só vai para a função publicada com autorização da titular.

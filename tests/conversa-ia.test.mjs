@@ -33,13 +33,13 @@ test("payload elimina nomes, nome completo, contatos, textos livres e ids", () =
     situacao: "transicao",
     areaPrincipal: "saude",
     interesses: ["saude", "tecnologia"],
-    querConversarSobre: ["carreira"],
   });
+  assert(!("querConversarSobre" in actual.quemBusca), "sem 'quero conversar sobre'");
   assert.deepEqual(Object.keys(actual.quemPodeAjudar), ["situacao", "areaPrincipal", "interesses", "podeAjudarCom"]);
 });
-test("quem busca pode não ter assuntos; quem ajuda precisa ter; até 5 interesses", () => {
+test("quem busca não manda assuntos; quem ajuda precisa ter; até 5 interesses", () => {
   const vazio = { ...profile, themes: [] };
-  assert.deepEqual(minimized({ goal: "carreira", a: vazio, b: profile }).quemBusca.querConversarSobre, []);
+  assert.deepEqual(Object.keys(minimized({ goal: "carreira", a: vazio, b: profile }).quemBusca), ["situacao", "areaPrincipal", "interesses"]);
   assert.throws(() => minimized({ goal: "carreira", a: profile, b: vazio }));
   assert.throws(() => minimized({ goal: "carreira", a: { ...profile, interesses: ["saude", "artes", "direito", "servicos", "outras", "ciencias"] }, b: profile }));
   assert.equal(minimized({ goal: "carreira", a: { ...profile, area_principal: "decidindo" }, b: profile }).quemBusca.areaPrincipal, "decidindo");

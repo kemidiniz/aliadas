@@ -134,8 +134,7 @@ insert into auth.users(id,email) values(:'u4','quatro@exemplo.invalid'),(:'u5','
 set role authenticated;
 select set_config('request.jwt.claim.sub', :'u4', false);
 select public.mvp_save_profile('{"name":"pessoa quatro","occupation":"designer","moment":"experiente","areas":["artes"],"can_help":["portfolio"],"want_talk":[],"channels":["email"],"slots":[],"ai_consent":false}', '{"meet":"https://meet.jit.si/sala-quatro"}', true);
-select tst.ok((select intentions='{compartilhar}' and themes='{portfolio}' from public.professional_profiles where profile_id=auth.uid()),'listas novas derivam intenções e temas antigos');
-select tst.bloqueia($$select public.mvp_save_profile('{"name":"x y","occupation":"designer","moment":"inicio","areas":["artes"],"can_help":[],"want_talk":[],"channels":["email"],"slots":[]}','{}',true)$$,'perfil precisa de ao menos um assunto');
+select tst.ok((select intentions='{buscar,compartilhar}' and themes='{portfolio}' from public.professional_profiles where profile_id=auth.uid()),'"posso ajudar com" deriva intenções e temas antigos');
 select tst.bloqueia($$select public.mvp_save_profile('{"name":"x y","occupation":"designer","moment":"inicio","areas":["artes"],"can_help":["portfolio"],"channels":["email"],"slots":[]}','{"meet":"https://exemplo.invalid/sala"}',true)$$,'sala de provedor desconhecido é rejeitada');
 select set_config('request.jwt.claim.sub', :'u5', false);
 select public.mvp_save_profile('{"name":"pessoa cinco","occupation":"ilustradora","moment":"transicao","areas":["artes"],"can_help":["portfolio"],"want_talk":["carreira"],"channels":["email"],"slots":[],"ai_consent":false}', '{}', true);
@@ -305,15 +304,15 @@ select tst.ok(:'job_outro' is null or position('estatística' in :'job_outro')=0
 \set g1 '10000000-0000-0000-0000-000000000041'
 insert into auth.users(id,email) values(:'g1','g1@exemplo.invalid');
 set role authenticated;select set_config('request.jwt.claim.sub', :'g1', false);
-select tst.bloqueia($$select public.mvp_save_profile('{"name":"nova","situacao":"estudo","area_principal":"decidindo","modos":[]}','{}',true)$$,'primeiro acesso exige uma forma de participar');
-select public.mvp_save_profile('{"name":"nova","situacao":"estudo","area_principal":"decidindo","modos":["ajudar","conversa"],"ai_consent":false}','{}',true);
-select tst.ok((select intentions @> '{buscar,compartilhar}' and cardinality(can_help)=0 and cardinality(channels)=0 and cardinality(interesses)=0 from public.professional_profiles where profile_id=auth.uid()),'primeiro acesso salva só nome, situação, área e disposição');
+select tst.bloqueia($$select public.mvp_save_profile('{"name":"nova"}','{}',true)$$,'primeiro acesso exige situação e área');
+select public.mvp_save_profile('{"name":"nova","situacao":"estudo","area_principal":"decidindo","can_help":[],"ai_consent":false}','{}',true);
+select tst.ok((select intentions='{buscar}' and cardinality(can_help)=0 and cardinality(channels)=0 and cardinality(interesses)=0 from public.professional_profiles where profile_id=auth.uid()),'perfil sem nenhum assunto é válido: só busca');
 reset role;
 update public.profiles set status='aprovado' where id=:'g1';
 set role authenticated;select set_config('request.jwt.claim.sub', :'g1', false);
 select tst.bloqueia($$select public.mvp_create_request('carreira','')$$,'buscar exige completar contatos e interesses');
-select public.mvp_save_profile('{"name":"nova","situacao":"estudo","area_principal":"decidindo","interesses":["artes"],"modos":["conversa"],"can_help":["rede"],"want_talk":["carreira"],"channels":["email"]}','{"email":"g1@exemplo.invalid"}',true);
-select tst.ok((select intentions='{buscar}' and can_help='{}' and want_talk='{carreira}' from public.professional_profiles where profile_id=auth.uid()),'desmarcar "Topo ajudar" limpa a lista correspondente');
+select public.mvp_save_profile('{"name":"nova","situacao":"estudo","area_principal":"decidindo","interesses":["artes"],"can_help":["rede"],"want_talk":["carreira"],"channels":["email"]}','{"email":"g1@exemplo.invalid"}',true);
+select tst.ok((select intentions='{buscar,compartilhar}' and can_help='{rede}' and want_talk='{}' from public.professional_profiles where profile_id=auth.uid()),'marcar "posso ajudar com" permite ser indicada; "quero conversar sobre" não é mais gravado');
 select public.mvp_create_request('carreira','') as completa \gset
 select tst.ok(:'completa' is not null,'depois de completar, a busca acontece');
 reset role;
@@ -380,3 +379,11 @@ select tst.ok((:'fbm'::jsonb->'por_tipo'->>'duvida')::int=1 and (:'fbm'::jsonb->
 update public.feedback set status='respondido' where tipo='duvida';
 select tst.ok((select count(*) from public.feedback where tipo='duvida' and status='respondido')=1,'curadoria marca como respondido');
 reset role;
+-- 029: entrada da IA sem "quero conversar sobre"; indicada precisa de assunto e perfil completo.
+update public.professional_profiles set ai_consent=true where profile_id in (:'g1',(select candidate_id from public.conversation_requests where id=:'completa'));
+update public.conversation_jobs set state='concluida' where request_id=:'completa';
+insert into public.conversation_jobs(request_id,candidate_id) select id,candidate_id from public.conversation_requests where id=:'completa';
+set role service_role;
+select coalesce(public.mvp_claim_job(:'completa')::text,'null') as job029 \gset
+reset role;
+select tst.ok(:'job029'<>'null' and not (:'job029'::jsonb->'a' ? 'themes') and (:'job029'::jsonb->'b' ? 'themes') and (:'job029'::jsonb->'a' ? 'interesses'),'a IA não recebe "quero conversar sobre" de quem pede');
