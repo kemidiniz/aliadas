@@ -31,15 +31,21 @@ Linha de base técnica verificável: versão anterior tinha cadastro de oito eta
 3. **IA generativa:** Gemini em Edge Function para justificar a dupla e produzir duas perguntas/rascunho, apenas com consentimento; pendente validação real gratuita.
 4. **Validação humana:** usuária revisa/edita o rascunho e decide se convida; destinatária decide aceitar; ambas avaliam separadamente. Avaliadoras externas testam qualidade.
 
-Prompt completo e versão no arquivo `supabase/functions/conversa-ia/core.ts` (`SYSTEM`). Inputs externos: apenas o objetivo e, de cada participante, áreas, momento e assuntos ("quero conversar sobre" de quem pede, "posso ajudar com" de quem ajuda), todos categóricos. Não são enviados nomes, códigos de perfil, ids, contatos, ocupação livre, descrição da solicitação ou conversa.
+Prompt completo e versão no arquivo `supabase/functions/conversa-ia/core.ts` (`SYSTEM`). Inputs externos: apenas o objetivo e, de cada participante, situação ("Você hoje"), área principal, interesses (até 5) e assuntos ("quero conversar sobre" de quem pede, "posso ajudar com" de quem ajuda), todos categóricos. Não são enviados nomes, nome completo, códigos de perfil, ids, contatos, texto livre, o texto de "Outro" ou a conversa. O prompt pede que as duas sejam tratadas como iguais, lado a lado.
 
 ## critérios definidos ANTES dos testes humanos
 
 - Segurança: 100% dos testes de acesso proibido precisam passar. Uma exposição de contato reprova a rodada.
-- Uma sugestão só é elegível se não há bloqueio, ambas estão aprovadas e disponíveis, o objetivo do pedido está no "posso ajudar com" da outra pessoa e há canal ou disponibilidade compatível.
+- Uma sugestão só é elegível se não há bloqueio, ambas estão aprovadas e disponíveis, o objetivo do pedido está no "posso ajudar com" da outra pessoa e há pelo menos um canal de contato em comum. Pontuação: +4 se a área principal de quem ajuda está nos interesses de quem pede (ou se as duas têm a mesma área principal) e +2 por interesse em comum; empate decidido por menos convites recebidos em 14 dias e sorteio.
 - Justificativa: escala 1–5 para relevância ao objetivo e fidelidade às categorias. Não pode inventar fatos.
 - Perguntas: duas, claras e úteis para o objetivo (1–5).
 - Rascunho: editável, respeitoso e sem envio automático; clareza/utilidade 1–5.
+- **Critérios de cada caso** (a avaliadora considera todos ao dar o veredito):
+  1. a indicação faz sentido para o objetivo;
+  2. a justificativa é fiel às categorias, sem inventar nada;
+  3. as perguntas ajudam a começar a conversa;
+  4. o tom trata as duas como iguais (ninguém é mentora ou "mais experiente");
+  5. nenhum dado pessoal aparece.
 - **Caso aprovado (regra do edital): pelo menos 2 das 3 avaliadoras marcam "aprovado".** Cada avaliadora dá um veredito por caso: aprovado, ajustar ou reprovado. A régua de notas acima (1 a 5) serve de apoio para o comentário, não decide sozinha. Dado inventado ou problema de segurança leva a "reprovado". Meta proposta para a rodada: >=80% dos casos aprovados; é meta, não resultado.
 - Usabilidade: a participante identifica a ação principal e conclui o fluxo sem ajuda. Registrar tempo e obstáculos; não definir baseline retrospectivamente para favorecer resultado.
 
@@ -74,7 +80,7 @@ Convidar três avaliadoras além da desenvolvedora; registrar A1/A2/A3, sem divu
 
 As 20 situações × 2 rodadas somam 40 gerações, e o produto limita a 30 gerações por dia no total e a 3 pedidos por pessoa a cada 24 h. Por isso os casos rodam num script separado: **parte manual declarada: mesmo prompt e mesmo modelo da produção, rodado fora do limite diário do produto.** O script importa de `supabase/functions/conversa-ia/core.ts` o `SYSTEM`, a montagem da entrada mínima e a validação da saída; não há cópia do prompt. As 3 execuções da automação continuam acontecendo pelo site.
 
-- Entrada: `validacao/casos.csv`, só categorias (as mesmas chaves de `src/lib/professional.ts`). A coluna `observacao` nunca vai para o Gemini.
+- Entrada: `validacao/casos.csv`, só categorias (as mesmas chaves de `src/lib/professional.ts`): `caso, objetivo, pede_situacao, pede_area, pede_interesses, pede_quer_conversar, ajuda_situacao, ajuda_area, ajuda_interesses, ajuda_pode_ajudar, observacao`. A coluna `observacao` nunca vai para o Gemini. A planilha das avaliadoras mostra a entrada em português (rótulos), não as chaves.
 - 1 chamada por caso, 1 s de pausa, sem retentativa. Erros ficam registrados na coluna `erro`; nada é simulado.
 - Saídas: `validacao/saidas-rodada-N.csv` (log com tokens, modelo, data e hora) e `validacao/avaliacao-rodada-N.csv` (planilha para as avaliadoras).
 - 2ª rodada: prompt ajustado em `SYSTEM_V2` (core.ts), com comentário do que mudou e por quê. Só vai para a função publicada com autorização da titular.

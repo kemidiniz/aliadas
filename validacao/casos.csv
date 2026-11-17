@@ -1,9 +1,9 @@
-caso,objetivo,quem_pede_areas,quem_pede_momento,quem_pede_quer_conversar,quem_ajuda_areas,quem_ajuda_momento,quem_ajuda_pode_ajudar,observacao
+caso,objetivo,pede_situacao,pede_area,pede_interesses,pede_quer_conversar,ajuda_situacao,ajuda_area,ajuda_interesses,ajuda_pode_ajudar,observacao
 # MODELO (linhas que começam com # são ignoradas). Apague este bloco ao preencher.
 # Listas: separe as chaves com | (ex.: tecnologia|negocios). Use só as chaves abaixo, nunca nomes, contatos ou texto pessoal.
-# objetivo e listas de assuntos: situacao entrevista apresentacao portfolio carreira rede projeto outro
-# áreas: tecnologia educacao saude negocios comunicacao artes ciencias direito engenharia servicos outras
-# momento: estudante inicio transicao experiente
-# quem_pede_quer_conversar pode ficar vazio. quem_ajuda_pode_ajudar precisa incluir o objetivo.
-# observacao: anotação interna da titular; NÃO vai para o Gemini.
-# C01,entrevista,tecnologia,transicao,entrevista|carreira,tecnologia|negocios,experiente,entrevista|portfolio,exemplo de formato
+# objetivo, pede_quer_conversar e ajuda_pode_ajudar: situacao entrevista apresentacao portfolio carreira rede projeto outro
+# situação (pede_situacao, ajuda_situacao): trabalho estudo trabalho_estudo transicao buscando
+# área principal e interesses: tecnologia educacao saude negocios comunicacao artes ciencias direito engenharia servicos outras decidindo
+# pede_interesses e ajuda_interesses: até 5. pede_quer_conversar pode ficar vazio. ajuda_pode_ajudar precisa incluir o objetivo.
+# observacao: anotação interna da titular; NÃO vai para o Gemini. O texto livre de "Outro" também não vai.
+# C01,entrevista,transicao,decidindo,tecnologia|negocios,entrevista|carreira,trabalho,tecnologia,tecnologia|educacao,entrevista|portfolio,exemplo de formato

@@ -25,10 +25,10 @@ const srv = createServer((req, res) => {
 const porta = srv.address().port;
 const dir = mkdtempSync(join(tmpdir(), "validacao-"));
 writeFileSync(join(dir, "casos.csv"), [
-  "caso,objetivo,quem_pede_areas,quem_pede_momento,quem_pede_quer_conversar,quem_ajuda_areas,quem_ajuda_momento,quem_ajuda_pode_ajudar,observacao",
+  "caso,objetivo,pede_situacao,pede_area,pede_interesses,pede_quer_conversar,ajuda_situacao,ajuda_area,ajuda_interesses,ajuda_pode_ajudar,observacao",
   "# comentário ignorado",
-  "T01,entrevista,tecnologia,transicao,entrevista|carreira,tecnologia,experiente,entrevista,NÃO ENVIAR ESTA NOTA",
-  "T02,portfolio,artes,inicio,,artes|comunicacao,experiente,portfolio,teste",
+  "T01,entrevista,transicao,decidindo,tecnologia|negocios,entrevista|carreira,trabalho,tecnologia,tecnologia,entrevista,NÃO ENVIAR ESTA NOTA",
+  "T02,portfolio,estudo,artes,,,trabalho_estudo,artes,artes|comunicacao,portfolio,teste",
 ].join("\n"));
 const env = { ...process.env, GEMINI_API_KEY: "chave-falsa-do-teste", GEMINI_MODEL: "modelo-teste", GEMINI_API_BASE: `http://127.0.0.1:${porta}` };
 const rodar = (extra) => run(deno, ["run", "--no-lock", "--allow-read", `--allow-write=${dir}`, "--allow-env", "--allow-net=127.0.0.1", "validacao/rodar.ts", "--casos", join(dir, "casos.csv"), "--saida", dir, ...extra], { env, encoding: "utf8" });
@@ -43,7 +43,7 @@ try {
   const p = pedidos[0];
   assert.equal(p.url, "/v1beta/models/modelo-teste:generateContent");
   const entrada = JSON.parse(p.body.contents[0].parts[0].text);
-  assert.deepEqual(entrada, { objetivo: "entrevista", quemBusca: { areas: ["tecnologia"], momento: "transicao", temas: ["entrevista", "carreira"] }, quemPodeAjudar: { areas: ["tecnologia"], momento: "experiente", temas: ["entrevista"] } });
+  assert.deepEqual(entrada, { objetivo: "entrevista", quemBusca: { situacao: "transicao", areaPrincipal: "decidindo", interesses: ["tecnologia", "negocios"], querConversarSobre: ["entrevista", "carreira"] }, quemPodeAjudar: { situacao: "trabalho", areaPrincipal: "tecnologia", interesses: ["tecnologia"], podeAjudarCom: ["entrevista"] } });
   assert(!JSON.stringify(p.body).includes("NÃO ENVIAR"), "observação não vai ao Gemini");
   const core = readFileSync("supabase/functions/conversa-ia/core.ts", "utf8");
   assert(p.body.systemInstruction.parts[0].text.length > 100 && core.includes(p.body.systemInstruction.parts[0].text.slice(0, 60)), "mesmo SYSTEM da produção");
@@ -55,7 +55,9 @@ try {
   console.log("PASSOU: saída validada com as regras da função; erro e tokens registrados");
   let av = readFileSync(join(dir, "avaliacao-rodada-1.csv"), "utf8");
   assert.match(av, /A1_veredito,A1_comentario,A2_veredito,A2_comentario,A3_veredito,A3_comentario/);
-  assert.match(av, /Preparar uma entrevista/);
+  assert.match(av, /Se preparar para uma entrevista/);
+  assert.match(av, /Você hoje: Em transição de carreira\. Área: Ainda estou decidindo\. Interesses: Tecnologia, Negócios e gestão\. Quer conversar sobre: Se preparar para uma entrevista, Dicas de carreira\./);
+  assert(!av.includes("trabalho_estudo") && !av.includes("|") && av.includes("Você hoje: Trabalho e estudo."), "planilha com rótulos, sem chaves");
   // simula avaliações preenchidas
   const preencher = (txt, v) => txt.split("\n").map((l, i) => (i === 0 || !l ? l : l + v[i - 1])).join("\n");
   writeFileSync(join(dir, "avaliacao-rodada-1.csv"), preencher(av.replace(/,,,,,,\n/g, "\n").replace(/,,,,,,$/g, ""), [",aprovado,,aprovado,,ajustar,tom formal", ",reprovado,sem perguntas,ajustar,,aprovado,"]));

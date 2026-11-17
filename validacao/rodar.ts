@@ -12,7 +12,7 @@ import {
   providerError,
   readGemini,
 } from "../supabase/functions/conversa-ia/core.ts";
-import { AREAS_PRO, GOALS_PRO, MOMENTS_PRO } from "../src/lib/professional.ts";
+import { AREAS_PRO, GOALS_PRO, SITUACAO_PRO } from "../src/lib/professional.ts";
 import { args, escreverCsv, lerCsv } from "./csv.ts";
 
 const a = args(Deno.args);
@@ -37,22 +37,27 @@ if (!casos.length) sair("nenhum caso em casos.csv (linhas com # são ignoradas).
 
 const lista = (s: string) => s.split("|").map((x) => x.trim()).filter(Boolean);
 const rot = (m: Record<string, string>, l: string[]) => l.map((k) => m[k] ?? k).join(", ");
+// Entrada em português legível para as avaliadoras (rótulos, não chaves)
+const um = (m: Record<string, string>, k: string) => m[k] ?? k;
+const pessoa = (sit: string, area: string, inter: string, rotulo: string, assuntos: string) =>
+  `Você hoje: ${um(SITUACAO_PRO, sit)}. Área: ${um(AREAS_PRO, area)}. Interesses: ${rot(AREAS_PRO, lista(inter)) || "nenhum"}. ${rotulo}: ${rot(GOALS_PRO, lista(assuntos)) || "nenhum"}.`;
 const saidas: Record<string, unknown>[] = [];
 const avaliacao: Record<string, unknown>[] = [];
 
 for (const [n, c] of casos.entries()) {
   if (n > 0) await new Promise((r) => setTimeout(r, 1000)); // 1 s entre chamadas
+  // mesmo formato que o banco entrega à função (mvp_claim_job)
   const job = {
     goal: c.objetivo,
-    a: { areas: lista(c.quem_pede_areas), moment: c.quem_pede_momento, themes: lista(c.quem_pede_quer_conversar) },
-    b: { areas: lista(c.quem_ajuda_areas), moment: c.quem_ajuda_momento, themes: lista(c.quem_ajuda_pode_ajudar) },
+    a: { situacao: c.pede_situacao, area_principal: c.pede_area, interesses: lista(c.pede_interesses), themes: lista(c.pede_quer_conversar) },
+    b: { situacao: c.ajuda_situacao, area_principal: c.ajuda_area, interesses: lista(c.ajuda_interesses), themes: lista(c.ajuda_pode_ajudar) },
   };
   const linha: Record<string, unknown> = {
     caso: c.caso, versao_prompt: versao, modelo: model, data_hora: new Date().toISOString(),
     tokens_entrada: 0, tokens_saida: 0, justificativa: "", pergunta_1: "", pergunta_2: "", rascunho: "", erro: "",
   };
   try {
-    if (!lista(c.quem_ajuda_pode_ajudar).includes(c.objetivo))
+    if (!lista(c.ajuda_pode_ajudar).includes(c.objetivo))
       throw Error("objetivo_fora_do_pode_ajudar");
     const body = JSON.stringify(geminiBody(job, PROMPTS[versao])); // valida categorias antes de chamar
     const resp = await fetch(geminiUrl(model!, base), {
@@ -77,8 +82,8 @@ for (const [n, c] of casos.entries()) {
   avaliacao.push({
     caso: c.caso,
     objetivo: GOALS_PRO[c.objetivo as keyof typeof GOALS_PRO] ?? c.objetivo,
-    quem_pede: `${MOMENTS_PRO[c.quem_pede_momento as keyof typeof MOMENTS_PRO] ?? c.quem_pede_momento}; ${rot(AREAS_PRO, lista(c.quem_pede_areas))}`,
-    quem_ajuda: `${MOMENTS_PRO[c.quem_ajuda_momento as keyof typeof MOMENTS_PRO] ?? c.quem_ajuda_momento}; ${rot(AREAS_PRO, lista(c.quem_ajuda_areas))}`,
+    quem_pede: pessoa(c.pede_situacao, c.pede_area, c.pede_interesses, "Quer conversar sobre", c.pede_quer_conversar),
+    quem_ajuda: pessoa(c.ajuda_situacao, c.ajuda_area, c.ajuda_interesses, "Pode ajudar com", c.ajuda_pode_ajudar),
     justificativa: linha.justificativa, pergunta_1: linha.pergunta_1, pergunta_2: linha.pergunta_2,
     rascunho: linha.rascunho, erro: linha.erro,
     A1_veredito: "", A1_comentario: "", A2_veredito: "", A2_comentario: "", A3_veredito: "", A3_comentario: "",
