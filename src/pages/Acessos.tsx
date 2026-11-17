@@ -16,6 +16,13 @@ export const PERMISSOES = {
   ver_feedback: "Ver feedback",
   ver_ia_automacoes: "Ver IA e automações",
 } as const;
+const DESCRICOES = {
+ ver_visao_geral: "Mostra os indicadores e onde faltam habilidades na comunidade.",
+ avaliar_perfis: "Permite revisar, aprovar ou não aprovar novos perfis.",
+ tratar_denuncias: "Permite consultar denúncias e acompanhar o tratamento.",
+ ver_feedback: "Mostra avaliações das conversas, feedback e dúvidas do site.",
+ ver_ia_automacoes: "Mostra execuções da IA, consumo, erros e exportações.",
+};
 type Permissao = keyof typeof PERMISSOES;
 type Pessoa = { id: string; name: string; email: string | null } & Record<Permissao, boolean>;
 type Registro = {
@@ -177,7 +184,7 @@ export default function Acessos() {
           <div className="grid gap-3 sm:grid-cols-2">
             {CHAVES.map((k) => (
               <Caixinha key={k} marcado={escolhida[k]} aoMudar={(v) => setEscolhida({ ...escolhida, [k]: v })}>
-                {PERMISSOES[k]}
+                <span className="block">{PERMISSOES[k]}</span><span className="mt-1 block text-xs font-normal text-suave">{DESCRICOES[k]}</span>
               </Caixinha>
             ))}
           </div>

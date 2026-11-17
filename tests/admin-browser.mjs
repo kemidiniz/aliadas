@@ -32,8 +32,8 @@ try {
   const esperado = {
     reviewer: ["Perfis"],
     reports: ["Denúncias"],
-    feedback: ["Feedback"],
-    principal: ["Visão geral", "Perfis", "Denúncias", "Feedback", "IA e automações", "Acessos"],
+    feedback: ["Avaliações e feedback"],
+    principal: ["Visão geral", "Perfis", "Denúncias", "Avaliações e feedback", "IA e automações", "Acessos"],
   };
   for (const kind of Object.keys(perfis)) {
     let access = { principal: kind === "principal", legacy: false, ...perfis[kind] };
@@ -62,11 +62,12 @@ try {
       if (endpoint === "profiles") data = [{ id: uid, apelido: "Conta de teste", status: "aprovado", areas: [], formas_conexao: [], foto_path: null }];
       if (endpoint === "mvp_admin_access") data = access;
       if (endpoint === "mvp_admin_counts") data = { perfis: 1 };
-      if (endpoint === "mvp_metrics") data = { pending_profiles: 1, pending_invites: 2, conversations_happened: 3, useful_rate: 0.6667, open_reports: 0, feedback_new: 4 };
+      if (endpoint === "mvp_metrics") data = { pending_profiles: 1, pending_invites: 2, conversations_happened: 3, useful_rate: 0.6667, open_reports: 0, feedback_new: 4, unanswered_questions: 1 };
       if (endpoint === "mvp_admin_profiles") data = [{ id: target, name: "Karina Teste", status: "pendente", situacao: "trabalho", area_principal: "tecnologia", interesses: ["saude"], can_help: ["carreira"] }];
       if (endpoint === "mvp_feedback_metrics") data = { por_tipo: {}, nota_media: null, notas: 0, conectou: {}, problemas_por_pagina: {}, novos: 0, respondidos: 0 };
       if (endpoint === "mvp_conversation_metrics") data = { conversations_happened: 3, useful_rate: 0.6667, top_marks: {}, feedback_requests_pending: 1, expired_invites: 0 };
-      if (endpoint === "mvp_ai_metrics") data = { jobs_month: 0, jobs_failed_month: 0, tokens_month: { input: 0, output: 0 }, requests_without_match: {} };
+      if (endpoint === "mvp_skill_metrics") data = { first_choice_rate:0.5,ia:2,regra:2,sem_compativel:1,habilidades:[{id:"entrevistas",nome:"Preparação para entrevistas",pedidas:3,oferecidas:1}] };
+      if (endpoint === "mvp_ai_metrics") data = { pending_invites:2,pending_by_goal:{entrevista:2}, jobs_month: 0, jobs_failed_month: 0, tokens_month: { input: 0, output: 0 }, requests_without_match: {} };
       if (endpoint === "mvp_admin_ambassadors") data = [{ ...pessoa, id: "10000000-0000-0000-0000-000000000009", name: "Bia Embaixadora", email: "bi***@exemplo.invalid", avaliar_perfis: true, ver_feedback: true }];
       if (endpoint === "mvp_admin_search") data = [pessoa];
       if (endpoint === "mvp_admin_audit") data = [{ id: "a1", action: "grant", actor_name: "Conta de teste", target_name: "Bia Embaixadora", permissions: { avaliar_perfis: true }, created_at: new Date().toISOString() }];
@@ -84,7 +85,7 @@ try {
     assert.deepEqual(abas, esperado[kind], `${kind}: abas`);
     assert(await p.getByRole("link", { name: "Painel" }).count() >= 1, "quem tem atribuição vê o Painel");
     if (kind === "reviewer") {
-      await p.getByRole("heading", { name: "Perfis aguardando aprovação" }).waitFor();
+      await p.getByRole("heading", { name: "Revisão humana" }).waitFor();
       await p.getByRole("button", { name: "Não aprovar" }).waitFor();
       assert.equal(await p.getByRole("combobox", { name: /Mostrar perfis/ }).count(), 0, "sem lista de todos os perfis");
       await p.getByRole("button", { name: "Não aprovar" }).click();
@@ -97,17 +98,29 @@ try {
     }
     if (kind === "principal") {
       assert.equal(await p.getByRole("tab", { name: "Visão geral" }).getAttribute("aria-selected"), "true", "Visão geral é a primeira aba");
-      const cards = p.getByRole("tabpanel").getByRole("listitem");
+      const cards = p.getByRole("list", { name: "Indicadores da comunidade" }).getByRole("listitem");
       assert.equal(await cards.count(), 6, "visão geral tem só 6 cards");
       await p.getByText("66,7%").waitFor();
       const x0 = (await p.getByRole("heading", { level: 1 }).boundingBox()).x;
+      await p.getByRole("heading", { name: "Para fazer hoje" }).waitFor();
+      await p.getByRole("heading", { name: "Onde falta gente" }).waitFor();
+      const { mkdir }=await import("node:fs/promises");
+      await mkdir(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B4"}`,{recursive:true});
+      for(const width of [390,1440]) { await p.setViewportSize({width,height:1000});await p.evaluate(()=>scrollTo(0,0));await p.waitForTimeout(200);await p.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B4"}/painel-${width}.png`,fullPage:true}); }
+      await p.getByRole("button", { name: /Convites esperando resposta/ }).click();
+      assert.equal(await p.getByRole("tab", { name: /IA e automações/ }).getAttribute("aria-selected"),"true","convites levam à aba com o detalhamento");
+      await p.getByRole("heading", { name: "Convites esperando resposta",exact:true }).waitFor();
+      await p.getByRole("tab", { name: "Visão geral" }).click();
       await p.getByRole("button", { name: /Perfis aguardando aprovação/ }).click();
       assert.equal(await p.getByRole("tab", { name: /Perfis/ }).getAttribute("aria-selected"), "true", "card leva à aba de detalhe");
-      await p.getByRole("tab", { name: /Feedback/ }).click();
+      await p.getByRole("tab", { name: /Avaliações e feedback/ }).click();
       await p.getByRole("heading", { name: "Feedback do site" }).waitFor();
       await p.getByRole("heading", { name: "Avaliação das conversas" }).waitFor();
       await p.getByRole("tab", { name: /IA e automações/ }).click();
-      await p.getByRole("heading", { name: "Pedidos sem ninguém compatível" }).waitFor();
+      await p.getByRole("heading", { name: "Convites esperando resposta", exact: true }).waitFor();
+      await p.getByRole("heading", { name: "Provas para a banca" }).waitFor();
+      assert.equal(await p.locator('[aria-labelledby="provas-banca"] button').count(), 3);
+      assert.equal(await p.getByRole("heading", { name: "Onde falta gente" }).count(),0);
       await p.getByRole("button", { name: "Exportar execuções (CSV)" }).waitFor();
       const x1 = (await p.getByRole("heading", { level: 1 }).boundingBox()).x;
       assert.equal(x0, x1, "a tela não se mexe ao trocar de aba");

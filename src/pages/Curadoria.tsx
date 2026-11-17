@@ -6,6 +6,7 @@ import { Botao } from "../components/Botao";
 import { Aviso, Carregando } from "../components/Aviso";
 import { mensagemAmigavel } from "../lib/erros";
 import { AREAS_PRO, SITUACAO_PRO, GOALS_PRO, label } from "../lib/professional";
+import { MetricasHabilidades } from "../components/MetricasHabilidades";
 import IAAutomacoes from "./IAAutomacoes";
 import FeedbackPainel from "./FeedbackPainel";
 import AvaliacaoConversas, { pct } from "./AvaliacaoConversas";
@@ -26,7 +27,7 @@ export default function Curadoria() {
   if (adminAccess.ver_visao_geral) tabs.push({ id: "visao", label: "Visão geral" });
   if (adminAccess.review_profiles) tabs.push({ id: "perfis", label: "Perfis" });
   if (adminAccess.handle_reports) tabs.push({ id: "denuncias", label: "Denúncias" });
-  if (adminAccess.ver_feedback) tabs.push({ id: "feedback", label: "Feedback" });
+  if (adminAccess.ver_feedback) tabs.push({ id: "feedback", label: "Avaliações e feedback" });
   if (adminAccess.ver_ia_automacoes) tabs.push({ id: "ia", label: "IA e automações" });
   if (adminAccess.principal) tabs.push({ id: "acessos", label: "Acessos" });
   const active = tabs.some((x) => x.id === tab) ? tab : tabs[0]?.id;
@@ -89,6 +90,7 @@ type Visao = {
   useful_rate: number | null;
   open_reports: number;
   feedback_new: number;
+  unanswered_questions: number;
 };
 // Só 6 cards; cada um leva à aba de detalhe (se a pessoa tiver acesso a ela).
 function VisaoGeral({ ir, pode }: { ir: (t: Tab) => void; pode: (t: Tab) => boolean }) {
@@ -104,14 +106,23 @@ function VisaoGeral({ ir, pode }: { ir: (t: Tab) => void; pode: (t: Tab) => bool
   if (!m) return <Carregando />;
   const cards: [string, string | number, Tab][] = [
     ["Perfis aguardando aprovação", m.pending_profiles, "perfis"],
-    ["Convites esperando resposta", m.pending_invites, "feedback"],
+    ["Convites esperando resposta", m.pending_invites, "ia"],
     ["Conversas que aconteceram", m.conversations_happened, "feedback"],
     ["Conversas úteis", pct(m.useful_rate), "feedback"],
     ["Denúncias abertas", m.open_reports, "denuncias"],
     ["Feedbacks novos", m.feedback_new, "feedback"],
   ];
-  return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  const tarefas: [string, number, Tab][] = [
+    ["Perfis aguardando aprovação", m.pending_profiles, "perfis"],
+    ["Denúncias abertas", m.open_reports, "denuncias"],
+    ["Dúvidas sem resposta", m.unanswered_questions ?? 0, "feedback"],
+  ].filter(([, n, destino]) => Number(n)>0 && pode(destino as Tab)) as [string,number,Tab][];
+  return (<div className="space-y-10">
+    <section aria-labelledby="tarefas-hoje"><h2 id="tarefas-hoje" className="mb-4 text-xl">Para fazer hoje</h2>
+      {tarefas.length ? <ul className="space-y-3">{tarefas.map(([nome,n,destino])=><li key={nome} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-superficie p-4"><span>{nome}: <strong>{n}</strong></span><Botao variante="secundario" onClick={()=>ir(destino)}>Abrir {destino === "perfis" ? "perfis" : destino === "denuncias" ? "denúncias" : "avaliações e feedback"}</Botao></li>)}</ul> : <p>Nada pendente hoje. Obrigada!</p>}
+    </section>
+    <section aria-labelledby="numeros"><h2 id="numeros" className="mb-4 text-xl">A comunidade em números</h2>
+    <ul aria-label="Indicadores da comunidade" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map(([rotulo, valor, destino]) => {
         const conteudo = (
           <>
@@ -136,8 +147,9 @@ function VisaoGeral({ ir, pode }: { ir: (t: Tab) => void; pode: (t: Tab) => bool
           </li>
         );
       })}
-    </ul>
-  );
+    </ul></section>
+    <section aria-labelledby="onde-falta"><h2 id="onde-falta" className="mb-4 text-xl">Onde falta gente</h2><MetricasHabilidades apenasDemanda /></section>
+  </div>);
 }
 
 type Profile = {
@@ -181,7 +193,8 @@ function Profiles() {
   }
   return (
     <>
-      <h2 className="mb-5 text-xl">Perfis aguardando aprovação</h2>
+      <h2 className="mb-2 text-xl">Revisão humana</h2>
+      <p className="mb-5 text-sm text-suave">Nenhum perfil recebe indicações antes desta aprovação.</p>
       {error && <Aviso tipo="erro">{error}</Aviso>}
       {!rows ? (
         <Carregando />

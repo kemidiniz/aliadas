@@ -171,7 +171,7 @@ select tst.ok((select count(*) from public.conversation_jobs)=0,'participante n�
 select set_config('request.jwt.claim.sub', :cur, false);
 select public.mvp_metrics() as painel \gset
 select public.mvp_ai_metrics() as ia \gset
-select tst.ok(:'painel'::jsonb ?& array['pending_profiles','pending_invites','conversations_happened','useful_rate','open_reports','feedback_new'] and (select count(*) from jsonb_object_keys(:'painel'::jsonb))=6,'visão geral traz só os 6 números dos cards');
+select tst.ok(:'painel'::jsonb ?& array['pending_profiles','pending_invites','conversations_happened','useful_rate','open_reports','feedback_new'] and (select count(*) from jsonb_object_keys(:'painel'::jsonb))=7,'visão geral traz seis números e tarefas de dúvidas');
 select tst.ok(:'ia'::jsonb ?& array['requests_without_match','tokens_month','jobs_failed_month','jobs_month'] and not (:'painel'::jsonb ? 'tokens_month'),'números da IA ficam só na aba IA e automações');
 select tst.ok((:'ia'::jsonb->'requests_without_match'->>'carreira')::int>=1,'pedidos sem candidata agrupados por objetivo');
 select tst.ok((:'painel'::jsonb->>'feedback_new')::int=(select count(*) from public.feedback where status='novo') and (:'ia'::jsonb->'tokens_month'->>'input')::int>=0,'feedback e tokens vêm de dados reais');

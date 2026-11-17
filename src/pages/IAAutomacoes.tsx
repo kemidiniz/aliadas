@@ -5,6 +5,8 @@ import { Aviso, Carregando } from "../components/Aviso";
 import { GOALS_PRO } from "../lib/professional";
 
 type MetricasIA = {
+  pending_invites: number;
+  pending_by_goal: Record<string,number>;
   jobs_month: number;
   jobs_failed_month: number;
   tokens_month: { input: number; output: number };
@@ -84,7 +86,7 @@ export default function IAAutomacoes() {
 
   return (
     <section className="space-y-10">
-      <MetricasHabilidades />
+      <MetricasHabilidades mostrarDemanda={false} />
       <div>
         <h2 className="mb-3 text-xl">IA no mês</h2>
         <p className="mb-4 text-sm text-suave">Uso da IA (tokens enviados / recebidos). Mede o custo da IA.</p>
@@ -97,29 +99,11 @@ export default function IAAutomacoes() {
           ))}
         </dl>
       </div>
-      <div>
-        <h2 className="mb-3 text-xl">Pedidos sem ninguém compatível</h2>
-        {semMatch.length ? (
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {semMatch.map(([g, c]) => (
-              <li key={g} className="flex justify-between rounded-xl bg-superficie px-4 py-3 text-sm">
-                <span>{GOALS_PRO[g as keyof typeof GOALS_PRO] ?? g}</span>
-                <strong>{c}</strong>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-suave">{SEM}</p>
-        )}
-        <button
-          type="button"
-          disabled={!semMatch.length}
-          onClick={() => baixarCsv("pedidos-sem-compativel", ["objetivo", "pedidos"], semMatch.map(([g, c]) => [GOALS_PRO[g as keyof typeof GOALS_PRO] ?? g, c]))}
-          className={botao}
-        >
-          Exportar pedidos sem compatível (CSV)
-        </button>
-      </div>
+      <section aria-labelledby="convites-pendentes"><h2 id="convites-pendentes" className="mb-3 text-xl">Convites esperando resposta</h2>
+        <p className="text-2xl font-semibold">{metrics.pending_invites ?? 0}</p>
+        <p className="mt-2 text-sm text-suave">Convites aguardando decisão das destinatárias. O painel mostra só totais, sem mensagens nem contatos.</p>
+        <ul className="mt-3 space-y-1 text-sm">{Object.entries(metrics.pending_by_goal ?? {}).map(([g,n])=><li key={g}>{GOALS_PRO[g as keyof typeof GOALS_PRO] ?? g}: {n}</li>)}</ul>
+      </section>
       <div>
         <h2 className="mb-3 text-xl">Execuções da IA</h2>
         {!logs.length ? (
@@ -133,9 +117,6 @@ export default function IAAutomacoes() {
             ))}
           </ul>
         )}
-        <button type="button" disabled={!logs.length} onClick={() => exportarCsv(logs)} className={botao}>
-          Exportar execuções (CSV)
-        </button>
       </div>
       <div>
         <h2 className="mb-3 text-xl">Rotina diária</h2>
@@ -144,15 +125,14 @@ export default function IAAutomacoes() {
             ? `Última execução: ${new Date(rotina[0].executado_em).toLocaleString("pt-BR")} · ${rotina[0].expirados} expirados · ${rotina[0].pedidos_avaliacao} pedidos de avaliação`
             : SEM}
         </p>
-        <button
-          type="button"
-          disabled={!rotina.length}
-          onClick={() => baixarCsv("rotina-diaria", ["data", "convites_expirados", "pedidos_de_avaliacao"], rotina.map((x) => [x.executado_em, x.expirados, x.pedidos_avaliacao]))}
-          className={botao}
-        >
-          Exportar rotina diária (CSV)
-        </button>
       </div>
+      <section aria-labelledby="provas-banca"><h2 id="provas-banca" className="text-xl">Provas para a banca</h2><p className="mt-2 text-sm text-suave">Exportações sem nomes ou contatos. Testes locais não comprovam execuções reais.</p>
+        <div className="flex flex-wrap gap-3">
+          <button type="button" disabled={!logs.length} onClick={()=>exportarCsv(logs)} className={botao}>Exportar execuções (CSV)</button>
+          <button type="button" disabled={!semMatch.length} onClick={()=>baixarCsv("pedidos-sem-compativel",["objetivo","pedidos"],semMatch.map(([g,c])=>[GOALS_PRO[g as keyof typeof GOALS_PRO] ?? g,c]))} className={botao}>Exportar pedidos sem compatível (CSV)</button>
+          <button type="button" disabled={!rotina.length} onClick={()=>baixarCsv("rotina-diaria",["data","convites_expirados","pedidos_de_avaliacao"],rotina.map(x=>[x.executado_em,x.expirados,x.pedidos_avaliacao]))} className={botao}>Exportar rotina diária (CSV)</button>
+        </div>
+      </section>
     </section>
   );
 }
