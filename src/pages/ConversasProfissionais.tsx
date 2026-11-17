@@ -146,7 +146,7 @@ export default function ConversasProfissionais() {
 }
 
 function grupo(i: ProInvite, eu: string, fb: Feedback[]): Aba {
-  if (i.state === "recusada" || fb.some((f) => f.invite_id === i.id)) return "concluidas";
+  if (i.state === "recusada" || i.state === "expirado" || fb.some((f) => f.invite_id === i.id)) return "concluidas";
   return i.recipient_id === eu ? "recebidos" : "enviados";
 }
 
@@ -223,12 +223,14 @@ function Conversa({
   const horario = i.horario_confirmado;
   const passou = horario ? new Date(horario).getTime() < Date.now() - 30 * 60_000 : false;
   const atual =
-    i.state === "pendente" ? 1 : i.state === "recusada" ? 1 : feedback ? 5 : !horario ? 2 : !passou ? 3 : 4;
+    i.state === "pendente" || i.state === "recusada" || i.state === "expirado" ? 1 : feedback ? 5 : !horario ? 2 : !passou ? 3 : 4;
   const estado: EstadoConversa =
     i.state === "pendente"
       ? "pendente"
       : i.state === "recusada"
         ? "recusada"
+        : i.state === "expirado"
+          ? "expirado"
         : feedback?.happened
           ? "realizada"
           : horario
@@ -255,7 +257,7 @@ function Conversa({
         </div>
         <MenuMais aoEscolher={setPainel} />
       </header>
-      <Linha atual={atual} parada={i.state === "recusada"} />
+      <Linha atual={atual} parada={i.state === "recusada" || i.state === "expirado"} />
       <blockquote className="rounded-xl bg-superficie px-4 py-3 text-sm break-words">
         <span className="mb-1 block text-xs font-semibold text-suave">
           {souRemetente ? "Sua mensagem" : "Mensagem dela"}
@@ -278,6 +280,15 @@ function Conversa({
           </div>
         ))}
       {i.state === "recusada" && <p className="text-sm text-suave">Este convite foi recusado.</p>}
+      {i.state === "expirado" &&
+        (souRemetente ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-suave">Expirou sem resposta.</p>
+            <BotaoLink to="/" variante="secundario">Pedir outra indicação</BotaoLink>
+          </div>
+        ) : (
+          <p className="text-sm text-suave">Este convite expirou sem resposta.</p>
+        ))}
 
       {i.state === "aceita" && (
         <>

@@ -219,3 +219,20 @@ select tst.ok(:'painel'::jsonb ?& array['pending_profiles','requests_without_mat
 select tst.ok((:'painel'::jsonb->'requests_without_match'->>'carreira')::int>=1,'pedidos sem candidata agrupados por objetivo');
 select tst.ok((:'painel'::jsonb->>'feedback_month')::int>=1 and (:'painel'::jsonb->'tokens_month'->>'input')::int>=0,'feedback e tokens do mês vêm de dados reais');
 reset role;
+-- 021: convites pendentes há mais de 7 dias expiram e não bloqueiam nova indicação.
+select tst.ok((select quando='7 6 * * *' and comando like '%mvp_expire_invites%' from cron.agendamentos where nome='aliadas-expirar-convites'),'rotina diária agendada no pg_cron');
+update public.conversation_invites set created_at=now()-interval '8 days' where recipient_id=:'d3';
+select public.mvp_expire_invites() as expirados \gset
+select tst.ok(:expirados=2 and (select count(*) from public.conversation_invites where recipient_id=:'d3' and state='expirado' and expirado_em is not null)=2,'convites pendentes há mais de 7 dias expiram');
+select tst.ok((select expirados=2 from public.conversation_expiry_runs order by id desc limit 1),'execução registrada no log');
+set role authenticated;select set_config('request.jwt.claim.sub', :'d4', false);
+select tst.ok((select count(*) from public.conversation_expiry_runs)=0,'participante não lê o log da rotina');
+select tst.bloqueia($$select public.mvp_expire_invites()$$,'participante não executa a rotina');
+select tst.bloqueia(format('select public.mvp_respond(%L,true)', (select id from public.conversation_invites where sender_id=:'d4' and recipient_id=:'d3' limit 1)),'convite expirado não pode ser aceito');
+reset role;
+insert into public.conversation_requests(id,owner_id,intention,goal) values('40000000-0000-0000-0000-000000000004',:'d4','buscar','situacao');
+insert into public.conversation_invites(request_id,sender_id,recipient_id,message) values('40000000-0000-0000-0000-000000000004',:'d4',:'d3','novo convite');
+select tst.ok(true,'expirado não bloqueia um novo convite entre as mesmas pessoas');
+set role authenticated;select set_config('request.jwt.claim.sub', :cur, false);
+select tst.ok((select count(*) from public.conversation_expiry_runs)>=1,'curadoria lê o log da rotina');
+reset role;

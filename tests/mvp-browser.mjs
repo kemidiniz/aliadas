@@ -284,6 +284,12 @@ try {
   assert.equal(feedback.utility, 5);
   assert.equal(feedback.outcome, "clareza");
   console.log("PASSOU: contatos autorizados e avaliação em botões");
+  invites = [{ ...invite, state: "expirado", horario_confirmado: null }];
+  await p.goto(base + "/minhas-conversas");
+  await p.getByRole("tab", { name: /Concluídas/ }).click();
+  await p.getByText("Expirou sem resposta.").waitFor();
+  assert.equal(await p.getByRole("link", { name: "Pedir outra indicação" }).getAttribute("href"), "/");
+  console.log("PASSOU: convite expirado aparece em Concluídas com 'Pedir outra indicação'");
 
   await p.goto(base + "/meu-perfil");
   await p.getByRole("heading", { name: "Meu perfil", exact: true }).waitFor();

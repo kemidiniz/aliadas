@@ -42,3 +42,8 @@ create function vault.create_secret(valor text, nome text) returns uuid language
   insert into vault.secrets values (nome, valor);
   insert into vault.decrypted_secrets values (nome, valor);
   select gen_random_uuid() $$;
+-- pg_cron só existe no Supabase; o stub registra o agendamento.
+create schema if not exists cron;
+create table cron.agendamentos (nome text primary key, quando text, comando text);
+create function cron.schedule(nome text, quando text, comando text) returns bigint language sql as $$
+  insert into cron.agendamentos values (nome, quando, comando) on conflict (nome) do update set quando = excluded.quando, comando = excluded.comando returning 1::bigint $$;

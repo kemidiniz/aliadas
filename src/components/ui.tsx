@@ -140,13 +140,15 @@ export type EstadoConversa =
   | "aceita"
   | "horario"
   | "realizada"
-  | "recusada";
+  | "recusada"
+  | "expirado";
 const BADGE: Record<EstadoConversa, [string, string]> = {
   pendente: ["Pendente", "border border-campo text-texto"],
   aceita: ["Aceita", "bg-superficie text-destaque ring-1 ring-destaque"],
   horario: ["Horário confirmado", "bg-destaque text-sobre-destaque"],
   realizada: ["Realizada", "bg-coral text-vinho-noite"],
   recusada: ["Recusada", "border border-linha text-suave"],
+  expirado: ["Expirou", "border border-linha text-suave"],
 };
 export function Badge({ estado }: { estado: EstadoConversa }) {
   const [t, c] = BADGE[estado];
