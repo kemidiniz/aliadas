@@ -17,7 +17,7 @@ drop policy if exists "perfis: vejo quando tenho motivo" on public.profiles;
 create policy "perfis: vejo quando tenho motivo" on public.profiles for select to authenticated using(public.mvp_pode_ver(id));
 drop policy if exists "fotos: vejo quando posso ver o perfil" on storage.objects;
 create policy "fotos: vejo quando posso ver o perfil" on storage.objects for select to authenticated using(
- bucket_id='fotos' and case when split_part(name,'/',1) ~ '^[0-9a-f-]{36}$' then public.mvp_pode_ver(split_part(name,'/',1)::uuid) else false end);
+ bucket_id='fotos' and case when split_part(name,'/',1) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then public.mvp_pode_ver(split_part(name,'/',1)::uuid) else false end);
 drop policy if exists "denúncias: denuncio quem eu vejo" on public.reports;
 create policy "denúncias: denuncio quem eu vejo" on public.reports for insert to authenticated with check(denunciante_id=auth.uid() and denunciado_id<>auth.uid() and public.mvp_pode_ver(denunciado_id));
 
@@ -131,6 +131,7 @@ begin
  if not found then raise exception 'convite indisponível';end if;
 end;$$;
 
+revoke all on function public.mvp_pode_ver(uuid) from public,anon;
 revoke all on function public.mvp_account_active(uuid),public.mvp_save_photo(text) from public,anon,authenticated;
 grant execute on function public.mvp_account_active(uuid) to service_role;
 grant execute on function public.mvp_save_photo(text),public.mvp_pode_ver(uuid) to authenticated,service_role;
