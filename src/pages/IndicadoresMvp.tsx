@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Aviso, Carregando } from "../components/Aviso";
 import { GOALS_PRO } from "../lib/professional";
+import { MARCAS } from "../components/AvaliacaoConversa";
 
 type Metricas = Record<string, unknown> & {
   average: number | null;
   requests_without_match?: Record<string, number>;
   tokens_month?: { input: number; output: number };
+  useful_rate?: number | null;
+  top_marks?: Record<string, number>;
 };
+type Rotina = { executado_em: string; expirados: number; pedidos_avaliacao: number };
 type Execucao = {
   id: string;
   state: string;
@@ -19,27 +23,28 @@ type Execucao = {
 };
 const SEM = "Sem dados ainda";
 
-// Exporta as execuções sem dado pessoal: nenhum id de pessoa, nome ou contato.
-function exportarCsv(execucoes: Execucao[]) {
-  const cab = ["data", "estado", "erro", "modelo", "tokens_entrada", "tokens_saida", "id_execucao"];
+// CSV sem dado pessoal: nenhum id de pessoa, nome ou contato.
+export function baixarCsv(nome: string, cab: string[], linhas: unknown[][]) {
   const esc = (v: unknown) => {
     const s = String(v ?? "");
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const linhas = execucoes.map((l) =>
-    [l.created_at, l.state, l.error_code ?? "", l.model ?? "", l.input_tokens ?? 0, l.output_tokens ?? 0, l.id].map(esc).join(","),
-  );
-  const url = URL.createObjectURL(new Blob(["﻿" + [cab.join(","), ...linhas].join("\n")], { type: "text/csv" }));
+  const corpo = [cab.join(","), ...linhas.map((l) => l.map(esc).join(","))].join("\n");
+  const url = URL.createObjectURL(new Blob(["﻿" + corpo], { type: "text/csv" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = `execucoes-aliadas-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `${nome}-aliadas-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+const exportarCsv = (execucoes: Execucao[]) =>
+  baixarCsv("execucoes", ["data", "estado", "erro", "modelo", "tokens_entrada", "tokens_saida", "id_execucao"],
+    execucoes.map((l) => [l.created_at, l.state, l.error_code ?? "", l.model ?? "", l.input_tokens ?? 0, l.output_tokens ?? 0, l.id]));
 
 export default function IndicadoresMvp() {
   const [metrics, setMetrics] = useState<Metricas | null>(null);
   const [logs, setLogs] = useState<Execucao[]>([]);
+  const [rotina, setRotina] = useState<Rotina[]>([]);
   const [error, setError] = useState("");
   useEffect(() => {
     Promise.all([
@@ -49,11 +54,13 @@ export default function IndicadoresMvp() {
         .select("id,state,error_code,model,input_tokens,output_tokens,created_at")
         .order("created_at", { ascending: false })
         .limit(500),
-    ]).then(([m, l]) => {
+      supabase.from("conversation_expiry_runs").select("executado_em,expirados,pedidos_avaliacao").order("executado_em", { ascending: false }).limit(500),
+    ]).then(([m, l, ro]) => {
       if (m.error || l.error) setError("Painel indisponível agora. Tente de novo em instantes.");
       else {
         setMetrics(m.data);
         setLogs(l.data ?? []);
+        setRotina((ro.data as Rotina[]) ?? []);
       }
     });
   }, []);
@@ -88,6 +95,15 @@ export default function IndicadoresMvp() {
       },
     ],
     [
+      "Depois da conversa",
+      {
+        "Conversas que aconteceram": n("conversations_happened"),
+        "Úteis (nota 4 ou 5)": metrics.useful_rate == null ? SEM : `${(Number(metrics.useful_rate) * 100).toFixed(1).replace(".", ",")}%`,
+        "Avaliações pendentes": n("feedback_requests_pending"),
+        "Convites expirados": n("expired_invites"),
+      },
+    ],
+    [
       "IA no mês",
       {
         "Execuções": n("jobs_month"),
@@ -113,6 +129,21 @@ export default function IndicadoresMvp() {
           </dl>
         </div>
       ))}
+      <div>
+        <h2 className="mb-3 text-xl">O que elas trouxeram</h2>
+        {Object.keys(metrics.top_marks ?? {}).length ? (
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {Object.entries(metrics.top_marks ?? {}).sort((a, b) => b[1] - a[1]).map(([m, c]) => (
+              <li key={m} className="flex justify-between rounded-xl bg-superficie px-4 py-3 text-sm">
+                <span>{MARCAS[m] ?? m}</span>
+                <strong>{c}</strong>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-suave">{SEM}</p>
+        )}
+      </div>
       <div>
         <h2 className="mb-3 text-xl">Pedidos sem ninguém compatível</h2>
         {semMatch.length ? (
@@ -154,6 +185,22 @@ export default function IndicadoresMvp() {
           className="mt-4 inline-flex h-12 items-center rounded-xl border-2 border-destaque px-5 font-semibold text-destaque hover:bg-superficie disabled:opacity-50"
         >
           Exportar execuções (CSV)
+        </button>
+      </div>
+      <div>
+        <h2 className="mb-3 text-xl">Rotina diária</h2>
+        <p className="text-sm text-suave">
+          {rotina.length
+            ? `Última execução: ${new Date(rotina[0].executado_em).toLocaleString("pt-BR")} · ${rotina[0].expirados} expirados · ${rotina[0].pedidos_avaliacao} pedidos de avaliação`
+            : SEM}
+        </p>
+        <button
+          type="button"
+          disabled={!rotina.length}
+          onClick={() => baixarCsv("rotina-diaria", ["data", "convites_expirados", "pedidos_de_avaliacao"], rotina.map((x) => [x.executado_em, x.expirados, x.pedidos_avaliacao]))}
+          className="mt-4 inline-flex h-12 items-center rounded-xl border-2 border-destaque px-5 font-semibold text-destaque hover:bg-superficie disabled:opacity-50"
+        >
+          Exportar rotina diária (CSV)
         </button>
       </div>
     </section>

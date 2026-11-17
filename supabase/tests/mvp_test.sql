@@ -361,3 +361,12 @@ reset role;
 update public.conversation_invites set created_at=now()-interval '8 days' where state='pendente';
 select public.mvp_expire_invites();
 select tst.ok((select count(*) from public.conversation_invites where state='pendente')=0,'a expiração continua funcionando');
+-- 026: indicadores da avaliação; usuária comum continua sem acesso.
+set role authenticated;select set_config('request.jwt.claim.sub', :'e1', false);
+select tst.bloqueia($$select public.mvp_metrics()$$,'participante não lê os indicadores da avaliação');
+select tst.ok((select count(*) from public.conversation_expiry_runs)=0,'participante não lê o log da rotina');
+select set_config('request.jwt.claim.sub', :cur, false);
+select public.mvp_metrics() as painel2 \gset
+select tst.ok(:'painel2'::jsonb ?& array['expired_invites','conversations_happened','useful_rate','top_marks','feedback_requests_pending'],'painel traz os indicadores da avaliação');
+select tst.ok((:'painel2'::jsonb->>'expired_invites')::int>=1 and (:'painel2'::jsonb->'top_marks'->>'escuta')::int>=2,'expirados e marcas vêm de dados reais');
+reset role;
