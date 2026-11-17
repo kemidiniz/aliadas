@@ -1,6 +1,6 @@
 import { CHAVE_NOVA_SENHA, useAuth } from "../lib/auth";
 import { SenhaPerfil } from "../components/SenhaPerfil";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CONTAINER, Formulario, Pagina, Titulo } from "../components/Pagina";
 import { Caixinha, CampoSelect, CampoTexto, MultiEscolha } from "../components/Campo";
@@ -12,6 +12,8 @@ import { mensagemAmigavel } from "../lib/erros";
 import { enviarFoto, useFotoUrl } from "../lib/fotos";
 import { FotoPerfil } from "../components/FotoPerfil";
 import { AREAS_PRO, CHANNELS_PRO, GOALS_PRO, SITUACAO_PRO, type ProContacts, type ProProfile } from "../lib/professional";
+
+import { chaveRascunhoPerfil, useAvisoPerfil } from "../lib/rascunhoPerfil";
 
 const opcoes = (m: Record<string, string>) => Object.entries(m).map(([valor, rotulo]) => ({ valor, rotulo }));
 type Dados = {
@@ -63,39 +65,64 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   const [excluir, setExcluir] = useState(false);
   const fotoAtual = useFotoUrl(semFoto ? null : (perfil?.foto_path ?? null));
 
+  const uid = session?.user.id;
+  const nomeInicial = useRef(perfil?.apelido ?? "");
+  const [base, setBase] = useState("");
+  const [recuperado, setRecuperado] = useState(false);
+  const [original, setOriginal] = useState<{ d: Dados; c: ProContacts; termos: boolean } | null>(null);
+  const conteudo = JSON.stringify({ d, c, termos });
+  const sujo = Boolean(base && (conteudo !== base || foto || semFoto));
+  const liberado = useRef(false);
+  useAvisoPerfil(sujo, liberado);
   useEffect(() => {
-    if (!session) return;
+    if (!uid) return;
     let ativo = true;
+    setCarregando(true);
     Promise.all([
-      supabase.from("professional_profiles").select("*").eq("profile_id", session.user.id).maybeSingle(),
-      supabase.from("professional_contacts").select("*").eq("profile_id", session.user.id).maybeSingle(),
+      supabase.from("professional_profiles").select("*").eq("profile_id", uid).maybeSingle(),
+      supabase.from("professional_contacts").select("*").eq("profile_id", uid).maybeSingle(),
     ]).then(([pr, co]) => {
       if (!ativo) return;
-      if (pr.error || co.error) toast("Não foi possível carregar seu perfil. Atualize a página.", "erro");
+      if (pr.error || co.error) { toast("Não foi possível carregar seu perfil. Atualize a página.", "erro"); return; }
       const p = pr.data as ProProfile | null;
-      if (p)
-        setD({
-          nome: perfil?.apelido ?? "",
-          situacao: p.situacao ?? "",
-          area: p.area_principal ?? "",
-          interesses: p.interesses ?? [],
-          can_help: p.can_help ?? [],
-          channels: p.channels.filter((x) => x !== "meet"),
-          ai_consent: p.ai_consent,
-          available: p.available,
-        });
-      else {
-        setNovo(true);
-        setD({ ...vazio, nome: perfil?.apelido ?? "" });
-      }
-      if (co.data) setC(co.data as ProContacts);
-      setTermos(Boolean(p));
-      setCarregando(false);
+      const salvo = {
+        d: p ? { nome: nomeInicial.current, situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], channels: p.channels.filter(x => x !== "meet"), ai_consent: p.ai_consent, available: p.available } : { ...vazio, nome: nomeInicial.current },
+        c: (co.data as ProContacts) ?? { linkedin: "", whatsapp: "", email: "", meet: null, nome_completo: "" },
+        termos: Boolean(p),
+      };
+      setNovo(!p); setOriginal(salvo); setBase(JSON.stringify(salvo));
+      let restaurado = salvo;
+      try {
+        const raw = sessionStorage.getItem(chaveRascunhoPerfil(uid));
+        const r = raw ? JSON.parse(raw) : null;
+        // Só os campos do formulário. Senhas e credenciais nunca entram no rascunho.
+        if (r?.d && typeof r.d.nome === "string" && Array.isArray(r.d.interesses) && Array.isArray(r.d.can_help) && Array.isArray(r.d.channels) && r.c && typeof r.termos === "boolean") {
+          restaurado = { d: { ...salvo.d, ...r.d }, c: { ...salvo.c, ...r.c }, termos: r.termos };
+          setRecuperado(JSON.stringify(restaurado) !== JSON.stringify(salvo));
+        }
+      } catch { sessionStorage.removeItem(chaveRascunhoPerfil(uid)); }
+      setD(restaurado.d); setC(restaurado.c); setTermos(restaurado.termos); setCarregando(false);
     });
-    return () => {
-      ativo = false;
-    };
-  }, [session, perfil?.apelido]);
+    return () => { ativo = false; };
+  }, [uid]);
+  useEffect(() => { if (base && conteudo !== base) liberado.current = false; }, [conteudo, base, foto, semFoto]);
+  useEffect(() => {
+    if (!uid || carregando || liberado.current) return;
+    try {
+      if (sujo) sessionStorage.setItem(chaveRascunhoPerfil(uid), conteudo);
+      else sessionStorage.removeItem(chaveRascunhoPerfil(uid));
+    } catch { /* O formulário continua disponível se o navegador bloquear o armazenamento. */ }
+  }, [uid, carregando, sujo, conteudo]);
+  const descartar = () => {
+    if (!original) return;
+    setD(original.d); setC(original.c); setTermos(original.termos); setFoto(null); setSemFoto(false); setRecuperado(false);
+    if (uid) sessionStorage.removeItem(chaveRascunhoPerfil(uid));
+  };
+  const avisoRascunho = recuperado ? <div role="status" className="mb-6 space-y-3 rounded-2xl border border-linha p-4">
+    <p>Recuperamos o que você não tinha salvado.</p><div className="flex flex-wrap gap-3">
+      <Botao type="button" onClick={() => salvar()} carregando={busy}>Salvar agora</Botao>
+      <Botao type="button" variante="secundario" onClick={descartar}>Descartar</Botao>
+    </div></div> : null;
 
   if (carregando)
     return (
@@ -110,7 +137,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
 
   const e = erros(d, c, termos, completar);
   const err = (k: string) => (mostrarErros ? e[k] : undefined);
-  const set = (x: Partial<Dados>) => setD({ ...d, ...x });
+  const set = (x: Partial<Dados>) => { liberado.current = false; setD({ ...d, ...x }); };
 
   async function salvar(ev?: FormEvent) {
     ev?.preventDefault();
@@ -140,6 +167,9 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
         terms: termos,
       });
       if (error) throw error;
+      liberado.current = true;
+      setBase(conteudo); setOriginal({ d, c, termos }); setRecuperado(false); setFoto(null); setSemFoto(false);
+      if (uid) sessionStorage.removeItem(chaveRascunhoPerfil(uid));
       await recarregar();
       if (novo) {
         toast("Boas-vindas! As embaixadoras vão revisar seu perfil em breve.");
@@ -155,6 +185,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     }
   }
   async function excluirConta() {
+    liberado.current = true;
     setBusy(true);
     const { error } = await supabase.functions.invoke("excluir-conta");
     setBusy(false);
@@ -228,6 +259,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     return (
       <Pagina titulo="Criar perfil">
         <Formulario>
+        {avisoRascunho}
         <Titulo sub="Leva menos de dois minutos. O resto você completa quando precisar.">Boas-vindas à aliadas</Titulo>
         <form onSubmit={salvar} className="space-y-6" noValidate>
           {campos.nome}
@@ -239,6 +271,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
             {campos.ia}
             {campos.termos}
           </div>
+          {sujo && <p role="status" className="text-sm text-suave">Mudanças não salvas</p>}
           <Botao type="submit" carregando={busy}>Entrar na aliadas</Botao>
         </form>
         </Formulario>
@@ -250,10 +283,12 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     return (
       <Pagina titulo="Falta pouco">
         <Formulario>
+        {avisoRascunho}
         <Titulo sub="Só mais isto para encontrarmos alguém para você.">Falta pouco para sua primeira conversa</Titulo>
         <form onSubmit={salvar} className="space-y-8" noValidate>
           {campos.interesses}
           {campos.contatos}
+          {sujo && <p role="status" className="text-sm text-suave">Mudanças não salvas</p>}
           <Botao type="submit" carregando={busy}>Salvar e continuar</Botao>
         </form>
         </Formulario>
@@ -314,6 +349,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   return (
     <Pagina titulo="Meu perfil">
       <Titulo sub="Um perfil, muitas conversas possíveis.">Meu perfil</Titulo>
+      {avisoRascunho}
       {recuperacao && <SenhaPerfil />}
       {/* índice (200px) + formulário (até 760px), ocupando o container */}
       <div className="lg:grid lg:grid-cols-[200px_minmax(0,760px)] lg:gap-8">
@@ -343,7 +379,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
               Precisa de ajuda? <Link to="/ajuda" className="text-link">Ajuda e feedback</Link>
             </p>
             <div className="flex flex-wrap gap-3">
-              <Botao type="button" variante="secundario" onClick={() => sair()}>Sair da conta</Botao>
+              <Botao type="button" variante="secundario" onClick={() => { if (!sujo || window.confirm("Você tem mudanças não salvas. Sair mesmo assim?")) { liberado.current = true; void sair(); } }}>Sair da conta</Botao>
               <Botao type="button" variante="perigo" onClick={() => setExcluir(true)}>Excluir minha conta</Botao>
             </div>
             {excluir && (
@@ -362,7 +398,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
               <span className="hidden lg:block" aria-hidden />
               <div className="flex items-center justify-between gap-4">
                 <p className="text-sm text-suave" aria-live="polite">
-                  {feitas} de {secoes.length} seções completas
+                  {sujo ? "Mudanças não salvas · " : ""}{feitas} de {secoes.length} seções completas
                 </p>
                 <Botao type="submit" carregando={busy}>Salvar</Botao>
               </div>

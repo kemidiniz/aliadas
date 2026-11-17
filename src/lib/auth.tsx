@@ -10,6 +10,7 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type { Perfil } from "./tipos";
+import { limparRascunhosPerfil } from "./rascunhoPerfil";
 
 export type AdminAccess = {
   principal: boolean;
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // link de "esqueci a senha" aberto: leva para criar a senha nova
       if (evento === "PASSWORD_RECOVERY")
         sessionStorage.setItem(CHAVE_NOVA_SENHA, "1");
+      if (evento === "SIGNED_OUT") limparRascunhosPerfil();
       setSession(s);
       // fora do callback para não travar o cliente do Supabase
       setTimeout(
@@ -126,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("focus", refresh);
   }, [session, carregarDados]);
   const sair = useCallback(async () => {
+    limparRascunhosPerfil();
     await supabase.auth.signOut();
   }, []);
 

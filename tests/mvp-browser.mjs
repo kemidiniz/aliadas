@@ -337,6 +337,34 @@ try {
   );
   assert.equal(await p.getByText("Link da minha sala de chamada (opcional)").count(), 0, "sem sala de chamada");
   assert.equal(await p.getByText("Quando você costuma ter tempo").count(), 0, "sem grade de disponibilidade");
+  const antesFoco = calls.filter(x => x.endpoint === "professional_profiles").length;
+  await p.locator("label.chip", { hasText: "Ampliar a rede de contatos" }).click();
+  await p.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await p.waitForTimeout(400);
+  assert.equal(calls.filter(x => x.endpoint === "professional_profiles").length, antesFoco, "foco não recarrega formulário");
+  assert(await p.locator("label.chip", { hasText: "Ampliar a rede de contatos" }).locator("input").isChecked());
+  assert(await p.evaluate(uid => !!sessionStorage.getItem(`aliadas:rascunho-perfil:${uid}`), uid));
+  // Navegação interna cancelada e recuperação após recarregar.
+  let avisoSaida = false;
+  const resolverAviso = async dialog => { avisoSaida = true; if (dialog.type() === "beforeunload") await dialog.accept(); else await dialog.dismiss(); };
+  p.on("dialog", resolverAviso);
+  await p.getByRole("navigation", { name: "Principal" }).first().getByRole("link", { name: "Início", exact: true }).click();
+  await p.waitForTimeout(150);
+  assert(avisoSaida, "navegação interna exige confirmação");
+  assert(new URL(p.url()).pathname === "/meu-perfil");
+  await p.reload();
+  await p.getByText("Recuperamos o que você não tinha salvado.").waitFor();
+  assert(await p.locator("label.chip", { hasText: "Ampliar a rede de contatos" }).locator("input").isChecked());
+  await p.getByRole("button", { name: "Descartar", exact: true }).click();
+  p.off("dialog", resolverAviso);
+  assert(!(await p.locator("label.chip", { hasText: "Ampliar a rede de contatos" }).locator("input").isChecked()));
+  const { mkdir } = await import("node:fs/promises");
+  await mkdir("/workspace/aliadas-review/A1", { recursive: true });
+  for (const width of [390, 1440]) {
+    await p.setViewportSize({ width, height: 900 });
+    await p.screenshot({ path: `/workspace/aliadas-review/A1/perfil-${width}.png`, fullPage: true });
+  }
+  console.log("PASSOU: foco preserva marcações, navegação avisa, rascunho restaura e descarta");
   await p.getByRole("button", { name: "Salvar", exact: true }).click();
   await p.getByText("Confira o e-mail.").waitFor();
   assert(!calls.some((x) => x.endpoint === "mvp_save_profile"), "não salva com erro");
