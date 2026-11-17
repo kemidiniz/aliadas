@@ -1,8 +1,11 @@
 M	.gitignore
 M	README.md
+A	docs/ARQUIVOS-ALTERADOS-17-11.txt
+M	docs/AUDITORIA-SEGURANCA.md
 M	docs/CUSTOS.md
 A	docs/DEPLOY-BLOCO-A.md
 A	docs/EMAILS.md
+A	docs/ENTREGA-17-11.md
 M	docs/MVP.md
 M	docs/SEGURANCA.md
 A	docs/TEXTOS-ANTES-DEPOIS.md
@@ -67,5 +70,3 @@ M	validacao/casos.csv
 M	validacao/consolidar.ts
 A	validacao/pool.csv
 M	validacao/rodar.ts
-A	docs/ENTREGA-17-11.md
-A	docs/ARQUIVOS-ALTERADOS-17-11.txt
