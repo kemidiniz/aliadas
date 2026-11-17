@@ -86,3 +86,13 @@ A rede desta sessão bloqueia jitsi.org, então não foi possível conferir na d
 - `conversa-ia` republicada (versão 9), com o mesmo comportamento.
 - Security Advisor: nenhuma tabela sem RLS e nenhum aviso novo.
 - Site publicado a partir do commit cb1fc8b (rodapé com © 2026 Kemily Diniz).
+
+### Registro do deploy da nova rodada (17/11, autorizado)
+
+- Migrations 022, 023, 024, 025, 026 e 027 aplicadas. Os 3 perfis existentes foram convertidos (situação, área principal e interesses) e o momento antigo foi preservado.
+- A 028 (limpeza do banco) **não** foi aplicada: espera uma autorização separada (docs/LIMPEZA-BANCO.md).
+- `conversa-ia` republicada (versão 10), com a entrada nova e o SYSTEM com a frase "lado a lado".
+- Security Advisor: nenhuma tabela sem RLS. Avisos novos esperados: mvp_feedback_v2, mvp_feedback_later e mvp_feedback_metrics (funções de uso intencional). Os avisos das funções antigas só somem com a 028.
+- Job `aliadas-expirar-convites` continua agendado, agora também criando os pedidos de avaliação.
+- Site publicado a partir do commit 480e769.
+- Make: falta atualizar o cenário para mostrar o texto da dúvida (tipo "duvida").
