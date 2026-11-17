@@ -123,9 +123,15 @@ try {
       kind === "reviewer" ? 0 : 1,
     );
     assert.equal(
-      await p.getByRole("tab", { name: "Indicadores", exact: true }).count(),
+      await p.getByRole("tab", { name: "Painel", exact: true }).count(),
       kind === "principal" ? 1 : 0,
     );
+    if (kind === "principal")
+      assert.equal(
+        await p.getByRole("tab", { name: "Painel", exact: true }).getAttribute("aria-selected"),
+        "true",
+        "Painel é a primeira aba",
+      );
     if (kind === "principal") {
       await p.getByRole("tab", { name: "Embaixadoras", exact: true }).click();
       await p.getByText("Participante de teste", { exact: true }).waitFor();

@@ -209,3 +209,13 @@ select tst.ok((select count(*) from net.chamadas where url='https://exemplo.inva
 select tst.ok((select body=jsonb_build_object('tabela','feedback','evento','insert','id',:'fb'::uuid) from net.chamadas where url='https://exemplo.invalid/webhook-feedback'),'aviso leva só tabela, evento e id, sem e-mail nem texto');
 update public.feedback set status='aprovado' where id=:'fb';
 select tst.ok((select count(*) from net.chamadas where url like '%exemplo.invalid/webhook%')=1,'aprovar resposta não dispara caminho antigo');
+-- 020: painel ampliado; usuária comum continua sem acesso.
+set role authenticated;select set_config('request.jwt.claim.sub', :'d1', false);
+select tst.bloqueia($$select public.mvp_metrics()$$,'participante não lê o painel ampliado');
+select tst.ok((select count(*) from public.conversation_jobs)=0,'participante não lê execuções da IA');
+select set_config('request.jwt.claim.sub', :cur, false);
+select public.mvp_metrics() as painel \gset
+select tst.ok(:'painel'::jsonb ?& array['pending_profiles','requests_without_match','stale_invites','open_reports','feedback_month','tokens_month','jobs_failed_month'],'painel traz os indicadores novos');
+select tst.ok((:'painel'::jsonb->'requests_without_match'->>'carreira')::int>=1,'pedidos sem candidata agrupados por objetivo');
+select tst.ok((:'painel'::jsonb->>'feedback_month')::int>=1 and (:'painel'::jsonb->'tokens_month'->>'input')::int>=0,'feedback e tokens do mês vêm de dados reais');
+reset role;

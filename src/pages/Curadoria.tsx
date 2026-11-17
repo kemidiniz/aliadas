@@ -8,16 +8,23 @@ import { mensagemAmigavel } from "../lib/erros";
 import { AREAS_PRO, MOMENTS_PRO, GOALS_PRO } from "../lib/professional";
 import IndicadoresMvp from "./IndicadoresMvp";
 import Embaixadoras from "./Embaixadoras";
-type Tab = "perfis" | "denuncias" | "indicadores" | "embaixadoras";
+type Tab = "painel" | "perfis" | "denuncias" | "embaixadoras";
 export default function Curadoria() {
   const { adminAccess, recarregar } = useAuth();
-  const [tab, setTab] = useState<Tab>("perfis");
+  const [tab, setTab] = useState<Tab>("painel");
+  const [contagem, setContagem] = useState<Record<string, number>>({});
+  useEffect(() => {
+    // contadores das abas; sem acesso ao painel, as abas ficam sem número
+    supabase.rpc("mvp_metrics").then(({ data }) => {
+      if (data) setContagem({ perfis: Number(data.pending_profiles ?? 0), denuncias: Number(data.open_reports ?? 0) });
+    });
+  }, [tab]);
   const tabs: { id: Tab; label: string }[] = [];
+  if (adminAccess.principal || adminAccess.legacy)
+    tabs.push({ id: "painel", label: "Painel" });
   if (adminAccess.review_profiles) tabs.push({ id: "perfis", label: "Perfis" });
   if (adminAccess.handle_reports)
     tabs.push({ id: "denuncias", label: "Denúncias" });
-  if (adminAccess.principal || adminAccess.legacy)
-    tabs.push({ id: "indicadores", label: "Indicadores" });
   if (adminAccess.principal)
     tabs.push({ id: "embaixadoras", label: "Embaixadoras" });
   const active = tabs.some((x) => x.id === tab) ? tab : tabs[0]?.id;
@@ -54,6 +61,12 @@ export default function Curadoria() {
             }}
           >
             {t.label}
+            {contagem[t.id] ? (
+              <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-coral px-1.5 text-xs text-vinho-noite">
+                {contagem[t.id]}
+                <span className="sr-only"> pendentes</span>
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -64,7 +77,7 @@ export default function Curadoria() {
       >
         {active === "perfis" && <Profiles />}
         {active === "denuncias" && <Reports />}
-        {active === "indicadores" && <IndicadoresMvp />}
+        {active === "painel" && <IndicadoresMvp />}
         {active === "embaixadoras" && <Embaixadoras />}
         {!active && <Aviso>Nenhuma atribuição administrativa ativa.</Aviso>}
       </section>
