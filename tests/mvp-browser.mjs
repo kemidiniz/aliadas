@@ -371,9 +371,12 @@ try {
   console.log(
     "PASSOU: recuperação de senha preservada e integrada ao novo perfil",
   );
+  assert.equal(await p.getByRole("link", { name: "Painel" }).count(), 0, "usuária comum não vê o Painel");
+  await p.goto(base + "/painel");
+  await p.waitForURL(base + "/");
+  assert.equal(await p.locator('a[href="/painel"], a[href="/curadoria"]').count(), 0);
   await p.goto(base + "/curadoria");
   await p.waitForURL(base + "/");
-  assert.equal(await p.locator('a[href="/curadoria"]').count(), 0);
   console.log(
     "PASSOU: participante comum não vê administração e URL direta bloqueia",
   );

@@ -106,9 +106,9 @@ try {
     });
     const p = await context.newPage();
     p.setDefaultTimeout(8000);
-    await p.goto(base + "/curadoria");
+    await p.goto(base + "/painel");
     await p
-      .getByRole("heading", { name: "Administração", exact: true })
+      .getByRole("heading", { name: "Painel das embaixadoras", exact: true })
       .waitFor();
     assert.equal(
       await p.getByRole("tab", { name: "Embaixadoras", exact: true }).count(),
@@ -126,6 +126,19 @@ try {
       await p.getByRole("tab", { name: "Painel", exact: true }).count(),
       kind === "principal" ? 1 : 0,
     );
+    assert(await p.getByRole("link", { name: "Painel" }).count() >= 1, "quem tem atribuição vê o Painel");
+    if (kind === "principal") {
+      // trocar de aba não pode mexer a tela
+      const x0 = (await p.getByRole("heading", { level: 1 }).boundingBox()).x;
+      await p.getByRole("tab", { name: /Perfis/ }).click();
+      await p.waitForTimeout(300);
+      const x1 = (await p.getByRole("heading", { level: 1 }).boundingBox()).x;
+      await p.getByRole("tab", { name: /Denúncias/ }).click();
+      await p.waitForTimeout(300);
+      const x2 = (await p.getByRole("heading", { level: 1 }).boundingBox()).x;
+      assert(x0 === x1 && x1 === x2, `tela se mexeu ao trocar de aba: ${x0}, ${x1}, ${x2}`);
+      await p.getByRole("tab", { name: /Painel/ }).click();
+    }
     if (kind === "principal")
       assert.equal(
         await p.getByRole("tab", { name: "Painel", exact: true }).getAttribute("aria-selected"),
@@ -168,7 +181,7 @@ try {
       };
       await p.evaluate(() => window.dispatchEvent(new Event("focus")));
       await p.waitForURL(base + "/");
-      assert.equal(await p.locator('a[href="/curadoria"]').count(), 0);
+      assert.equal(await p.locator('a[href="/painel"]').count(), 0);
       console.log(
         `PASSOU: ${kind} vê só sua atribuição e perde acesso na atualização após revogação`,
       );

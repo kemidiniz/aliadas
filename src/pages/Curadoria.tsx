@@ -29,9 +29,9 @@ export default function Curadoria() {
     tabs.push({ id: "embaixadoras", label: "Embaixadoras" });
   const active = tabs.some((x) => x.id === tab) ? tab : tabs[0]?.id;
   return (
-    <Pagina titulo="Administração">
+    <Pagina titulo="Painel das embaixadoras">
       <Titulo sub="Acesso restrito às atribuições autorizadas para sua conta.">
-        Administração
+        Painel das embaixadoras
       </Titulo>
       {adminAccess.legacy && (
         <div className="mb-6">
@@ -72,6 +72,7 @@ export default function Curadoria() {
       </div>
       <section
         role="tabpanel"
+        className="min-h-[60vh]"
         id={`admin-${active}`}
         aria-labelledby={`tab-${active}`}
       >

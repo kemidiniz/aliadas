@@ -94,6 +94,10 @@ html {
 html.dark {
   color-scheme: dark;
 }
+/* reserva o espaço da barra de rolagem: trocar de aba não empurra a tela para os lados */
+html {
+  scrollbar-gutter: stable;
+}
 
 body {
   min-height: 100dvh;

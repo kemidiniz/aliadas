@@ -28,7 +28,7 @@ export default function Entrar() {
       return <Navigate to="/meu-perfil" replace />;
     return (
       <Navigate
-        to={perfil ? "/" : curadora ? "/curadoria" : "/meu-perfil"}
+        to={perfil ? "/" : curadora ? "/painel" : "/meu-perfil"}
         replace
       />
     );

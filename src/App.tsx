@@ -102,13 +102,14 @@ export function App() {
                 }
               />
               <Route
-                path="/curadoria"
+                path="/painel"
                 element={
                   <Protegida apenasCuradora>
                     <Curadoria />
                   </Protegida>
                 }
               />
+              <Route path="/curadoria" element={<Navigate to="/painel" replace />} />
               <Route
                 path="/recomendacoes"
                 element={<Navigate to="/" replace />}

@@ -160,6 +160,16 @@ export default function LandingInstitucional() {
           ))}
         </ol>
       </section>
+      <section className="institutional-section" aria-labelledby="embaixadoras-title">
+        <p className="eyebrow">Embaixadoras</p>
+        <h2 id="embaixadoras-title">Quem cuida da comunidade.</h2>
+        <div className="editorial-copy">
+          <p>
+            Mulheres que cuidam da comunidade: revisam perfis novos e acompanham
+            denúncias. O papel é por convite.
+          </p>
+        </div>
+      </section>
       <section id="perguntas" className="institutional-section scroll-mt-28" aria-labelledby="faq-title">
         <p className="eyebrow">Perguntas rápidas</p>
         <h2 id="faq-title">Antes de começar.</h2>

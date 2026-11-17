@@ -32,7 +32,7 @@ function BotaoTema() {
 }
 
 export function Cabecalho() {
-  const { session } = useAuth();
+  const { session, curadora } = useAuth();
   const [aberto, setAberto] = useState(false);
   const local = useLocation();
   const reduzir = useReducedMotion();
@@ -46,6 +46,8 @@ export function Cabecalho() {
         { to: "/", rotulo: "Início" },
         { to: "/minhas-conversas", rotulo: "Conversas" },
         { to: "/meu-perfil", rotulo: "Perfil" },
+        // só quem tem atribuição administrativa vê o Painel
+        ...(curadora ? [{ to: "/painel", rotulo: "Painel" }] : []),
       ]
     : [
         { to: "/#como-funciona", rotulo: "Como funciona" },

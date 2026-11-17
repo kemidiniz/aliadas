@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
-import { IconeConversas, IconeInicio, IconePerfil } from "./Icones";
+import { IconeConversas, IconeInicio, IconePainel, IconePerfil } from "./Icones";
 
 // Navegação inferior no celular (só para quem entrou).
 export function NavInferior() {
-  const { session } = useAuth();
+  const { session, curadora } = useAuth();
   const local = useLocation();
   const [pendentes, setPendentes] = useState(0);
   useEffect(() => {
@@ -23,10 +23,11 @@ export function NavInferior() {
     { to: "/", rotulo: "Início", Icone: IconeInicio, n: 0 },
     { to: "/minhas-conversas", rotulo: "Conversas", Icone: IconeConversas, n: pendentes },
     { to: "/meu-perfil", rotulo: "Perfil", Icone: IconePerfil, n: 0 },
+    ...(curadora ? [{ to: "/painel", rotulo: "Painel", Icone: IconePainel, n: 0 }] : []),
   ];
   return (
     <nav aria-label="Navegação" className="fixed inset-x-0 bottom-0 z-40 border-t border-linha bg-fundo pb-[env(safe-area-inset-bottom)] sm:hidden">
-      <ul className="grid grid-cols-3">
+      <ul className={`grid ${curadora ? "grid-cols-4" : "grid-cols-3"}`}>
         {itens.map(({ to, rotulo, Icone, n }) => (
           <li key={to}>
             <NavLink
