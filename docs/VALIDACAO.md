@@ -117,3 +117,5 @@ Testes locais: build/TypeScript, SQL/RLS, contratos de IA, worker Deno sem rede 
 | Custos e cenário 10× | Sim | Consumo DB consultado | Cotas/faturas atuais | Conferir fontes/painéis |
 | LGPD e segurança | Controles/documentação | Testes locais | Configuração de senha vazada | Ver docs/SEGURANCA.md |
 | Pitch e demonstração | Roteiro pronto | Sem ensaio real | Gravação até 2min dentro de 5min | Ensaiar fluxo publicado |
+
+No instrumento CSV, empates do plano B conservam a ordem do pool para tornar as duas rodadas repetíveis, pois o arquivo pedido não contém carga real de convites. Em produção, o banco usa menos convites recentes e sorteio. Manter o pool/ordem iguais nas rodadas e declarar essa diferença ao comparar; não atribuir à IA um ganho causado só por desempate diferente.

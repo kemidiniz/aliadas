@@ -15,7 +15,7 @@ const Cadastro = lazy(() => import("./pages/PerfilProfissional"));
 const Conversas = lazy(() => import("./pages/ConversasProfissionais"));
 const Curadoria = lazy(() => import("./pages/Curadoria"));
 const FeedbackPagina = lazy(() => import("./pages/Feedback"));
-const Sobre = lazy(() => import("./pages/LandingInstitucional"));
+import Sobre from "./pages/LandingInstitucional";
 const TermosEPrivacidade = lazy(() => import("./pages/Textos").then(m => ({ default:m.TermosEPrivacidade })));
 function RedirecionarLegal({ parte }: { parte: string }) {
  const local=useLocation();

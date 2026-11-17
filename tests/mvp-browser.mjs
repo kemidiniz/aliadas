@@ -226,7 +226,7 @@ try {
       requests = [request];
       data = request.id;
     }
-    if (endpoint === "mvp_invite") {
+    if (endpoint === "mvp_invite_reviewed") {
       invites = [invite];
       data = invite.id;
     }
@@ -285,7 +285,7 @@ try {
   await p.getByRole("heading", { name: "Sua indicação" }).waitFor();
   assert.equal(await p.getByText("Próximas conversas").count(), 0, "Início sem histórico nem agenda");
   await p.getByText("A IA está procurando quem pode ajudar…", { exact: true }).waitFor();
-  assert(!calls.some((x) => x.endpoint === "mvp_invite"));
+  assert(!calls.some((x) => x.endpoint === "mvp_invite_reviewed"));
   assert.equal(await p.getByText("Recomendada pela IA", { exact: true }).count(), 0);
   assert.deepEqual(calls.find((x) => x.endpoint === "mvp_create_request").body, { goal: "carreira", description: "" });
   requests = [{ ...request, mode: "ia", questions: ["NÃO MOSTRAR PERGUNTA ANTIGA"], draft: "NÃO MOSTRAR RASCUNHO ANTIGO" }];
@@ -314,7 +314,8 @@ try {
   console.log("PASSOU: ver outra sugestão usa a RPC própria e não cria nova busca");
   await p.getByRole("button", { name: "Enviar convite" }).click();
   await p.getByText("Convite enviado. Você acompanha em Alianças.").waitFor();
-  assert.equal(calls.find((x) => x.endpoint === "mvp_invite").body.message, "minha mensagem revisada de teste");
+  assert.equal(calls.find((x) => x.endpoint === "mvp_invite_reviewed").body.message, "minha mensagem revisada de teste");
+  assert.equal(calls.find(x=>x.endpoint==="mvp_invite_reviewed").body.candidate,other,"convite vincula a pessoa vista");
   console.log("PASSOU: convite só com a mensagem revisada");
 
   await p.goto(base + "/minhas-conversas");

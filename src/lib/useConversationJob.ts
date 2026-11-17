@@ -18,13 +18,13 @@ export function useConversationJob(
     setStalled(false);
     if (!requestId) return;
     let active = true,
-      attempt = 0;
+      attempt = 0, finished = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const controller = new AbortController();
     async function poll() {
-      if (!active) return;
+      timer = undefined;
+      if (!active || finished) return;
       if (document.visibilityState === "hidden") {
-        setStalled(true);
         return;
       }
       const { data, error } = await supabase
@@ -32,17 +32,20 @@ export function useConversationJob(
         .abortSignal(controller.signal);
       if (!active) return;
       if (error) {
-        setJob({ state: "falha", mode: "basica", has_candidate: true });
+        finished=true;
+        setJob({ state: "falha", mode: "regra", has_candidate: true });
         return;
       }
       const status = data as ConversationJobState;
       setJob(status);
       if (!["pendente", "executando"].includes(status.state)) {
+        finished=true;
         if (status.mode === "ia") await done.current();
         return;
       }
       attempt++;
       if (attempt >= JOB_POLL_DELAYS.length) {
+        finished=true;
         setStalled(true);
         await supabase.rpc("mvp_use_fallback", { request: requestId }).abortSignal(controller.signal);
         if (active) await done.current();
@@ -50,8 +53,11 @@ export function useConversationJob(
       }
       timer = setTimeout(poll, JOB_POLL_DELAYS[attempt]);
     }
+    const visible = () => { if (document.visibilityState === "visible" && active && !finished && timer === undefined) timer=setTimeout(poll,0); };
+    document.addEventListener("visibilitychange",visible);
     timer = setTimeout(poll, 0);
     return () => {
+      document.removeEventListener("visibilitychange",visible);
       active = false;
       if (timer) clearTimeout(timer);
       controller.abort();

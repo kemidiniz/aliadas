@@ -140,3 +140,9 @@ A resposta é validada no worker e no banco: códigos do pool, habilidades exist
 Testes locais incluem acesso por UUID conhecido, terceiros, pool privado, contatos antes/depois do aceite, manipulação de saída, revogação, limites, não repetição e 15 candidatas. Stubs não são evidência de geração remota.
 
 Consulta de configuração Auth em 17/11 encontrou `password_hibp_enabled=false`. Conferir Authentication › Settings › Password security e ativar proteção contra senhas vazadas **se disponível no plano atual sem custo**. Nenhum upgrade ou faturamento será ativado. A situação do Security Advisor será registrada no relatório de publicação; não revogar funções em massa para silenciar alertas.
+
+## Complementos do Bloco B
+
+032 guarda motivo opcional de revisão por RPC autorizada; participantes não alteram esse campo diretamente. 033 só acrescenta agregados para tarefas/convites, com as permissões existentes. 034 remove contatos acidentais do apoio mostrado à destinatária e condiciona Meet ao canal autorizado. 035 vincula o convite ao id da candidata vista pela usuária, dentro de lock do pedido: se a indicação mudar, o envio é recusado e a tela pede nova revisão. Não são novos papéis nem novos acessos administrativos.
+
+Ao ocultar a aba, a consulta do job pausa e retoma ao voltar, respeitando o número máximo de consultas. Não há polling ilimitado. O vínculo do convite protege também a janela entre o término do worker e a atualização da tela.

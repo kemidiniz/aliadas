@@ -278,9 +278,9 @@ function Indicacao({
 
   async function convidar() {
     setBusy(`convite-${r.id}`);
-    const { error } = await supabase.rpc("mvp_invite", { request: r.id, message: msg });
+    const { error } = await supabase.rpc("mvp_invite_reviewed", { request: r.id, candidate:r.candidate_id, message: msg });
     setBusy("");
-    if (error) return toast(mensagemAmigavel(error), "erro");
+    if (error) { toast(mensagemAmigavel(error), "erro"); await depois(); return; }
     toast("Convite enviado. Você acompanha em Alianças.");
     await depois();
   }
