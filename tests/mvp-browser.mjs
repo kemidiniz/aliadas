@@ -354,6 +354,89 @@ try {
   assert.deepEqual(ultimo.p.can_help, [], "perfil sem nenhum assunto é válido: só busca");
   assert(!("want_talk" in ultimo.p) && !("modos" in ultimo.p));
   console.log("PASSOU: 'Como você pode ajudar' só com 'Posso ajudar com', opcional");
+  // Foto: arquivo grande (8 MB), PNG com transparência, colar, arrastar e recusa de não imagem
+  const { deflateSync } = await import("node:zlib");
+  function bmp(w, h) {
+    const linha = w * 3, tam = 54 + linha * h, b = Buffer.alloc(tam);
+    b.write("BM", 0); b.writeUInt32LE(tam, 2); b.writeUInt32LE(54, 10); b.writeUInt32LE(40, 14);
+    b.writeInt32LE(w, 18); b.writeInt32LE(h, 22); b.writeUInt16LE(1, 26); b.writeUInt16LE(24, 28);
+    for (let i = 54; i < tam; i += 3) { b[i] = (i * 7) & 255; b[i + 1] = (i * 13) & 255; b[i + 2] = (i * 31) & 255; }
+    return b;
+  }
+  function png(w, h) {
+    const crcT = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+    const crc = (buf) => { let c = 0xffffffff; for (const x of buf) c = crcT[(c ^ x) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+    const bloco = (tipo, dados) => { const t = Buffer.concat([Buffer.from(tipo), dados]); const o = Buffer.alloc(4); o.writeUInt32BE(dados.length); const c = Buffer.alloc(4); c.writeUInt32BE(crc(t)); return Buffer.concat([o, t, c]); };
+    const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 6;
+    const cru = Buffer.alloc((w * 4 + 1) * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * (w * 4 + 1) + 1 + x * 4; cru[i] = 200; cru[i + 1] = 60; cru[i + 2] = 90; cru[i + 3] = x < w / 2 ? 0 : 255; }
+    return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), bloco("IHDR", ihdr), bloco("IDAT", deflateSync(cru)), bloco("IEND", Buffer.alloc(0))]);
+  }
+  const uploads = [];
+  await context.route("**/storage/v1/object/**", async (route) => {
+    const r = route.request();
+    if (r.method() === "POST") {
+      // o supabase-js envia em multipart: o arquivo é a parte que começa em RIFF....WEBP
+      const corpo = r.postDataBuffer() ?? Buffer.alloc(0);
+      const ini = corpo.indexOf("RIFF"), fim = corpo.lastIndexOf("\r\n--");
+      const webp = ini >= 0 && corpo.subarray(ini + 8, ini + 12).toString() === "WEBP";
+      uploads.push({ url: r.url(), tipo: webp ? "image/webp" : "outro", tamanho: webp ? fim - ini : 0 });
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ Key: "fotos/x", signedURL: "/x" }) });
+  });
+  await p.goto(base + "/meu-perfil");
+  await p.getByText("Do celular ou do computador. Você pode ajustar o enquadramento.").waitFor();
+  await p.getByRole("textbox", { name: "E-mail para contato" }).fill("contato@exemplo.invalid");
+  assert.equal(await p.getByText(/JPG, PNG ou WebP até 2 MB/).count(), 0, "texto antigo da foto saiu");
+  const entrada = p.locator('input[type="file"]');
+  assert.equal(await entrada.getAttribute("accept"), "image/*");
+  assert.equal(await entrada.getAttribute("capture"), null, "sem capture: o celular oferece câmera, fototeca e arquivos");
+  assert.equal(await p.getByRole("button", { name: "Usar a câmera" }).count(), 1, "câmera no computador");
+  await entrada.setInputFiles({ name: "notas.txt", mimeType: "text/plain", buffer: Buffer.from("não sou imagem") });
+  await p.getByText("Não conseguimos abrir essa foto. Tente uma JPG ou PNG.").waitFor();
+  await entrada.setInputFiles({ name: "falsa.jpg", mimeType: "image/jpeg", buffer: Buffer.from("isso não é um jpeg") });
+  await p.getByText("Não conseguimos abrir essa foto. Tente uma JPG ou PNG.").waitFor();
+  const grande = bmp(1800, 1600);
+  assert(grande.length > 8 * 1024 * 1024, "arquivo de teste tem mais de 8 MB");
+  await entrada.setInputFiles({ name: "grande.bmp", mimeType: "image/bmp", buffer: grande });
+  await p.getByRole("dialog", { name: "Ajuste o enquadramento" }).waitFor();
+  await p.getByRole("slider", { name: "Zoom" }).fill("1.5");
+  await p.getByRole("button", { name: "Usar esta foto" }).click();
+  await p.getByRole("img", { name: "Prévia da foto" }).waitFor();
+  await p.getByRole("button", { name: "Salvar", exact: true }).click();
+  await p.getByText("Perfil salvo.").last().waitFor();
+  assert.equal(uploads.length, 1);
+  assert.equal(uploads[0].tipo, "image/webp");
+  assert(uploads[0].tamanho > 0 && uploads[0].tamanho <= 2 * 1024 * 1024, `foto final até 2 MB (${uploads[0].tamanho})`);
+  assert.match(calls.filter((x) => x.endpoint === "mvp_save_profile").at(-1).body.p.photo, new RegExp(`^${uid}/[0-9a-f-]{36}\\.webp$`));
+  // PNG com transparência, por colar (Ctrl/Cmd+V com a área focada)
+  const transparente = png(300, 200).toString("base64");
+  await p.getByRole("group", { name: "Foto (opcional)" }).focus();
+  await p.evaluate((b64) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const dt = new DataTransfer();
+    dt.items.add(new File([bytes], "transparente.png", { type: "image/png" }));
+    document.activeElement.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true }));
+  }, transparente);
+  await p.getByRole("dialog", { name: "Ajuste o enquadramento" }).waitFor();
+  await p.getByRole("button", { name: "Usar esta foto" }).click();
+  await p.getByRole("dialog", { name: "Ajuste o enquadramento" }).waitFor({ state: "detached" });
+  // arrastar e soltar
+  await p.evaluate((b64) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const dt = new DataTransfer();
+    dt.items.add(new File([bytes], "solta.png", { type: "image/png" }));
+    const alvo = document.querySelector('[role="group"][tabindex="0"]');
+    alvo.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
+  }, transparente);
+  await p.getByRole("dialog", { name: "Ajuste o enquadramento" }).waitFor();
+  await p.getByRole("button", { name: "Usar esta foto" }).click();
+  await p.getByRole("button", { name: "Salvar", exact: true }).click();
+  await p.getByText("Perfil salvo.").last().waitFor();
+  assert.equal(uploads.length, 2);
+  assert.equal(uploads[1].tipo, "image/webp");
+  assert(uploads[1].tamanho <= 2 * 1024 * 1024);
+  console.log("PASSOU: foto de 8 MB reduzida a WebP ≤ 2 MB, PNG transparente por colar e arrastar, não imagem recusada");
   await context.route("**/auth/v1/user", (route) =>
     route.fulfill({
       status: 200,

@@ -1,8 +1,5 @@
 import {
-  useEffect,
   useId,
-  useRef,
-  useState,
   type InputHTMLAttributes,
   type ReactNode,
   type SelectHTMLAttributes,
@@ -161,94 +158,6 @@ export function CampoSelect({
         </svg>
       </div>
     </Envelope>
-  );
-}
-
-// foto: botão + prévia em círculo + remover (sem <input type=file> cru)
-export function CampoArquivo({
-  rotulo,
-  ajuda,
-  erro,
-  previaAtual,
-  iniciais,
-  arquivo,
-  aoEscolher,
-  aoRemover,
-  accept = "image/jpeg,image/png,image/webp",
-}: Base & {
-  previaAtual?: string | null;
-  iniciais: string;
-  arquivo: File | null;
-  aoEscolher: (f: File) => void;
-  aoRemover: () => void;
-  accept?: string;
-}) {
-  const id = useId();
-  const input = useRef<HTMLInputElement>(null);
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!arquivo) return setUrl(null);
-    const u = URL.createObjectURL(arquivo);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [arquivo]);
-  const src = url ?? previaAtual ?? null;
-  return (
-    <div className="space-y-2">
-      <span className={rotuloCampo} id={`${id}-rotulo`}>
-        {rotulo}
-      </span>
-      <div className="flex items-center gap-4">
-        {src ? (
-          <img
-            src={src}
-            alt="Prévia da foto"
-            className="h-16 w-16 shrink-0 rounded-full border-2 border-coral object-cover"
-          />
-        ) : (
-          <span
-            aria-hidden
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-coral bg-vinho text-lg font-semibold text-off-white"
-          >
-            {iniciais}
-          </span>
-        )}
-        <input
-          ref={input}
-          id={id}
-          type="file"
-          accept={accept}
-          className="sr-only"
-          aria-labelledby={`${id}-rotulo`}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) aoEscolher(f);
-            e.target.value = "";
-          }}
-        />
-        <button
-          type="button"
-          onClick={() => input.current?.click()}
-          className="inline-flex h-12 items-center rounded-xl border-2 border-destaque px-5 font-semibold text-destaque transition-colors hover:bg-superficie"
-        >
-          {src ? "Trocar foto" : "Escolher foto"}
-        </button>
-        {src && (
-          <button
-            type="button"
-            onClick={aoRemover}
-            className="text-sm font-semibold text-suave underline underline-offset-4 hover:text-erro"
-          >
-            Remover
-          </button>
-        )}
-      </div>
-      {(erro || ajuda) && (
-        <p className={`text-sm ${erro ? "text-erro" : "text-suave"}`}>
-          {erro ?? ajuda}
-        </p>
-      )}
-    </div>
   );
 }
 

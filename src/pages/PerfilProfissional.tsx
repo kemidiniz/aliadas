@@ -3,14 +3,15 @@ import { SenhaPerfil } from "../components/SenhaPerfil";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CONTAINER, Formulario, Pagina, Titulo } from "../components/Pagina";
-import { Caixinha, CampoArquivo, CampoSelect, CampoTexto, MultiEscolha } from "../components/Campo";
+import { Caixinha, CampoSelect, CampoTexto, MultiEscolha } from "../components/Campo";
 import { Botao } from "../components/Botao";
 import { MinhasBuscas } from "../components/MinhasBuscas";
 import { CartaoCarregando } from "../components/ui";
 import { useToast } from "../components/Toast";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
-import { enviarFoto, useFotoUrl, validarFoto } from "../lib/fotos";
+import { enviarFoto, useFotoUrl } from "../lib/fotos";
+import { FotoPerfil } from "../components/FotoPerfil";
 import { AREAS_PRO, CHANNELS_PRO, GOALS_PRO, SITUACAO_PRO, type ProContacts, type ProProfile } from "../lib/professional";
 
 const opcoes = (m: Record<string, string>) => Object.entries(m).map(([valor, rotulo]) => ({ valor, rotulo }));
@@ -55,7 +56,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
   const [recuperacao] = useState(() => Boolean(sessionStorage.getItem(CHAVE_NOVA_SENHA)));
   const [d, setD] = useState<Dados>(vazio);
   const [c, setC] = useState<ProContacts>({ linkedin: "", whatsapp: "", email: "", meet: null, nome_completo: "" });
-  const [foto, setFoto] = useState<File | null>(null);
+  const [foto, setFoto] = useState<Blob | null>(null);
   const [semFoto, setSemFoto] = useState(false);
   const [termos, setTermos] = useState(false);
   const [mostrarErros, setMostrarErros] = useState(false);
@@ -118,10 +119,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       setMostrarErros(true);
       setTimeout(() => document.querySelector("[aria-invalid=true], [role=alert]")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
       return;
-    }
-    if (foto) {
-      const erroFoto = validarFoto(foto);
-      if (erroFoto) return toast(erroFoto, "erro");
     }
     setBusy(true);
     try {
@@ -273,21 +270,16 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
         <div className="grid items-start gap-6 sm:grid-cols-2">
           {campos.nome}
           <CampoTexto rotulo="Nome completo (opcional)" ajuda="Aparece só para quem aceitar conversar com você." value={c.nome_completo ?? ""} maxLength={120} erro={err("nome_completo")} onChange={(x) => setC({ ...c, nome_completo: x.target.value })} />
-          <CampoArquivo
-            rotulo="Foto (opcional)"
-            ajuda="JPG, PNG ou WebP até 2 MB."
-            iniciais={iniciais}
-            previaAtual={fotoAtual}
-            arquivo={foto}
-            aoEscolher={(f) => {
-              setFoto(f);
-              setSemFoto(false);
-            }}
-            aoRemover={() => {
-              setFoto(null);
-              setSemFoto(true);
-            }}
-          />
+          <div className="sm:col-span-2">
+            <FotoPerfil
+              iniciais={iniciais}
+              previaAtual={fotoAtual}
+              aoMudar={(f) => {
+                setFoto(f);
+                setSemFoto(f === null);
+              }}
+            />
+          </div>
         </div>
       ),
     },

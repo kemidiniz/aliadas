@@ -1,36 +1,62 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
 
-export const TIPOS_FOTO = ['image/jpeg', 'image/png', 'image/webp']
-export const MAX_FOTO = 2 * 1024 * 1024 // 2 MB
+export const MAX_ORIGINAL = 15 * 1024 * 1024 // arquivo escolhido: até 15 MB
+export const MAX_FOTO = 2 * 1024 * 1024 // arquivo final (reduzido): até 2 MB
+export const LADO_FOTO = 640
+export const ERRO_ABRIR = 'Não conseguimos abrir essa foto. Tente uma JPG ou PNG.'
 
-export function validarFoto(f: File): string | null {
-  if (!TIPOS_FOTO.includes(f.type)) return 'Use uma foto JPG, PNG ou WebP'
-  if (f.size > MAX_FOTO) return 'A foto precisa ter até 2 MB'
+// Aceita qualquer imagem que o navegador consiga abrir (inclui HEIC onde houver suporte).
+export function validarFoto(f: Blob): string | null {
+  if (f.type && !f.type.startsWith('image/')) return ERRO_ABRIR
+  if (f.size > MAX_ORIGINAL) return 'A foto precisa ter até 15 MB.'
   return null
 }
 
-// Redesenha a imagem num canvas: reduz o tamanho e APAGA os metadados
-// (EXIF), que podem conter localização e modelo do celular.
-export async function prepararFoto(f: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(f)
-  const lado = 640
-  const escala = Math.min(1, lado / Math.max(bitmap.width, bitmap.height))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.round(bitmap.width * escala)
-  canvas.height = Math.round(bitmap.height * escala)
-  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-  bitmap.close()
-  const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, 'image/webp', 0.85))
-  if (!blob || blob.size > MAX_FOTO) throw new Error('Foto grande demais')
-  return blob
+export async function abrirFoto(f: Blob): Promise<ImageBitmap> {
+  const erro = validarFoto(f)
+  if (erro) throw new Error(erro)
+  try {
+    return await createImageBitmap(f)
+  } catch {
+    throw new Error(ERRO_ABRIR)
+  }
 }
 
-export async function enviarFoto(uid: string, f: File): Promise<string> {
-  const blob = await prepararFoto(f)
-  const caminho = `${uid}/${crypto.randomUUID()}.webp`
-  const { error } = await supabase.storage.from('fotos').upload(caminho, blob, {
-    contentType: 'image/webp',
+// Recorte quadrado: zoom (1 = a imagem inteira cabe no lado menor) e posição
+// (-1 a 1 em cada eixo). Redesenhar no canvas reduz para 640px e APAGA os
+// metadados (EXIF), que podem conter localização e modelo do celular.
+export type Enquadramento = { zoom: number; x: number; y: number }
+export function areaDoRecorte(w: number, h: number, e: Enquadramento) {
+  const lado = Math.min(w, h) / e.zoom
+  const sx = (w - lado) / 2 + (e.x * (w - lado)) / 2
+  const sy = (h - lado) / 2 + (e.y * (h - lado)) / 2
+  return { sx, sy, lado }
+}
+export async function recortarFoto(img: ImageBitmap, e: Enquadramento): Promise<Blob> {
+  const { sx, sy, lado } = areaDoRecorte(img.width, img.height, e)
+  const saida = Math.min(LADO_FOTO, Math.round(lado))
+  const canvas = document.createElement('canvas')
+  canvas.width = saida
+  canvas.height = saida
+  canvas.getContext('2d')!.drawImage(img, sx, sy, lado, lado, 0, 0, saida, saida)
+  // Safari antigo não gera WebP (devolve PNG): nesse caso, JPEG.
+  for (const tipo of ['image/webp', 'image/jpeg']) {
+    for (const q of [0.85, 0.7, 0.5]) {
+      const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, tipo, q))
+      if (!blob || blob.type !== tipo) break
+      if (blob.size <= MAX_FOTO) return blob
+    }
+  }
+  throw new Error('Não conseguimos reduzir essa foto. Tente outra.')
+}
+
+export async function enviarFoto(uid: string, foto: Blob): Promise<string> {
+  if (foto.size > MAX_FOTO) throw new Error('Foto grande demais')
+  const jpeg = foto.type === 'image/jpeg'
+  const caminho = `${uid}/${crypto.randomUUID()}.${jpeg ? 'jpg' : 'webp'}`
+  const { error } = await supabase.storage.from('fotos').upload(caminho, foto, {
+    contentType: jpeg ? 'image/jpeg' : 'image/webp',
     upsert: false,
   })
   if (error) throw error
