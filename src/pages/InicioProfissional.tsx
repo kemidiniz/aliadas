@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ConviteRecebido } from "../components/ConviteRecebido";
 import { useConversationJob } from "../lib/useConversationJob";
 import { conversationStatus } from "../lib/conversationStatus";
 import LandingInstitucional from "./LandingInstitucional";
@@ -10,7 +9,7 @@ import { CampoArea } from "../components/Campo";
 import { Avatar } from "../components/Avatar";
 import { CartaoCarregando, Chips, Vazio } from "../components/ui";
 import { useToast } from "../components/Toast";
-import { AvaliacaoConversa, MARCAS } from "../components/AvaliacaoConversa";
+import { MARCAS } from "../components/AvaliacaoConversa";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
@@ -19,7 +18,6 @@ import {
   GOALS_PRO,
   SITUACAO_PRO,
   type ProCard,
-  type ProInvite,
   type ProProfile,
   type ProRequest,
 } from "../lib/professional";
@@ -31,13 +29,10 @@ const modeloConvite = (r: ProRequest) => `Oi! Vi na aliadas que você pode ajuda
 
 export default function InicioProfissional() {
   const { session, perfil, carregando } = useAuth();
-  const toast = useToast();
   const [pro, setPro] = useState<ProProfile | null>(null);
   const [ready, setReady] = useState(false);
   const [atual, setAtual] = useState<ProRequest | null>(null);
   const [cards, setCards] = useState<ProCard[]>([]);
-  const [convites, setConvites] = useState<ProInvite[]>([]);
-  const [pedidos, setPedidos] = useState<{ id: string; invite_id: string }[]>([]);
   const [busy, setBusy] = useState("");
   const [erro, setErro] = useState("");
   const { job, stalled, refresh } = useConversationJob(atual?.id, load);
@@ -47,7 +42,7 @@ export default function InicioProfissional() {
     const v = ++rev.current;
     if (!session) return setReady(true);
     const eu = session.user.id;
-    const [p, r, c, i, fr] = await Promise.all([
+    const [p, r, c, i] = await Promise.all([
       supabase.from("professional_profiles").select("*").eq("profile_id", eu).maybeSingle(),
       // só a busca mais recente dos últimos 7 dias; o histórico fica em Meu perfil
       supabase
@@ -58,31 +53,18 @@ export default function InicioProfissional() {
         .order("created_at", { ascending: false })
         .limit(1),
       supabase.rpc("mvp_cards"),
-      supabase
-        .from("conversation_invites")
-        .select("*")
-        .or(`sender_id.eq.${eu},recipient_id.eq.${eu}`)
-        .order("created_at", { ascending: false }),
-      // pedidos de avaliação criados pela rotina diária (5 dias depois do aceite)
-      supabase
-        .from("conversation_feedback_requests")
-        .select("id,invite_id")
-        .is("encerrado_em", null)
-        .lte("mostrar_a_partir", new Date().toISOString())
-        .order("criado_em"),
+      supabase.from("conversation_invites").select("request_id").eq("sender_id", eu),
     ]);
     if (v !== rev.current) return;
     if (p.error || r.error || c.error || i.error) {
-      setErro("Não foi possível carregar seu início. Tente novamente.");
+      setErro("Não foi possível carregar a busca. Tente novamente.");
       return setReady(true);
     }
-    const inv = (i.data as ProInvite[]) ?? [];
+    const inv = (i.data as { request_id: string }[]) ?? [];
     const ultima = (r.data as ProRequest[])?.[0];
     setPro(p.data);
     setAtual(ultima && !inv.some((x) => x.request_id === ultima.id) ? ultima : null);
     setCards((c.data as ProCard[]) ?? []);
-    setConvites(inv);
-    setPedidos((fr.data as { id: string; invite_id: string }[]) ?? []);
     setReady(true);
   }
   useEffect(() => {
@@ -95,14 +77,14 @@ export default function InicioProfissional() {
 
   if (carregando || (!ready && session))
     return (
-      <Pagina titulo="Início">
+      <Pagina titulo="Encontrar uma aliada">
         <CartaoCarregando />
       </Pagina>
     );
   if (!session) return <LandingInstitucional />;
   if (!perfil || !pro)
     return (
-      <Pagina titulo="Início">
+      <Pagina titulo="Encontrar uma aliada">
         <Titulo sub="Leva menos de dois minutos.">Vamos criar seu perfil?</Titulo>
         {erro && <p className="mb-4 text-erro">{erro}</p>}
         <BotaoLink to="/meu-perfil">Começar</BotaoLink>
@@ -110,7 +92,7 @@ export default function InicioProfissional() {
     );
   if (!["pendente", "aprovado"].includes(perfil.status))
     return (
-      <Pagina titulo="Início">
+      <Pagina titulo="Encontrar uma aliada">
         <Titulo sub="Sua conta está pausada ou restrita. Entre em contato para receber ajuda.">
           Sua conta está indisponível para novas buscas
         </Titulo>
@@ -118,26 +100,12 @@ export default function InicioProfissional() {
       </Pagina>
     );
 
-  const eu = session.user.id;
-  const esperando = convites.filter((x) => x.state === "pendente" && x.recipient_id === eu);
-  const nomeDe = (id: string) => cards.find((c) => c.id === id)?.name ?? "Participante";
-  const pedido = pedidos.find((x) => convites.some((c) => c.id === x.invite_id && c.state === "aceita"));
-  const convitePedido = pedido && convites.find((c) => c.id === pedido.invite_id);
-  async function lembrarDepois() {
-    if (!pedido) return;
-    const { error } = await supabase.rpc("mvp_feedback_later", { pedido: pedido.id });
-    if (error) return toast(mensagemAmigavel(error), "erro");
-    toast("Combinado, perguntamos de novo em 3 dias.");
-    await load();
-  }
-
   return (
-    <Pagina titulo="Início">
-      <Titulo sub="Conte seu objetivo, revise as habilidades e encontre uma aliada.">Olá, {perfil.apelido.split(" ")[0]}</Titulo>
+    <Pagina titulo="Encontrar uma aliada">
+      <Titulo sub="Conte seu objetivo, revise as habilidades e encontre uma aliada.">Encontre sua aliada</Titulo>
       {pro.available && !pro.habilidades?.length && <p className="mb-6 rounded-xl bg-superficie p-4 text-sm">Escolha suas habilidades para poder ser indicada. <Link to="/meu-perfil#ajudar" className="text-link">Escolher habilidades</Link></p>}
       {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
-      <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
-        <div className="space-y-6">
+      <div className="space-y-6">
           <ObjetivoConversa pro={pro} aoEncontrar={load} />
 
           {atual && (
@@ -157,45 +125,7 @@ export default function InicioProfissional() {
               />
             </section>
           )}
-        </div>
 
-        <aside className="space-y-6">
-          {pedido && convitePedido && (
-            <section aria-labelledby="avaliar" className="space-y-4 rounded-3xl border-2 border-destaque p-5">
-              <h2 id="avaliar" className="text-lg">
-                Como foi sua conversa com {nomeDe(convitePedido.sender_id === eu ? convitePedido.recipient_id : convitePedido.sender_id)}?
-              </h2>
-              <AvaliacaoConversa invite={convitePedido.id} aoTerminar={load} />
-              <button type="button" onClick={lembrarDepois} className="text-sm font-semibold text-destaque underline underline-offset-4">
-                Lembrar depois
-              </button>
-            </section>
-          )}
-          <section aria-labelledby="esperando" className="rounded-3xl bg-superficie p-5">
-            <h2 id="esperando" className="flex items-center gap-2 text-lg">
-              Convites esperando sua resposta
-              {esperando.length > 0 && (
-                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-coral px-2 text-sm text-vinho-noite">
-                  {esperando.length}
-                </span>
-              )}
-            </h2>
-            {esperando.length ? (
-              <ul className="mt-3 space-y-2">
-                {esperando.slice(0, 3).map((x) => (
-                  <li key={x.id}><ConviteRecebido convite={x} nome={nomeDe(x.sender_id)} depois={load}/></li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-suave">Nenhum convite novo.</p>
-            )}
-            {esperando.length > 0 && (
-              <div className="mt-4">
-                <BotaoLink to="/minhas-aliancas" variante="secundario">Ver minhas alianças</BotaoLink>
-              </div>
-            )}
-          </section>
-        </aside>
       </div>
     </Pagina>
   );

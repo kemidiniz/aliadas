@@ -23,9 +23,9 @@ export function Pagina({ titulo, children }: { titulo: string; children: ReactNo
   return <div className={`${CONTAINER} py-8 sm:py-10`}>{children}</div>;
 }
 
-// Largura de leitura dentro do container, alinhada à esquerda (sem centralizar)
-export const Leitura = ({ children }: { children: ReactNode }) => <div className="max-w-[720px]">{children}</div>;
-export const Formulario = ({ children }: { children: ReactNode }) => <div className="max-w-[760px]">{children}</div>;
+// Textos e formulários ocupam o mesmo container das demais páginas.
+export const Leitura = ({ children }: { children: ReactNode }) => <div className="w-full">{children}</div>;
+export const Formulario = ({ children }: { children: ReactNode }) => <div className="w-full">{children}</div>;
 
 export function Titulo({
   children,

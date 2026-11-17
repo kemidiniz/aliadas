@@ -3,7 +3,8 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { Caixinha, CampoTexto } from "../components/Campo";
 import { Botao } from "../components/Botao";
-import { Aviso, Carregando } from "../components/Aviso";
+import { MaisHistorico, useHistorico } from "../components/Historico";
+import { Aviso } from "../components/Aviso";
 import { useToast } from "../components/Toast";
 import { mensagemAmigavel } from "../lib/erros";
 
@@ -17,14 +18,14 @@ export const PERMISSOES = {
   ver_ia_automacoes: "Ver IA e automações",
 } as const;
 const DESCRICOES = {
- ver_visao_geral: "Mostra os indicadores e onde faltam habilidades na comunidade.",
+ ver_visao_geral: "Mostra os indicadores gerais da comunidade.",
  avaliar_perfis: "Permite consultar participantes e pausar ou reativar contas.",
  tratar_denuncias: "Permite consultar denúncias e acompanhar o tratamento.",
  ver_feedback: "Mostra avaliações das conversas, feedback e dúvidas do site.",
  ver_ia_automacoes: "Mostra execuções da IA, consumo, erros e exportações.",
 };
 type Permissao = keyof typeof PERMISSOES;
-type Pessoa = { id: string; name: string; email: string | null } & Record<Permissao, boolean>;
+type Pessoa = { id: string; name: string; email: string | null; status?: string; situacao?: string; area_principal?: string; habilidades?: string[]; available?: boolean } & Record<Permissao, boolean>;
 type Registro = {
   id: string;
   action: string;
@@ -62,18 +63,18 @@ function VerId({ id }: { id: string }) {
 export default function Acessos() {
   const { adminAccess } = useAuth();
   const toast = useToast();
-  const [embaixadoras, setEmbaixadoras] = useState<Pessoa[] | null>(null);
   const [auditoria, setAuditoria] = useState<Registro[]>([]);
   const [busca, setBusca] = useState("");
   const [resultados, setResultados] = useState<Pessoa[] | null>(null);
   const [escolhida, setEscolhida] = useState<Pessoa | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
+  const historico = useHistorico();
+  const buscaHistorico = useHistorico();
 
   async function carregar() {
-    const [e, a] = await Promise.all([supabase.rpc("mvp_admin_ambassadors"), supabase.rpc("mvp_admin_audit")]);
-    if (e.error || a.error) return setErro("Não foi possível consultar os acessos agora.");
-    setEmbaixadoras(e.data as Pessoa[]);
+    const a = await supabase.rpc("mvp_admin_audit");
+    if (a.error) return setErro("Não foi possível consultar os acessos agora.");
     setAuditoria(a.data as Registro[]);
   }
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function Acessos() {
   }, [adminAccess.principal]);
 
   async function buscar(ev: FormEvent) {
-    ev.preventDefault();
+    ev.preventDefault(); buscaHistorico.recolher();
     if (busca.trim().length < 2) return setErro("Digite ao menos 2 letras do nome ou do e-mail.");
     setErro("");
     setEscolhida(null);
@@ -113,34 +114,9 @@ export default function Acessos() {
   if (!adminAccess.principal) return <Aviso tipo="erro">Somente a administradora principal gerencia acessos.</Aviso>;
 
   return (
-    <section className="max-w-[760px] space-y-10">
+    <section className="w-full space-y-10">
       <div>
-        <h2 className="mb-3 text-xl">Embaixadoras com acesso</h2>
-        {!embaixadoras ? (
-          <Carregando />
-        ) : !embaixadoras.length ? (
-          <p className="text-sm text-suave">Ninguém tem acesso ao painel além de você.</p>
-        ) : (
-          <ul className="space-y-3">
-            {embaixadoras.map((p) => (
-              <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-linha p-4">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <p className="font-semibold">
-                    {p.name} <span className="font-normal text-suave">· {p.email ?? "sem e-mail"}</span>
-                  </p>
-                  <Etiquetas p={p} />
-                </div>
-                <Botao variante="secundario" onClick={() => setEscolhida({ ...p })} aria-label={`Editar acessos de ${p.name}`}>
-                  Editar
-                </Botao>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div>
-        <h2 className="mb-3 text-xl">Dar acesso</h2>
+        <h2 className="mb-2 text-xl">Participantes e acessos</h2><p className="mb-5 text-sm text-suave">Busque uma participante para pausar ou reativar a conta e gerenciar suas permissões. Só a administradora principal pode conceder ou revogar acessos.</p>
         <form onSubmit={buscar} className="flex flex-wrap items-start gap-3" noValidate>
           <div className="min-w-0 flex-1">
             <CampoTexto
@@ -158,21 +134,32 @@ export default function Acessos() {
         {resultados && (
           <ul className="mt-4 space-y-2" aria-label="Resultados da busca">
             {!resultados.length && <li className="text-sm text-suave">Ninguém encontrado.</li>}
-            {resultados.map((p) => (
+            {resultados.slice(0,buscaHistorico.limite).map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-linha p-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{p.name}</p>
                   <p className="text-sm text-suave">{p.email ?? "sem e-mail"}</p>
+                  <p className="mt-1 text-sm text-suave">{["pendente","aprovado"].includes(p.status ?? "aprovado") ? "Conta ativa" : "Conta pausada ou restrita"}</p>
+                  <Etiquetas p={p} />
                   <VerId id={p.id} />
                 </div>
+                <Botao variante="secundario" disabled={ocupado} onClick={async()=>{
+                  const active=!["pendente","aprovado"].includes(p.status ?? "aprovado");
+                  if(!window.confirm(`${active?"Reativar":"Pausar"} a conta de ${p.name}?`))return;
+                  setOcupado(true);const {error}=await supabase.rpc("mvp_admin_set_active",{target:p.id,active});setOcupado(false);
+                  if(error)return toast(mensagemAmigavel(error),"erro");
+                  setResultados(lista=>lista?.map(x=>x.id===p.id?{...x,status:active?"aprovado":"pausado"}:x)??null);
+                }}>{["pendente","aprovado"].includes(p.status??"aprovado")?"Pausar conta":"Reativar conta"}</Botao>
                 <Botao variante="discreto" onClick={() => setEscolhida({ ...p })}>
-                  Escolher
+                  Gerenciar acessos
                 </Botao>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {resultados && <MaisHistorico total={resultados.length} {...buscaHistorico} />}
 
       {escolhida && (
         <div role="region" aria-label={`Acessos de ${escolhida.name}`} className="space-y-4 rounded-2xl border-2 border-destaque p-5">
@@ -204,7 +191,7 @@ export default function Acessos() {
         <summary className="cursor-pointer font-semibold">Auditoria de concessões e revogações</summary>
         {auditoria.length ? (
           <ul className="mt-4 space-y-3">
-            {auditoria.map((a) => {
+            {auditoria.slice(0,historico.limite).map((a) => {
               const perms = CHAVES.filter((k) => a.permissions?.[k]).map((k) => PERMISSOES[k]);
               if (a.permissions?.review_profiles) perms.push(PERMISSOES.avaliar_perfis);
               if (a.permissions?.handle_reports) perms.push(PERMISSOES.tratar_denuncias);
@@ -220,6 +207,7 @@ export default function Acessos() {
         ) : (
           <p className="mt-3 text-sm text-suave">Nenhuma ação registrada.</p>
         )}
+        <MaisHistorico total={auditoria.length} {...historico} />
       </details>
     </section>
   );

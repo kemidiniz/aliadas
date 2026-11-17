@@ -106,7 +106,7 @@ export function Vazio({ titulo, children }: { titulo: string; children?: ReactNo
         <span className="absolute right-0 top-0 h-14 w-14 rounded-full border-2 border-coral" />
       </span>
       <p className="font-titulo text-lg font-semibold">{titulo}</p>
-      {children && <div className="mt-2 max-w-sm text-suave">{children}</div>}
+      {children && <div className="mt-2 text-suave">{children}</div>}
     </div>
   )
 }

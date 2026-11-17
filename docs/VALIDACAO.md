@@ -115,3 +115,9 @@ Testes locais: build/TypeScript, SQL/RLS, contratos de IA, worker Deno sem rede 
 No instrumento CSV, empates do plano B conservam a ordem do pool para tornar as duas rodadas repetíveis, pois o arquivo pedido não contém carga real de convites. Em produção, o banco usa menos convites recentes e sorteio. Manter o pool/ordem iguais nas rodadas e declarar essa diferença ao comparar; não atribuir à IA um ganho causado só por desempate diferente.
 
 Consulta adicional em produção em 17/11: Gemini reconheceu a chave/modelo `gemini-2.5-flash-lite` com HTTP 200 no endpoint de metadados e suporte a `generateContent`. Não houve prompt, geração ou dados de participantes. A função temporária foi removida. Esse diagnóstico **não conta** entre as três execuções reais da automação nem entre os vinte casos humanos.
+
+## Feedback do site como evidência complementar (040–042)
+
+O formulário agora mede clareza do fluxo, adequação percebida das habilidades da IA e facilidade de acompanhar convites. Há notas de 1 a 5 e opções não aplicáveis; as médias usam só notas válidas e mostram seu denominador. Os valores não aplicáveis têm contagens separadas, e respostas antigas não são preenchidas artificialmente.
+
+Esse feedback mede experiência geral, não o julgamento dos vinte casos por três avaliadoras em duas rodadas. Para comprovar casos, continuar usando a planilha identificada por caso/rodada/avaliadora e o resultado efetivo da IA. A percepção positiva não substitui verificação da relevância, do catálogo e da privacidade. Ver INTERFACE-E-USABILIDADE.md para as perguntas, regras e exportação sem contatos/texto aberto.

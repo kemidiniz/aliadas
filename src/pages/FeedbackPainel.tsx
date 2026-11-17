@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
 import { Carregando } from "../components/Aviso";
 import { useToast } from "../components/Toast";
+import { PERGUNTAS_USABILIDADE, medidaParaCsv, respostaUsabilidade } from "../lib/feedbackUsabilidade";
+import { MaisHistorico, RespostaAberta, useHistorico } from "../components/Historico";
 import { baixarCsv } from "./IAAutomacoes";
 
 type Linha = {
@@ -17,6 +19,9 @@ type Linha = {
   mensagem: string | null;
   status: string;
   email: string | null;
+  clareza_fluxo: string | null;
+  adequacao_ia: string | null;
+  acompanhar_convites: string | null;
 };
 type Metricas = {
   por_tipo: Record<string, number>;
@@ -26,6 +31,7 @@ type Metricas = {
   problemas_por_pagina: Record<string, number>;
   novos: number;
   respondidos: number;
+  usabilidade?: Record<string,{media:number|null;notas:number;positivas:number;nao_usei:number;sem_sugestoes:number;nao_cheguei:number}>;
 };
 const TIPOS: Record<string, string> = { duvida: "Dúvida", avaliacao: "Avaliação", problema: "Problema", indicacao: "Indicação (antiga)" };
 const CONECTOU: Record<string, string> = { sim: "Sim", em_parte: "Em parte", nao: "Não" };
@@ -39,6 +45,7 @@ export default function FeedbackPainel() {
   const [linhas, setLinhas] = useState<Linha[] | null>(null);
   const [tipo, setTipo] = useState("");
   const [status, setStatus] = useState("");
+  const historico = useHistorico(`${mes}:${tipo}:${status}`);
   const [emails, setEmails] = useState<Record<string, boolean>>({});
   const [erro, setErro] = useState("");
 
@@ -51,7 +58,7 @@ export default function FeedbackPainel() {
       supabase.rpc("mvp_feedback_metrics", { mes: `${mes}-01` }),
       supabase
         .from("feedback")
-        .select("id,created_at,tipo,nota_facilidade,encontrou_aliadas,problema_pagina,mudaria,problema_descricao,mensagem,status,email")
+        .select("id,created_at,tipo,nota_facilidade,encontrou_aliadas,problema_pagina,mudaria,problema_descricao,mensagem,status,email,clareza_fluxo,adequacao_ia,acompanhar_convites")
         .gte("created_at", ini.toISOString())
         .lt("created_at", fim.toISOString())
         .order("created_at", { ascending: false }),
@@ -112,6 +119,10 @@ export default function FeedbackPainel() {
               </div>
             ))}
           </dl>
+          <section aria-labelledby="medidas-usabilidade"><h3 id="medidas-usabilidade" className="mb-2 text-xl">Usabilidade e percepção da IA</h3>
+            <p className="mb-4 text-sm text-suave">Médias de 1 a 5, calculadas apenas com respostas que deram nota. Uso não realizado e ausência de sugestões ficam separados. São percepções das participantes, sem substituir a validação dos casos da IA. Os indicadores são do mês; os filtros abaixo alteram a lista e o CSV.</p>
+            <dl className="grid gap-4 lg:grid-cols-3">{PERGUNTAS_USABILIDADE.map(q=>{const u=m?.usabilidade?.[q.campo];return <div key={q.campo} className="space-y-2 rounded-xl border border-linha p-4"><dt className="text-sm text-suave">{q.titulo}</dt><dd className="font-semibold">{u?.notas ? `${String(u.media).replace(".",",")} de 5 · ${u.notas} ${u.notas===1?"nota":"notas"}` : SEM}</dd>{!!u?.notas && <dd className="text-sm">{u.positivas} com nota 4 ou 5 ({Math.round(100*u.positivas/u.notas)}%)</dd>}{u && <dd className="text-sm text-suave">{q.campo==="adequacao_ia" ? `Não usaram IA: ${u.nao_usei} · Sem sugestões: ${u.sem_sugestoes}` : q.campo==="acompanhar_convites" ? `Não chegaram à etapa: ${u.nao_cheguei}` : ""}</dd>}</div>;})}</dl>
+          </section>
           <div className="flex flex-wrap items-end gap-4">
             <label className="space-y-2">
               <span className="block text-sm font-semibold">Tipo</span>
@@ -134,19 +145,19 @@ export default function FeedbackPainel() {
               type="button"
               disabled={!visiveis.length}
               onClick={() =>
-                baixarCsv("feedback", ["data", "tipo", "nota", "conseguiu_se_conectar", "pagina", "texto", "status"],
-                  visiveis.map((l) => [l.created_at, l.tipo, l.nota_facilidade ?? "", l.encontrou_aliadas ?? "", l.problema_pagina ?? "", texto(l), l.status]))
+                baixarCsv("feedback", ["registro", "data", "tipo", "nota", "conseguiu_se_conectar", "status", "clareza_do_fluxo", "adequacao_da_IA", "acompanhar_convites"],
+                  visiveis.map((l) => [l.id, l.created_at, l.tipo, l.nota_facilidade ?? "", l.encontrou_aliadas ?? "", l.status, medidaParaCsv(l.clareza_fluxo), medidaParaCsv(l.adequacao_ia), medidaParaCsv(l.acompanhar_convites)]))
               }
               className="inline-flex h-12 items-center rounded-xl border-2 border-destaque px-5 font-semibold text-destaque hover:bg-superficie disabled:opacity-50"
             >
-              Exportar CSV
+              Exportar medidas (CSV)
             </button>
           </div>
           {!visiveis.length ? (
             <p className="text-sm text-suave">{SEM}</p>
           ) : (
             <ul className="space-y-3">
-              {visiveis.map((l) => (
+              {visiveis.slice(0,historico.limite).map((l) => (
                 <li key={l.id} className="space-y-2 rounded-2xl border border-linha p-4 text-sm">
                   <p className="text-suave">
                     {new Date(l.created_at).toLocaleString("pt-BR")} · {TIPOS[l.tipo] ?? l.tipo}
@@ -154,7 +165,8 @@ export default function FeedbackPainel() {
                     {l.encontrou_aliadas ? ` · conectou: ${CONECTOU[l.encontrou_aliadas]}` : ""}
                     {l.problema_pagina ? ` · ${l.problema_pagina}` : ""} · {l.status === "respondido" ? "Respondido" : l.status === "novo" ? "Novo" : l.status}
                   </p>
-                  {texto(l) && <p className="break-words">{texto(l)}</p>}
+                  {l.tipo==="avaliacao" && <dl className="space-y-1">{PERGUNTAS_USABILIDADE.map(q=><div key={q.campo}><dt className="inline font-semibold">{q.titulo} </dt><dd className="inline">{respostaUsabilidade(l[q.campo])}</dd></div>)}</dl>}
+                  {texto(l) && <RespostaAberta texto={texto(l)} />}
                   <div className="flex flex-wrap items-center gap-4">
                     {l.email &&
                       (emails[l.id] ? (
@@ -174,6 +186,7 @@ export default function FeedbackPainel() {
               ))}
             </ul>
           )}
+          <MaisHistorico total={visiveis.length} {...historico} />
         </>
       )}
     </section>

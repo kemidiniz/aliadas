@@ -83,7 +83,7 @@ export type Feedback = {
 // sugestões de áreas; quem quiser pode escrever outra
 
 export const PAGINAS_DO_SITE = [
-  'Início',
+  'Encontrar uma aliada',
   'Alianças',
   'Perfil',
   'Entrar',

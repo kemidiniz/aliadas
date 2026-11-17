@@ -292,7 +292,7 @@ try {
   await p.getByRole("link",{name:"Encontrar minha aliada",exact:true}).first().click();
   console.log("PASSOU: /sobre logada mostra landing e CTA leva ao Início");
   await p.goto(base);
-  await p.getByRole("heading", { level: 1, name: /Olá/ }).waitFor();
+  await p.getByRole("heading", { level: 1, name: "Encontre sua aliada" }).waitFor();
   // Texto livre -> IA sugere habilidades -> revisão humana -> só então busca.
   const objetivo = p.getByRole("textbox", { name: "Qual é o objetivo da sua próxima conversa?" });
   assert.equal(await objetivo.inputValue(), "");
@@ -361,8 +361,8 @@ try {
   await p.keyboard.press("Escape");
   assert.equal(await p.getByRole("menu").count(), 0);
   console.log("PASSOU: menu de bloqueio e denúncia acessível pelo teclado");
-  await p.getByRole("button", { name: /Avaliar a conversa/ }).click();
-  await p.getByText("Vocês conversaram?").waitFor();
+  await p.getByRole("button", { name: "Atualizar situação da conversa", exact:true }).click();
+  await p.getByText("Vocês já conversaram?").waitFor();
   await p.locator("label.chip", { hasText: "Sim" }).click();
   await p.getByRole("button", { name: "5", exact: true }).click();
   await p.locator("label.chip", { hasText: "Escuta" }).click();
@@ -371,36 +371,36 @@ try {
   await p.getByText("Obrigada por contar!").waitFor();
   assert.deepEqual(feedback, { invite: invite.id, resposta: "sim", utility: 5, marcas: ["escuta", "dica"] });
   console.log("PASSOU: avaliação com 'Vocês conversaram?', nota e marcas");
-  // cartão no Início 5 dias depois do aceite
+  // O lembrete está em Alianças e nunca bloqueia Encontrar.
   pedidos = [{ id: "50000000-0000-0000-0000-000000000001", invite_id: invite.id }];
-  await p.goto(base + "/");
-  await p.getByRole("heading", { name: "Como foi sua conversa com aliada de teste?" }).waitFor();
+  await p.goto(base + "/minhas-aliancas");
+  await p.getByRole("heading", { name: "Como está essa conversa?" }).waitFor();
   await p.getByRole("button", { name: "Lembrar depois" }).click();
   await p.getByText("Combinado, perguntamos de novo em 3 dias.").waitFor();
-  assert.equal(calls.filter((x) => x.endpoint === "mvp_feedback_later").at(-1).body.pedido, pedidos[0]?.id ?? "50000000-0000-0000-0000-000000000001");
-  await p.getByRole("heading", { name: /Como foi sua conversa/ }).waitFor({ state: "detached" });
-  console.log("PASSOU: cartão 'Como foi sua conversa' no Início e 'Lembrar depois'");
-  // Convite recebido: revisão e resposta diretamente no Início, sem contato antecipado.
+  await p.getByRole("heading", { name: "Como está essa conversa?" }).waitFor({state:"detached"});
+  assert(calls.some(c=>c.endpoint==="mvp_feedback_later"));
+  console.log("PASSOU: lembrete não presume encontro e aparece em Alianças");
   invites=[{...invite,sender_id:other,recipient_id:uid,state:"pendente"}];
   await p.goto(base+"/");
+  await p.getByRole("heading",{name:"Encontre sua aliada",exact:true}).waitFor();
+  assert.equal(await p.getByText("Convites esperando sua resposta",{exact:true}).count(),0);
+  assert.equal(await p.getByRole("button",{name:"Aceitar convite",exact:true}).count(),0);
+  assert.equal(await p.getByRole("button",{name:/Descobrir habilidades|Escolher habilidades sem IA/}).count(),1,"busca disponível mesmo com avaliação pendente");
+  await p.goto(base+"/minhas-aliancas");
   await p.getByRole("button",{name:"Aceitar convite",exact:true}).waitFor();
   const contatosAntes=calls.filter(c=>c.endpoint==="mvp_shared_contacts").length;
   await p.getByText("Ver mensagem",{exact:true}).click();
-  await p.getByText("mensagem de teste autorizada",{exact:true}).waitFor();
-  await p.getByText("Apoio profissional de teste",{exact:true}).waitFor();
+  await p.locator("blockquote").filter({hasText:"mensagem de teste autorizada"}).waitFor();
   assert.equal(calls.filter(c=>c.endpoint==="mvp_shared_contacts").length,contatosAntes);
-  const { mkdir: pastaConvites }=await import("node:fs/promises");
-  await pastaConvites(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B5"}`,{recursive:true});
-  for(const width of [390,1440]) {await p.setViewportSize({width,height:1000});await p.evaluate(()=>scrollTo(0,0));await p.waitForTimeout(200);await p.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B5"}/convite-${width}.png`,fullPage:true});}
   await p.getByRole("button",{name:"Aceitar convite",exact:true}).click();
   await p.getByText("Convite aceito. Os contatos já aparecem no cartão.",{exact:true}).waitFor();
   assert.equal(calls.filter(c=>c.endpoint==="mvp_respond").at(-1).body.accept,true);
   invites=[{...invite,sender_id:other,recipient_id:uid,state:"pendente"}];
-  await p.goto(base+"/");
+  await p.goto(base+"/minhas-aliancas");
   await p.getByRole("button",{name:"Agora não",exact:true}).click();
   await p.getByText("Convite recusado.",{exact:true}).waitFor();
   assert.equal(calls.filter(c=>c.endpoint==="mvp_respond").at(-1).body.accept,false);
-  console.log("PASSOU: convite recebido é revisado, aceito ou recusado no Início sem contatos antecipados");
+  console.log("PASSOU: convites respondidos apenas em Alianças, sem duplicação na busca nem contato antecipado");
   invites = [{ ...invite, state: "expirado", horario_confirmado: null }];
   await p.goto(base + "/minhas-aliancas");
   await p.getByRole("tab", { name: /Concluídas/ }).click();
@@ -438,7 +438,7 @@ try {
   let avisoSaida = false;
   const resolverAviso = async dialog => { avisoSaida = true; if (dialog.type() === "beforeunload") await dialog.accept(); else await dialog.dismiss(); };
   p.on("dialog", resolverAviso);
-  await p.getByRole("navigation", { name: "Principal" }).first().getByRole("link", { name: "Início", exact: true }).click();
+  await p.getByRole("navigation", { name: "Principal" }).first().getByRole("link", { name: "Encontrar", exact: true }).click();
   await p.waitForTimeout(150);
   assert(avisoSaida, "navegação interna exige confirmação");
   assert(new URL(p.url()).pathname === "/meu-perfil");
@@ -468,7 +468,7 @@ try {
   assert.equal(savedProfile.c.email, "contato@exemplo.invalid");
   assert.notEqual(savedProfile.c.email, session.user.email);
   assert.deepEqual(savedProfile.p.can_help, ["entrevista"]);
-  assert.equal(savedProfile.c.meet,"", "Meet não autorizado é limpo ao salvar");
+  assert(!("meet" in savedProfile.c), "campo Meet é omitido para preservar histórico no banco");
   console.log("PASSOU: perfil com seções abertas, erro ao lado do campo, sem sala nem grade e sem consentimento automático de IA");
   await p.getByRole("heading", { name: "Como você pode ajudar" }).waitFor();
   for (const fora of ["Quero conversar sobre", "Como você quer participar agora?"])
@@ -540,7 +540,7 @@ try {
   await p.getByRole("dialog", { name: "Ajuste o enquadramento" }).waitFor();
   await p.getByRole("slider", { name: "Zoom" }).fill("1.5");
   await p.getByRole("button", { name: "Usar esta foto" }).click();
-  await p.getByRole("img", { name: "Prévia da foto" }).waitFor();
+  await p.getByRole("img", { name: "Foto de perfil" }).waitFor();
   assert(calls.some(c=>c.endpoint==="mvp_save_photo"),"foto salva mesmo com e-mail incompleto no formulário");
   assert.equal(uploads.length, 1);
   assert.equal(uploads[0].tipo, "image/webp");
@@ -623,7 +623,7 @@ try {
   await p.getByText("Escolha uma opção.").first().waitFor();
   await p.getByRole("combobox", { name: "Você hoje" }).selectOption("estudo");
   await p.getByRole("combobox", { name: "Sua área de atuação ou estudo" }).selectOption("decidindo");
-  await p.getByRole("checkbox", { name: /Sou mulher cis/ }).check();
+  await p.getByRole("checkbox", { name: /Faço parte do público/ }).check();
   const antesNovo = calls.filter((x) => x.endpoint === "mvp_save_profile").length;
   await p.getByRole("button", { name: "Entrar na aliadas" }).click();
   await p.waitForURL(base + "/");
@@ -703,3 +703,5 @@ try {
 } finally {
   await browser.close();
 }
+
+await import('./ajustes-browser.mjs');

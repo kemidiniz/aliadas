@@ -43,7 +43,6 @@ function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
   if (d.channels.includes("whatsapp") && !/^\+[1-9][0-9]{7,14}$/.test(c.whatsapp ?? ""))
     e.whatsapp = "Use o código do país, sem espaços. Ex.: +5511999999999";
   if (d.channels.includes("email") && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email ?? "")) e.email = "Confira o e-mail.";
-  if (d.channels.includes("meet") && !/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}(?:[?][^\s]*)?$/.test(c.meet ?? "")) e.meet = "Cole um link válido do Google Meet.";
   if (d.available && !d.habilidades.length) e.habilidades = "Escolha uma habilidade ou desative a disponibilidade para receber convites.";
   if (completar) {
     if (!d.channels.length) e.channels = "Escolha pelo menos um contato.";
@@ -92,7 +91,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       if (pr.error || co.error || info.error) { toast("Não foi possível carregar seu perfil. Atualize a página.", "erro"); return; }
       const p = pr.data as ProProfile | null;
       const salvo = {
-        d: p ? { nome: (info.data?.apelido ?? ""), situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels, ai_consent: p.ai_consent && p.ai_consent_version === "habilidades-v1", ai_consent_version: "habilidades-v1", available: p.available } : { ...vazio, nome: (info.data?.apelido ?? "") },
+        d: p ? { nome: (info.data?.apelido ?? ""), situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels.filter(c => c in CHANNELS_PRO), ai_consent: p.ai_consent && p.ai_consent_version === "habilidades-v1", ai_consent_version: "habilidades-v1", available: p.available } : { ...vazio, nome: (info.data?.apelido ?? "") },
         c: (co.data as ProContacts) ?? { linkedin: "", whatsapp: "", email: "", meet: null, nome_completo: "" },
         termos: Boolean(p),
       };
@@ -103,7 +102,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
         const r = raw ? JSON.parse(raw) : null;
         // Só os campos do formulário. Senhas e credenciais nunca entram no rascunho.
         if (r?.d && typeof r.d.nome === "string" && Array.isArray(r.d.interesses) && Array.isArray(r.d.can_help) && Array.isArray(r.d.channels) && r.c && typeof r.termos === "boolean") {
-          restaurado = { d: { ...salvo.d, ...r.d, ai_consent_version: "habilidades-v1", ai_consent: r.d.ai_consent === true && r.d.ai_consent_version === "habilidades-v1" }, c: { ...salvo.c, ...r.c }, termos: r.termos };
+          restaurado = { d: { ...salvo.d, ...r.d, ai_consent_version: "habilidades-v1", channels: r.d.channels.filter((c: string) => c in CHANNELS_PRO), ai_consent: r.d.ai_consent === true && r.d.ai_consent_version === "habilidades-v1" }, c: { ...salvo.c, ...r.c }, termos: r.termos };
           setRecuperado(JSON.stringify(restaurado) !== JSON.stringify(salvo));
         }
       } catch { sessionStorage.removeItem(chaveRascunhoPerfil(uid)); }
@@ -191,7 +190,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     setBusy(true);
     try {
       const path = foto ? await enviarFoto(session!.user.id, foto) : semFoto ? null : (perfil?.foto_path ?? null);
-      const contato = (k: "linkedin" | "whatsapp" | "email" | "meet") => (d.channels.includes(k) ? c[k] : "");
+      const contato = (k: "linkedin" | "whatsapp" | "email") => (d.channels.includes(k) ? c[k] : "");
       const { error } = await supabase.rpc("mvp_save_profile", {
         p: {
           name: d.nome,
@@ -206,7 +205,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           available: d.available,
         },
         // Disponibilidade histórica é preservada; os contatos seguem as permissões atuais.
-        c: { linkedin: contato("linkedin"), whatsapp: contato("whatsapp"), email: contato("email"), meet: contato("meet"), nome_completo: c.nome_completo ?? "" },
+        c: { linkedin: contato("linkedin"), whatsapp: contato("whatsapp"), email: contato("email"), nome_completo: c.nome_completo ?? "" },
         terms: termos,
       });
       if (error) throw error;
@@ -268,7 +267,6 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           {d.channels.includes("email") && (
             <CampoTexto rotulo="E-mail para contato" type="email" value={c.email ?? ""} maxLength={254} erro={err("email")} onChange={(x) => setC({ ...c, email: x.target.value })} />
           )}
-          {d.channels.includes("meet") && <CampoTexto rotulo="Google Meet (opcional)" type="url" placeholder="https://meet.google.com/abc-defg-hij" value={c.meet ?? ""} maxLength={250} erro={err("meet")} onChange={e=>setC({...c,meet:e.target.value})} ajuda="Você cria o link manualmente. Só aparece se você autorizar este canal e houver aceite mútuo."/>}
         </div>
       </div>
     ),
@@ -281,7 +279,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
     termos: (
       <>
         <Caixinha marcado={termos} aoMudar={setTermos} obrigatoria>
-          Sou mulher cis, trans ou pessoa não binária e aceito os <Link to="/termos-e-privacidade#termos" className="text-link">Termos de uso</Link> e a{" "}
+          Faço parte do público da aliadas e aceito os <Link to="/termos-e-privacidade#termos" className="text-link">Termos de uso</Link> e a{" "}
           <Link to="/termos-e-privacidade#privacidade" className="text-link">Privacidade</Link>.
         </Caixinha>
         {err("termos") && <p className="text-sm text-erro" role="alert">{err("termos")}</p>}

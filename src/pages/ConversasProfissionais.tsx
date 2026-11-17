@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { nomeHabilidade } from "../lib/habilidades";
+import { MaisHistorico, useHistorico } from "../components/Historico";
 import { Pagina, Titulo } from "../components/Pagina";
 import { Botao, BotaoLink } from "../components/Botao";
 import { CampoArea, rotuloCampo } from "../components/Campo";
@@ -6,7 +8,6 @@ import { Avatar } from "../components/Avatar";
 import { Abas, Badge, CartaoCarregando, Vazio, type EstadoConversa } from "../components/ui";
 import {
   IconeEmail,
-  IconeConversas,
   IconeLinkedin,
   IconeMais,
   IconeWhatsapp,
@@ -34,12 +35,14 @@ export default function ConversasProfissionais() {
   const [invites, setInvites] = useState<ProInvite[] | null>(null);
   const [cards, setCards] = useState<ProCard[]>([]);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [pedidos, setPedidos] = useState<{id:string;invite_id:string}[]>([]);
   const [erro, setErro] = useState("");
   const [aba, setAba] = useState<Aba>("recebidos");
   const escolhida = useRef(false);
+  const historico = useHistorico(aba);
 
   async function load() {
-    const [i, c, f] = await Promise.all([
+    const [i, c, f, lembretes] = await Promise.all([
       supabase
         .from("conversation_invites")
         .select("*")
@@ -47,6 +50,7 @@ export default function ConversasProfissionais() {
         .order("created_at", { ascending: false }),
       supabase.rpc("mvp_cards"),
       supabase.from("conversation_feedback").select("*").eq("author_id", eu),
+      supabase.from("conversation_feedback_requests").select("id,invite_id").is("encerrado_em",null).lte("mostrar_a_partir",new Date().toISOString()),
     ]);
     if (i.error || c.error) {
       setErro("Não foi possível carregar as conversas. Tente novamente.");
@@ -58,6 +62,7 @@ export default function ConversasProfissionais() {
     setInvites(lista);
     setCards(c.data);
     setFeedback(fb);
+    setPedidos(lembretes.data ?? []);
     // abre na aba com algo esperando resposta
     if (!escolhida.current) {
       escolhida.current = true;
@@ -77,6 +82,7 @@ export default function ConversasProfissionais() {
   return (
     <Pagina titulo="Minhas alianças">
       <Titulo sub="Convites, contatos e avaliações em um só lugar.">Minhas alianças</Titulo>
+      <p className="mb-6 text-sm text-suave">Quando puder, conte como está a conversa. Você pode continuar encontrando outras aliadas.</p>
       {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
       {!invites ? (
         <CartaoCarregando />
@@ -100,20 +106,15 @@ export default function ConversasProfissionais() {
           {!visiveis.length ? (
             <Vazio titulo={aba === "concluidas" ? "Nenhuma conversa concluída ainda." : "Nada nesta aba agora."} />
           ) : (
-            <div className={`grid items-start gap-6 ${visiveis.length > 1 ? "lg:grid-cols-2" : ""}`}>
-              {visiveis.map((i) => {
-                const outra = i.sender_id === eu ? i.recipient_id : i.sender_id;
-                return (
-                  <Conversa
-                    key={i.id}
-                    invite={i}
-                    eu={eu}
-                    card={cards.find((c) => c.id === outra)}
-                    feedback={feedback.find((f) => f.invite_id === i.id)}
-                    reload={load}
-                  />
-                );
+            <div className="space-y-8">
+              {["Hoje", "Últimos 7 dias", "Anteriores"].map(periodo=>{
+                const grupo=visiveis.slice(0,historico.limite).filter(i=>periodoDaAlianca(i.created_at)===periodo);
+                if(!grupo.length)return null;
+                return <section key={periodo} aria-label={`Alianças: ${periodo}`}><h2 className="mb-4 text-lg text-suave">{periodo}</h2><div className={`grid items-start gap-6 ${grupo.length>1?"lg:grid-cols-2":""}`}>
+                  {grupo.map(i=>{const outra=i.sender_id===eu?i.recipient_id:i.sender_id;return <Conversa key={i.id} invite={i} eu={eu} card={cards.find(c=>c.id===outra)} feedback={feedback.find(f=>f.invite_id===i.id)} reload={load} pedido={pedidos.find(p=>p.invite_id===i.id)} />;})}
+                </div></section>;
               })}
+              <MaisHistorico total={visiveis.length} {...historico} />
             </div>
           )}
           <p className="sr-only" aria-live="polite">
@@ -123,6 +124,12 @@ export default function ConversasProfissionais() {
       )}
     </Pagina>
   );
+}
+
+function periodoDaAlianca(data: string) {
+  const formatar = (d: Date) => d.toLocaleDateString("en-CA",{timeZone:"America/Sao_Paulo"});
+  if (formatar(new Date(data)) === formatar(new Date())) return "Hoje";
+  return Date.now()-new Date(data).getTime() <= 7*86400_000 ? "Últimos 7 dias" : "Anteriores";
 }
 
 function grupo(i: ProInvite, eu: string, fb: Feedback[]): Aba {
@@ -159,16 +166,21 @@ function Conversa({
   card,
   feedback,
   reload,
+  pedido,
 }: {
   invite: ProInvite;
   eu: string;
   card?: ProCard;
   feedback?: Feedback;
   reload: () => Promise<void>;
+  pedido?: {id:string};
 }) {
   const toast = useToast();
   const [contatos, setContatos] = useState<(ProContacts & { slots?: string[] }) | null>(null);
   const [busy, setBusy] = useState(false);
+  const [contexto, setContexto] = useState<{description:string;habilidades:string[]}|null>(null);
+  const [contextoBusy,setContextoBusy] = useState(false);
+  const [contextoErro,setContextoErro] = useState(false);
   const [avaliar, setAvaliar] = useState(false);
   const [painel, setPainel] = useState<"" | "bloquear" | "denunciar">("");
   const souRemetente = i.sender_id === eu;
@@ -211,10 +223,10 @@ function Conversa({
   return (
     <article className="space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
       <header className="flex items-start gap-4">
-        <Avatar apelido={nome} tamanho={52} />
+        <Avatar apelido={nome} fotoPath={card?.foto_path} tamanho={52} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg">{nome}</h2>
+            <h3 className="text-lg">{nome}</h3>
             <Badge estado={estado} />
           </div>
           {card && (
@@ -233,12 +245,24 @@ function Conversa({
           {i.goal === "outro" && i.goal_text && <span className="block text-suave">{i.goal_text}</span>}
         </p>
       )}
+      <details className="rounded-xl border border-linha p-4" onToggle={async e=>{
+        if(!e.currentTarget.open || contexto || contextoBusy)return;
+        setContextoBusy(true);setContextoErro(false);
+        const {data,error}=await supabase.rpc("mvp_invite_context",{invite:i.id});
+        if(error)setContextoErro(true);else setContexto(data);
+        setContextoBusy(false);
+      }}><summary className="cursor-pointer text-sm font-semibold">Ver mensagem</summary>
+      {contextoBusy && <p className="mt-3 text-sm text-suave" role="status">Carregando o objetivo…</p>}
+      {contextoErro && <p className="mt-3 text-sm text-erro">Não foi possível abrir o objetivo. Feche e tente novamente.</p>}
+      {contexto?.description && <p className="mt-3 text-sm break-words"><span className="font-semibold">Objetivo: </span>{contexto.description}</p>}
+      {!!contexto?.habilidades?.length && <p className="mt-2 text-sm text-suave">Habilidades: {contexto.habilidades.map(nomeHabilidade).join(" · ")}</p>}
       <blockquote className="rounded-xl bg-superficie px-4 py-3 text-sm break-words">
         <span className="mb-1 block text-xs font-semibold text-suave">
           {souRemetente ? "Sua mensagem" : "Mensagem dela"}
         </span>
         {i.message}
       </blockquote>
+      </details>
 
       {/* Etapa atual: só a ação dela fica aberta */}
       {i.state === "pendente" &&
@@ -269,15 +293,11 @@ function Conversa({
         <>
           <Contatos c={contatos} />
           <p className="text-sm text-suave">Combinem a conversa por onde preferirem.</p>
-          {avaliar && !feedback ? (
-            <AvaliacaoConversa invite={i.id} aoTerminar={reload} />
-          ) : (
-            !feedback && (
-              <button type="button" className="text-sm font-semibold text-destaque underline underline-offset-4" onClick={() => setAvaliar(true)}>
-                Já conversaram? Avaliar a conversa
-              </button>
-            )
-          )}
+          {!feedback && <div className={`space-y-3 ${pedido ? "rounded-xl border border-destaque bg-superficie p-4" : ""}`}>
+            {pedido && <h3 className="font-semibold">Como está essa conversa?</h3>}
+            {avaliar ? <AvaliacaoConversa invite={i.id} aoTerminar={()=>{setAvaliar(false);void reload();}} /> : <button type="button" className="text-sm font-semibold text-destaque underline underline-offset-4" onClick={() => setAvaliar(true)}>Atualizar situação da conversa</button>}
+            {pedido && <button type="button" className="text-sm font-semibold text-destaque underline underline-offset-4" disabled={busy} onClick={()=>rpc("mvp_feedback_later",{pedido:pedido.id},"Combinado, perguntamos de novo em 3 dias.")}>Lembrar depois</button>}
+          </div>}
           {feedback && (
             <p className="text-sm text-suave">
               {feedback.happened ? `Sua avaliação: ${feedback.utility} de 5. Obrigada!` : "Você registrou que a conversa não aconteceu."}
@@ -378,7 +398,6 @@ function Contatos({ c }: { c: ProContacts | null }) {
   const itens = [
     c.linkedin && { href: c.linkedin, rotulo: "LinkedIn", Icone: IconeLinkedin, ext: true },
     c.whatsapp && { href: `https://wa.me/${c.whatsapp.replace(/\D/g, "")}`, rotulo: "WhatsApp", Icone: IconeWhatsapp, ext: true },
-    c.meet && { href:c.meet,rotulo:"Google Meet",Icone:IconeConversas,ext:true },
     c.email && { href: `mailto:${c.email}`, rotulo: "E-mail", Icone: IconeEmail, ext: false },
   ].filter(Boolean) as { href: string; rotulo: string; Icone: typeof IconeEmail; ext: boolean }[];
   return (

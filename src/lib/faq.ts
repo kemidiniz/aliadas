@@ -25,6 +25,8 @@ export const FAQ = [
 
 // Perguntas a mais da página de Ajuda (no máximo 2 frases cada).
 export const FAQ_AJUDA = [
+  { q: "Preciso avaliar para encontrar outra aliada?", a: "Você pode continuar buscando. Em Alianças, conte se vocês já conversaram, ainda não ou não vão conversar; a nota de utilidade aparece só quando a conversa aconteceu." },
+
   ...FAQ,
   {
     q: "Como edito meu perfil?",

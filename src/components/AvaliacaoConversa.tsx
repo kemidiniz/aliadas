@@ -36,13 +36,13 @@ export function AvaliacaoConversa({ invite, aoTerminar }: { invite: string; aoTe
     <div className="space-y-4">
       <EscolhaChips
         nome={`conversaram-${invite}`}
-        rotulo="Vocês conversaram?"
+        rotulo="Vocês já conversaram?"
         valor={resposta}
         aoMudar={setResposta}
         opcoes={[
           { valor: "sim", rotulo: "Sim" },
           { valor: "ainda_nao", rotulo: "Ainda não" },
-          { valor: "nao_vai_rolar", rotulo: "Não vai rolar" },
+          { valor: "nao_vai_rolar", rotulo: "Não vamos conversar" },
         ]}
       />
       {resposta === "sim" && (

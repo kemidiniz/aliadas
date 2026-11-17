@@ -74,22 +74,54 @@ export async function apagarFoto(caminho: string) {
   await supabase.storage.from('fotos').remove([caminho])
 }
 
-// URL assinada (expira em 1 h). O Storage só gera se o RLS permitir.
+// Cache apenas em memória e por 45s; não persiste URLs privadas no navegador.
+// Trocar de conta ou sair invalida também requisições antigas em andamento.
+type Assinada = { url: string; ate: number };
+const fotosAssinadas = new Map<string, Assinada>();
+const fotosEmCurso = new Map<string, Promise<string | null>>();
+let contaFotos: string | undefined;
+let versaoFotos = 0;
+supabase.auth.onAuthStateChange((evento, sessao) => {
+  const conta = sessao?.user.id ?? "";
+  if (evento === "SIGNED_OUT" || (contaFotos !== undefined && contaFotos !== conta)) {
+    fotosAssinadas.clear(); fotosEmCurso.clear(); versaoFotos++;
+  }
+  contaFotos = conta;
+});
+function fotoEmCache(caminho: string) {
+  const foto = fotosAssinadas.get(`${contaFotos ?? ""}:${caminho}`);
+  return foto && foto.ate > Date.now() ? foto.url : null;
+}
+async function assinarFoto(caminho: string) {
+  const anterior = fotoEmCache(caminho);
+  if (anterior) return anterior;
+  const chave = `${contaFotos ?? ""}:${caminho}`;
+  const versao = versaoFotos;
+  const andamento = fotosEmCurso.get(chave);
+  if (andamento) return andamento;
+  const requisicao = (async () => {
+    try {
+      const { data } = await supabase.storage.from('fotos').createSignedUrl(caminho, 3600);
+      if (versao !== versaoFotos) return null;
+      const url = data?.signedUrl ?? null;
+      if (url) fotosAssinadas.set(chave, { url, ate: Date.now() + 45000 });
+      return url;
+    } finally { if (versao === versaoFotos) fotosEmCurso.delete(chave); }
+  })();
+  fotosEmCurso.set(chave, requisicao);
+  return requisicao;
+}
+// O Storage continua validando RLS ao assinar; a URL expira em uma hora.
 export function useFotoUrl(caminho: string | null | undefined) {
-  const [url, setUrl] = useState<string | null>(null)
+  const [foto, setFoto] = useState(() => ({ caminho, versao: versaoFotos, url: caminho ? fotoEmCache(caminho) : null }));
+  const versao = versaoFotos;
   useEffect(() => {
-    let ativo = true
-    setUrl(null)
-    if (!caminho) return
-    supabase.storage
-      .from('fotos')
-      .createSignedUrl(caminho, 3600)
-      .then(({ data }) => {
-        if (ativo) setUrl(data?.signedUrl ?? null)
-      })
-    return () => {
-      ativo = false
-    }
-  }, [caminho])
-  return url
+    let ativo = true;
+    setFoto({ caminho, versao, url: caminho ? fotoEmCache(caminho) : null });
+    if (caminho) void assinarFoto(caminho).then(url => {
+      if (ativo && versao === versaoFotos) setFoto({ caminho, versao, url });
+    }).catch(() => { /* As iniciais continuam visíveis se a imagem falhar. */ });
+    return () => { ativo = false; };
+  }, [caminho, versao]);
+  return foto.caminho === caminho && foto.versao === versaoFotos ? foto.url : null;
 }

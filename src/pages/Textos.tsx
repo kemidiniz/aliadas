@@ -12,7 +12,7 @@ export function TermosEPrivacidade() {
    <p className={p}>A aliadas nasceu na formação em IA Aplicada da {"{reprograma}"}, criada por Kemily Diniz. A {"{reprograma}"} não administra nem patrocina a plataforma.</p>
   </section>
   <section id="termos" className="mt-10 scroll-mt-24"><h2 className="text-2xl text-destaque">Termos de uso</h2>
-      <p className={p}>A aliadas é para mulheres cis e trans e pessoas não binárias de todas as áreas. Para ficar bom para todo mundo, combinamos:</p>
+      <p className={p}>Para nós mulheres. Estes são os combinados da comunidade:</p>
       <ul className="mt-4 list-disc space-y-2 pl-6">
         <li>Respeito sempre. Nada de assédio, preconceito, transfobia, racismo, capacitismo ou qualquer discriminação.</li>
         <li>Conte sua trajetória com verdade. Não invente cargos, empresas ou conquistas.</li>
@@ -37,7 +37,7 @@ export function TermosEPrivacidade() {
       <p className={p}>Você escreve um objetivo profissional e, se autorizar, a IA sugere até três habilidades úteis para alcançá-lo. Você confirma quais fazem sentido. Só então o banco procura uma aliada com essas habilidades, disponível, com canal em comum e sem bloqueios. Você revisa a indicação e decide enviar o convite.</p>
       <p className={p}>Só se você autorizar e, mesmo assim, ela recebe apenas sua situação, área e expressões profissionais do objetivo. Nenhuma informação de candidatas é enviada. Nunca enviamos nomes, contatos, foto ou ids reais. Do objetivo escrito extraímos apenas expressões de um vocabulário profissional fechado, depois de retirar e-mails, telefones, URLs e documentos; o texto original não é enviado ao Google nem guardado nos logs.</p>
       <p className={p}>No plano gratuito do Gemini, o Google pode usar os dados enviados para melhorar seus produtos, conforme a <a className="text-link" href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noreferrer">página oficial de preços</a> e os <a className="text-link" href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noreferrer">termos do Gemini</a>. Você pode retirar a autorização no perfil. Sem consentimento, cota ou disponibilidade da IA, você escolhe habilidades diretamente no menu, sem IA generativa. A busca por pessoas continua disponível. O consentimento é confirmado no perfil ou antes de analisar um objetivo.</p>
-      <p className={p}>E-mails, telefones e links colados no apoio ficam ocultos para a destinatária. Só os canais autorizados no perfil são liberados após aceite mútuo, incluindo Google Meet.</p>
+      <p className={p}>E-mails, telefones e links colados no apoio ficam ocultos para a destinatária. Só os canais autorizados no perfil são liberados após aceite mútuo, por LinkedIn, WhatsApp ou e-mail. Se escolherem uma chamada, combinem o link diretamente entre vocês.</p>
       <p className={p}>Nada é enviado automaticamente à outra participante: você revisa e decide se manda o convite.</p>
       <h3 className={h2}>Feedback</h3>
       <p className={p}>O e-mail que você informa no formulário de feedback é opcional e usado só para responder a sua mensagem. Ele passa pelo Make, que avisa as embaixadoras, e pelo Gmail, de onde sai a resposta.</p>

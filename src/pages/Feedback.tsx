@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom'
 import { useState, type FormEvent } from 'react'
 import { Aviso } from '../components/Aviso'
 import { Botao } from '../components/Botao'
-import { CampoArea, CampoTexto, Escolha } from '../components/Campo'
+import { CampoArea, CampoSelect, CampoTexto, Escolha } from '../components/Campo'
 import { Pagina, Titulo, Leitura } from '../components/Pagina'
 import { errosPorCampo, feedbackAvaliacao, feedbackDuvida, feedbackProblema, LIMITES } from '../lib/esquemas'
 import { FAQ_AJUDA } from '../lib/faq'
 import { mensagemAmigavel } from '../lib/erros'
 import { supabase } from '../lib/supabase'
+import { PERGUNTAS_USABILIDADE } from '../lib/feedbackUsabilidade'
 import { PAGINAS_DO_SITE } from '../lib/tipos'
 
 type Caminho = 'duvida' | 'avaliacao' | 'problema'
@@ -20,6 +21,9 @@ const CAMINHOS: { valor: Caminho; rotulo: string; detalhe: string }[] = [
 ]
 
 const vazio = {
+  clareza_fluxo: "",
+  adequacao_ia: "",
+  acompanhar_convites: "",
   nota_facilidade: 0,
   encontrou_aliadas: '' as '' | 'sim' | 'em_parte' | 'nao',
   mudaria: '',
@@ -114,6 +118,10 @@ export default function FeedbackPagina() {
                     <p className="mt-2 flex justify-between text-sm text-suave"><span>1: muito difícil</span><span>5: muito fácil</span></p>
                     <p className="text-sm text-erro" aria-live="polite">{erros.nota_facilidade}</p>
                   </fieldset>
+                  <section aria-labelledby="experiencia-site" className="space-y-5">
+                    <div><h3 id="experiencia-site" className="text-lg">Sua experiência no site</h3><p className="mt-2 text-sm text-suave">Estas três respostas são opcionais. Avalie apenas as etapas que você usou.</p></div>
+                    {PERGUNTAS_USABILIDADE.map(q => <CampoSelect key={q.campo} rotulo={q.titulo} value={f[q.campo]} onChange={e=>muda(q.campo,e.target.value)} erro={erros[q.campo]} opcoes={[{valor:"",rotulo:"Prefiro não responder"},...[1,2,3,4,5].map(n=>({valor:String(n),rotulo:n===1?q.extremos[0]:n===5?q.extremos[1]:String(n)})),...q.extras]} />)}
+                  </section>
                   <Escolha
                     nome="encontrou"
                     rotulo="Você conseguiu se conectar com alguém?"

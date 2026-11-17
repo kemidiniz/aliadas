@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { abrirFoto, areaDoRecorte, recortarFoto, type FotoAberta, type Enquadramento } from "../lib/fotos";
+import { FotoRedonda } from "./FotoRedonda";
 import { rotuloCampo } from "./Campo";
 
 // Foto de perfil de qualquer lugar: escolher (no celular abre câmera, fototeca e
@@ -91,13 +92,7 @@ export function FotoPerfil({
         onPaste={colar}
         className={`flex flex-wrap items-center gap-4 rounded-2xl border-2 border-dashed p-3 ${arrastando ? "border-destaque bg-superficie" : "border-transparent"}`}
       >
-        {src ? (
-          <img src={src} alt="Prévia da foto" className="h-16 w-16 shrink-0 rounded-full border-2 border-coral object-cover" />
-        ) : (
-          <span aria-hidden className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-coral bg-vinho text-lg font-semibold text-off-white">
-            {iniciais}
-          </span>
-        )}
+        <FotoRedonda src={src} alternativa={src ? "Foto de perfil" : "Iniciais do perfil"} iniciais={iniciais} tamanho={64} />
         <input
           ref={input}
           type="file"

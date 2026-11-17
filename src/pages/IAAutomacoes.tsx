@@ -1,3 +1,4 @@
+import { MaisHistorico, useHistorico } from "../components/Historico";
 import { MetricasHabilidades } from "../components/MetricasHabilidades";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
@@ -55,6 +56,8 @@ export default function IAAutomacoes() {
   const [metrics, setMetrics] = useState<MetricasIA | null>(null);
   const [logs, setLogs] = useState<Execucao[]>([]);
   const [rotina, setRotina] = useState<Rotina[]>([]);
+  const historico = useHistorico();
+  const rotinaHistorico = useHistorico();
   const [error, setError] = useState("");
   useEffect(() => {
     Promise.all([
@@ -113,7 +116,7 @@ export default function IAAutomacoes() {
           <p className="text-sm text-suave">{SEM}</p>
         ) : (
           <ul className="space-y-2">
-            {logs.slice(0, 30).map((l) => (
+            {logs.slice(0, historico.limite).map((l) => (
               <li key={l.id} className="break-words rounded-xl bg-superficie p-4 text-sm">
                 <p className="font-semibold">{l.objective_attempt ? `Habilidades do objetivo · tentativa ${l.objective_attempt}` : "Fluxo anterior"} · {estado(l.state)}</p>
                 <p className="mt-1 text-suave">{new Date(l.created_at).toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo"})} (Brasília) · {l.model ?? "Sem modelo"} · Uso da IA: {l.input_tokens ?? 0} enviados / {l.output_tokens ?? 0} recebidos</p>
@@ -126,12 +129,12 @@ export default function IAAutomacoes() {
         )}
       </div>
       <div>
+        <MaisHistorico total={logs.length} {...historico} />
+      </div>
+      <div>
         <h2 className="mb-3 text-xl">Rotina diária</h2>
-        <p className="text-sm text-suave">
-          {rotina.length
-            ? `Última execução: ${new Date(rotina[0].executado_em).toLocaleString("pt-BR")} · ${rotina[0].expirados} expirados · ${rotina[0].pedidos_avaliacao} pedidos de avaliação`
-            : SEM}
-        </p>
+        {rotina.length ? <ul className="space-y-2">{rotina.slice(0,rotinaHistorico.limite).map((r,i)=><li key={`${r.executado_em}:${i}`} className="rounded-xl bg-superficie p-4 text-sm">{new Date(r.executado_em).toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo"})} · {r.expirados} expirados · {r.pedidos_avaliacao} pedidos de avaliação</li>)}</ul> : <p className="text-sm text-suave">{SEM}</p>}
+        <MaisHistorico total={rotina.length} {...rotinaHistorico} />
       </div>
       <section aria-labelledby="provas-banca"><h2 id="provas-banca" className="text-xl">Provas para a banca</h2><p className="mt-2 text-sm text-suave">Exportações sem nomes ou contatos. Testes locais não comprovam execuções reais.</p>
         <div className="flex flex-wrap gap-3">

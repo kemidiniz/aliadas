@@ -43,7 +43,6 @@ export const CHANNELS_PRO = {
   linkedin: "LinkedIn",
   whatsapp: "WhatsApp",
   email: "E-mail",
-  meet: "Google Meet",
 };
 export const DAYS_PRO = [
   "segunda",

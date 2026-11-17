@@ -135,7 +135,7 @@ export default function LandingInstitucional() {
           </div>
         </div>
         <p className="mt-7">
-          Dá para estar dos dois lados. Para mulheres cis e trans e pessoas não binárias, de todas as áreas.
+          Dá para estar dos dois lados. Para nós mulheres.
         </p>
       </section>
       <section id="perguntas" className="institutional-section scroll-mt-28" aria-labelledby="faq-title">
