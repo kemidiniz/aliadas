@@ -179,7 +179,7 @@ export default function PerfilProfissional() {
 
   if (carregando)
     return (
-      <Pagina titulo="Meu perfil">
+      <Pagina titulo="Meu perfil" largura="form">
         <CartaoCarregando />
       </Pagina>
     );
@@ -300,8 +300,8 @@ export default function PerfilProfissional() {
     ];
     const okPasso = [completa.quem, completa.assuntos, true][passo];
     return (
-      <Pagina titulo="Criar perfil">
-        <div className="mx-auto max-w-2xl">
+      <Pagina titulo="Criar perfil" largura="form">
+        <div>
           <p className="mb-2 text-sm font-semibold text-suave">Passo {passo + 1} de 3</p>
           <div className="mb-8 h-2 rounded-full bg-superficie" role="progressbar" aria-valuemin={1} aria-valuemax={3} aria-valuenow={passo + 1} aria-label="Progresso do cadastro">
             <div className="h-2 rounded-full bg-destaque transition-[width] duration-300" style={{ width: `${((passo + 1) / 3) * 100}%` }} />
@@ -335,10 +335,10 @@ export default function PerfilProfissional() {
   }
 
   return (
-    <Pagina titulo="Meu perfil">
+    <Pagina titulo="Meu perfil" largura="form">
       <Titulo sub="Um perfil, muitas conversas possíveis.">Meu perfil</Titulo>
       {recuperacao && <SenhaPerfil />}
-      <div className="lg:grid lg:grid-cols-[12rem_1fr] lg:gap-10">
+      <div className="lg:grid lg:grid-cols-[220px_minmax(0,700px)] lg:gap-10">
         <nav aria-label="Seções do perfil" className="hidden lg:block">
           <ul className="sticky top-24 space-y-1 text-sm">
             {[...SECOES, { id: "conta", titulo: "Conta" }].map((s) => (
@@ -376,7 +376,7 @@ export default function PerfilProfissional() {
             )}
           </section>
           <div className="fixed inset-x-0 bottom-16 z-30 border-t border-linha bg-fundo/95 backdrop-blur sm:bottom-0">
-            <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-3">
+            <div className="mx-auto flex max-w-[960px] items-center justify-between gap-4 px-5 py-3">
               <p className="text-sm text-suave" aria-live="polite">
                 {feitas} de {SECOES.length} seções completas
               </p>

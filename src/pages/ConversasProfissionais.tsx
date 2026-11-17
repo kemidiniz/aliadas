@@ -117,7 +117,7 @@ export default function ConversasProfissionais() {
           {!visiveis.length ? (
             <Vazio titulo={aba === "concluidas" ? "Nenhuma conversa concluída ainda." : "Nada nesta aba agora."} />
           ) : (
-            <div className="space-y-6">
+            <div className="grid items-start gap-6 lg:grid-cols-2">
               {visiveis.map((i) => {
                 const outra = i.sender_id === eu ? i.recipient_id : i.sender_id;
                 return (

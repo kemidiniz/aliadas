@@ -138,7 +138,7 @@ export default function Entrar() {
   );
 
   return (
-    <Pagina titulo="Entrar">
+    <Pagina titulo="Entrar" largura="form">
       <Titulo
         sub={
           modo === "recuperar"

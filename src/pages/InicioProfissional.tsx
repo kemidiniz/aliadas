@@ -145,7 +145,7 @@ export default function InicioProfissional() {
     <Pagina titulo="Início">
       <Titulo sub="Escolha um objetivo e receba uma indicação.">Olá, {perfil.apelido.split(" ")[0]}</Titulo>
       {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
-      <div className="grid items-start gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="space-y-6">
           <form onSubmit={criar} className="space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
             <EscolhaChips

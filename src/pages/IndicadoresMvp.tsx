@@ -48,7 +48,7 @@ export default function IndicadoresMvp() {
       <h2 className="mb-4 font-titulo text-2xl font-bold">
         Indicadores da jornada
       </h2>
-      <dl className="grid gap-4 sm:grid-cols-3">
+      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Object.entries({
           "Solicitações criadas": n("requests"),
           "Convites enviados": n("invites"),

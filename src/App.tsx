@@ -42,7 +42,7 @@ export function App() {
     <div className={`flex min-h-dvh flex-col ${session ? "pb-16 sm:pb-0" : ""}`}>
       <Cabecalho />
       {!supabaseConfigurado && (
-        <div className="mx-auto mt-4 w-full max-w-5xl px-5">
+        <div className="mx-auto mt-4 w-full max-w-[1200px] px-5">
           <Aviso tipo="erro">
             A conexão com o serviço está indisponível. Tente novamente em
             instantes.

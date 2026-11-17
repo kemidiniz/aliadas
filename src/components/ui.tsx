@@ -58,7 +58,7 @@ export function Abas<T extends string>({
 }) {
   const reduzir = useReducedMotion()
   return (
-    <div role="tablist" aria-label={rotulo} className="mb-8 flex gap-1 overflow-x-auto rounded-full border-2 border-campo p-1">
+    <div role="tablist" aria-label={rotulo} className="mb-8 flex gap-1 overflow-x-auto rounded-full border-2 border-campo p-1 sm:max-w-lg">
       {abas.map((a) => {
         const ativa = a.id === atual
         return (

@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from "react";
 
 // Container e hierarquia compartilhados; conteúdo legível desde o primeiro frame.
 // Larguras por tipo de tela: texto (leitura), form (formulários) e app (painéis).
-const LARGURAS = { texto: "max-w-[720px]", form: "max-w-[960px]", app: "max-w-5xl" };
+const LARGURAS = { texto: "max-w-[720px]", form: "max-w-[960px]", app: "max-w-[1200px]" };
 export function Pagina({
   titulo,
   children,
