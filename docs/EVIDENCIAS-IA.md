@@ -2,7 +2,7 @@
 
 A titular autorizou expressamente o processamento informado e o teste em sua conta. Foram usadas as RPCs normais com papel autenticado, objetivo profissional informado pela titular, gatilho, pg_net e a Edge Function publicada. O Gemini foi chamado de verdade. Não foram inseridos jobs ou respostas manualmente nem criados perfis fictícios. Nenhum convite foi enviado.
 
-**Resultado:** três gerações concluídas e uma falha anterior preservada. Duas solicitações de objetivo, incluindo duas tentativas alternativas do primeiro objetivo (uma delas falhou com o modelo antigo). Não são três participantes, vinte casos ou validação humana. Os testes não substituem o clique de confirmação das habilidades.
+**Resultado:** três gerações concluídas e uma falha anterior preservada. Duas solicitações de objetivo: no primeiro, a tentativa inicial falhou com o modelo antigo e duas solicitações de alternativas concluíram; no segundo, a tentativa inicial concluiu. Não são três participantes, vinte casos ou validação humana. Os testes não substituem o clique de confirmação das habilidades.
 
 A configuração anterior gemini-2.5-flash-lite respondeu HTTP 404 na geração, apesar de aparecer na lista de modelos. O secret GEMINI_MODEL passou a gemini-flash-lite-latest. As respostas reais informaram gemini-3.5-flash-lite, versão efetivamente gravada em cada job. Projeto sem faturamento conforme confirmação da titular, sem ativar cobrança ou planos.
 
