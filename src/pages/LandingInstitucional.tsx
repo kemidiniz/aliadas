@@ -72,11 +72,10 @@ export default function LandingInstitucional() {
               27% <span>Brasil</span>
             </p>
             <p>
-              Mulheres no Brasil tinham 27% menos chance de ter uma rede
-              profissional forte que os homens.
+              Em análise de dados do LinkedIn, mulheres no Brasil tinham 27% menos probabilidade de possuir uma rede profissional forte em comparação aos homens.
             </p>
             <a className="source-link" href={LINKEDIN} target="_blank" rel="noopener noreferrer">
-              LinkedIn, 2020 <Arrow />
+              LinkedIn, 11/03/2020 <Arrow />
             </a>
           </article>
           <article>
@@ -84,14 +83,35 @@ export default function LandingInstitucional() {
               97% <span>Global</span>
             </p>
             <p>
-              Em 97% das economias analisadas, os homens tinham redes maiores
-              que as mulheres no LinkedIn.
+              Em 97% das economias analisadas, os homens tinham redes de conexões maiores que as mulheres no LinkedIn.
             </p>
             <a className="source-link" href={WEF} target="_blank" rel="noopener noreferrer">
               Fórum Econômico Mundial, 2024 <Arrow />
             </a>
           </article>
         </div>
+        <p className="mt-5 text-xs text-suave">Estudos históricos de membros do LinkedIn. A força da rede considera tamanho e diversidade; 97% se refere às economias analisadas. Esses dados contextualizam a desigualdade e não comprovam a eficácia da aliadas.</p>
+      </section>
+      <section id="como-funciona" className="institutional-section scroll-mt-28" aria-labelledby="solution-title">
+        <p className="eyebrow">Como funciona</p>
+        <h2 id="solution-title">Não é apenas mentoria, é aliança.</h2>
+        <div className="editorial-copy">
+          <p>
+            Na mentoria, alguém com mais experiência guia alguém com menos.
+            Aqui, qualquer mulher pode apoiar outra, em qualquer momento da
+            carreira, lado a lado.
+          </p>
+        </div>
+        <ol className="steps-list">
+          {["Escolha o objetivo.", "Receba uma indicação feita pela IA, pelas habilidades de quem pode ajudar.", "Depois do aceite, conversem por onde preferirem."].map((passo, i) => (
+            <li key={passo}>
+              <span className="step-number" aria-hidden>
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <h3>{passo}</h3>
+            </li>
+          ))}
+        </ol>
       </section>
       <section className="institutional-section" aria-labelledby="audience-title">
         <p className="eyebrow">Para quem é</p>
@@ -112,38 +132,8 @@ export default function LandingInstitucional() {
           </div>
         </div>
         <p className="mt-7">
-          Para mulheres cis e trans e pessoas não binárias, de todas as áreas.
+          Dá para estar dos dois lados. Para mulheres cis e trans e pessoas não binárias, de todas as áreas.
         </p>
-      </section>
-      <section id="como-funciona" className="institutional-section scroll-mt-28" aria-labelledby="solution-title">
-        <p className="eyebrow">Como funciona</p>
-        <h2 id="solution-title">Não é apenas mentoria, é aliança.</h2>
-        <div className="editorial-copy">
-          <p>
-            Na mentoria, alguém com mais experiência guia alguém com menos.
-            Aqui, qualquer mulher pode apoiar outra, em qualquer momento da
-            carreira, lado a lado.
-          </p>
-        </div>
-        <ol className="steps-list">
-          {["Escolha o objetivo.", "Receba uma indicação.", "Depois do aceite, conversem por onde preferirem."].map((passo, i) => (
-            <li key={passo}>
-              <span className="step-number" aria-hidden>
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <h3>{passo}</h3>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <section className="institutional-section" aria-labelledby="embaixadoras-title">
-        <p className="eyebrow">Embaixadoras</p>
-        <h2 id="embaixadoras-title">Quem cuida da comunidade.</h2>
-        <div className="editorial-copy">
-          <p>
-            Elas revisam perfis novos e acompanham denúncias. O papel é por convite.
-          </p>
-        </div>
       </section>
       <section id="perguntas" className="institutional-section scroll-mt-28" aria-labelledby="faq-title">
         <p className="eyebrow">Perguntas rápidas</p>
@@ -163,6 +153,7 @@ export default function LandingInstitucional() {
       <section className="final-call" aria-labelledby="final-title">
         <h2 id="final-title">Sua próxima conversa começa aqui.</h2>
         <BotaoLink to="/entrar">Encontrar minha aliada</BotaoLink>
+        <p className="mt-4 text-sm text-suave">Todas nós temos algo a ensinar e muito a aprender.</p>
       </section>
     </Pagina>
   );

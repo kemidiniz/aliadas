@@ -115,6 +115,14 @@ try {
   assert.equal(await g.getByText(/Criada na formação em IA Aplicada/).count(), 0, "frase da reprograma só em Quem somos");
   await g.getByText("© 2026 Kemily Diniz", { exact: true }).waitFor();
   assert.equal(await g.locator('a[href="/forum"]').count(), 0);
+  assert.deepEqual(await g.locator("main section[aria-labelledby]").evaluateAll(nodes=>nodes.map(n=>n.getAttribute("aria-labelledby"))),["hero-title","why-title","solution-title","audience-title","faq-title","final-title"]);
+  await g.getByText("Receba uma indicação feita pela IA, pelas habilidades de quem pode ajudar.",{exact:true}).waitFor();
+  await g.getByText("Quem cuida da comunidade?",{exact:false}).click();
+  await g.getByText("As embaixadoras: aliadas que revisam perfis novos e acompanham denúncias. O papel é por convite.",{exact:true}).waitFor();
+  const { mkdir: pastaLanding }=await import("node:fs/promises");
+  await pastaLanding(`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B3"}`,{recursive:true});
+  for(const width of [390,1440]) { await g.setViewportSize({width,height:1000}); await g.evaluate(()=>scrollTo(0,0)); await g.waitForTimeout(200);await g.screenshot({path:`/workspace/aliadas-review/${process.env.REVIEW_STAGE || "B3"}/landing-${width}.png`,fullPage:true}); }
+
   await g.getByRole("link", { name: "Quem somos" }).first().click();
   await g.waitForURL(base + "/quem-somos");
   await g.getByRole("heading", { level: 2, name: "Como funciona" }).waitFor();

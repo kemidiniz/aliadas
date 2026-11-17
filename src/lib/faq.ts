@@ -1,5 +1,6 @@
 // Perguntas rápidas da landing (também abrem a página de Ajuda).
 export const FAQ = [
+  { q: "Quem cuida da comunidade?", a: "As embaixadoras: aliadas que revisam perfis novos e acompanham denúncias. O papel é por convite." },
   {
     q: "A IA vê meus dados?",
     a: "Só se você autorizar e, mesmo assim, ela recebe apenas categorias: objetivo, situação, área, interesses e habilidades, incluindo expressões profissionais extraídas do apoio. Nunca nome, contatos, foto ou ids reais. No plano gratuito, o Google pode usar os dados enviados para melhorar seus produtos. Consulte os detalhes em Termos e privacidade.",
