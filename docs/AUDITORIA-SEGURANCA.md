@@ -58,3 +58,28 @@ Testes SQL locais cobrem tentativa de promoção por roles/JSON de usuário, boo
 ## Atualização após autorização expressa
 
 A migration 015 e o bootstrap foram autorizados posteriormente e aplicados em produção. A conta principal foi verificada no banco em contexto autenticado; possui revisão de perfis e denúncias, sem depender do fallback legado. A tabela de embaixadoras está vazia, e nenhuma outra conta foi promovida. O histórico anterior deste relatório descreve o diagnóstico antes da aplicação.
+
+## Atualização de 17/11 — funções críticas da rodada 031–036
+
+O levantamento anterior é histórico. Situação vigente: zero tabelas públicas sem RLS; cinco avisos informativos de tabelas internas sem política, 54 avisos de funções SECURITY DEFINER acessíveis por authenticated e proteção de senha vazada desativada. Não foram revogados privilégios em massa. Os avisos de execução não foram apresentados como vulnerabilidades automaticamente resolvidas.
+
+| Função/grupo | Restrição revisada |
+|---|---|
+| mvp_save_profile | auth.uid fixa a dona, termos, catálogo/limites; finalidade nova exige versão explícita. Não muda papéis ou autoaprova |
+| mvp_create_request | Dona aprovada/completa, lock por pessoa e três pedidos/24h |
+| mvp_eligible_candidates / pick_candidate / queue_job | Funções internas sem EXECUTE de participantes; pool privado sem grants |
+| mvp_claim_job | service_role, claim único, nova finalidade consentida, candidatas elegíveis e limite global serializado |
+| mvp_finish_job | service_role, saída dentro do pool/habilidades, consentimento rechecado e revisão humana protegida |
+| mvp_next_suggestion | Somente dona, sem convite enviado, histórico sem repetição; não cria job |
+| mvp_use_fallback | Somente dona, espera mínima de quinze segundos para encerrar a espera |
+| mvp_invite / invite_reviewed | Pedido da dona, elegibilidade, mensagem segura; versão nova fixa a candidata revisada sob lock |
+| mvp_shared_contacts | Participante do convite aceito, sem bloqueio, cada canal individualmente autorizado |
+| mvp_invite_context | Participante do convite, sem bloqueio; apoio para destinatária com contatos ocultos |
+| mvp_skill_metrics / metrics / ai_metrics | Permissões específicas do painel; agregados sem contatos ou apoio livre |
+| mvp_admin_review_with_reason | Reutiliza checagem da revisão autorizada; impede autoavaliação e participante comum |
+| mvp_salvar_acessos / manage_ambassador / admin_search / admin_audit | Administração principal; roles/permissões reais no banco, sem confiar em metadados editáveis |
+| mvp_bootstrap_principal / worker_secret | service_role; não oferecidas ao frontend. Bootstrap não reexecutado nesta rodada |
+
+As novas restrições têm testes SQL negativos e positivos locais; na produção houve consultas em transações revertidas e verificação de administração preservada, contatos alheios invisíveis e pool/claim inacessíveis a authenticated. A Edge Function recusou uma chamada sem segredo (401). Isso não comprova geração nem a jornada autenticada real no navegador.
+
+O diagnóstico adicional de metadados Gemini retornou 200, sem perfil/prompt/geração; a função temporária foi removida. Nenhuma credencial foi publicada. Backups e metadados de auditoria ficam fora do Git. Resultados e limitações finais: `ENTREGA-17-11.md`.

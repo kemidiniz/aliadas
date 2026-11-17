@@ -119,3 +119,5 @@ Testes locais: build/TypeScript, SQL/RLS, contratos de IA, worker Deno sem rede 
 | Pitch e demonstração | Roteiro pronto | Sem ensaio real | Gravação até 2min dentro de 5min | Ensaiar fluxo publicado |
 
 No instrumento CSV, empates do plano B conservam a ordem do pool para tornar as duas rodadas repetíveis, pois o arquivo pedido não contém carga real de convites. Em produção, o banco usa menos convites recentes e sorteio. Manter o pool/ordem iguais nas rodadas e declarar essa diferença ao comparar; não atribuir à IA um ganho causado só por desempate diferente.
+
+Consulta adicional em produção em 17/11: Gemini reconheceu a chave/modelo `gemini-2.5-flash-lite` com HTTP 200 no endpoint de metadados e suporte a `generateContent`. Não houve prompt, geração ou dados de participantes. A função temporária foi removida. Esse diagnóstico **não conta** entre as três execuções reais da automação nem entre os vinte casos humanos.

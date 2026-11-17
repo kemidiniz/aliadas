@@ -43,7 +43,7 @@ Painel: tarefas permitidas no topo, métricas e demanda/oferta de habilidades; I
 
 Bloco A publicado sob autorização geral: migration 031, worker versão 12 e frontend commit `ff725b2`. Deploy Vercel `dpl_D6g5qLtNqMdRUrLW9kbBm2CFqhct`, confirmado READY e no domínio público antes de iniciar B. Sete perfis presentes na migração preservados; backup privado fora do Git.
 
-Na checagem após 031, zero perfis tinham habilidades/consentimento novo; por isso a nova geração real e três execuções não foram alegadas. A presença dos secrets não comprova resposta Gemini. Consultar situação final no relatório de entrega.
+Na checagem após 031, zero perfis tinham habilidades/consentimento novo; por isso a nova geração real e três execuções não foram alegadas. A presença dos secrets não comprova resposta Gemini. Consultar situação final em `ENTREGA-17-11.md`: o Gemini reconheceu chave/modelo em consulta de metadados, mas ainda não houve geração da nova recomendação por falta de habilidades/consentimentos preenchidos.
 
 Testes: build, RLS local descartável, contratos de IA, navegador com Auth/API simulados, worker Deno com rede externa proibida, validação humana com stub e varredura de links. Evidência sintética não substitui pessoas reais nem API generativa real. Ver `VALIDACAO.md`, `CUSTOS.md`, `SEGURANCA.md` e `EMAILS.md`.
 

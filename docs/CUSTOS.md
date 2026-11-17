@@ -20,6 +20,8 @@ Consulta de produção, somente leitura, em 17/11 antes desta publicação: banc
 
 O novo worker registra modelo, tokens enviados/recebidos (incluindo raciocínio informado), erros e datas. Não registra apoio livre ou dados pessoais. Limites do produto: três pedidos/pessoa/24h, trinta chamadas iniciadas/24h globalmente, 700 tokens máximos de saída e timeout de 14s; plano B depois de 15s. A interface faz até cinco consultas automáticas de estado por ciclo. Trocar indicação não chama IA nem cria novo pedido.
 
+Em 17/11, uma consulta autenticada de metadados ao Gemini retornou HTTP 200 para `gemini-2.5-flash-lite`, incluindo suporte a `generateContent`. Isso confirma reconhecimento da chave/modelo, não a cota gratuita nem uma geração. Nenhum prompt ou dado de participante foi enviado. A função temporária de diagnóstico foi removida; os jobs continuam em zero.
+
 ## Projeções — hipóteses, não resultados
 
 Hipótese de planejamento: duas solicitações por pessoa ativa/mês, uma geração por pedido, consentimento/compatibilidade em todos. Os números de pessoas abaixo são cenários propostos, não medições de uso. Definir `T_in` e `T_out` pelas três execuções reais antes de estimar tokens ou custo. O catálogo com 26 habilidades e o pool de até 15 aumentam entrada; não reaproveitar consumo médio da IA antiga.

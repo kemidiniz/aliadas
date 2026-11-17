@@ -27,4 +27,4 @@ Após migration: zero perfis com habilidades, zero confirmações do consentimen
 
 Próximo passo: duas participantes reais aprovadas salvarem habilidades e consentimento no perfil; a titular criar uma busca e conferir Painel › IA e automações. Perfis legados podem aparecer pelo plano B. O aviso de senha vazada requer verificar disponibilidade sem upgrade no painel Auth. Preços/termos atuais Gemini não puderam ser consultados devido a HTTP 403 do proxy; fontes e limitação estão documentadas.
 
-O deploy do frontend deste commit será conferido pela API Vercel e por abertura do site antes de iniciar B. O resultado final e o identificador da publicação serão registrados no relatório da entrega.
+O frontend A foi confirmado READY pela API Vercel, com alias público e abertura do site, antes de iniciar B. Deploy `dpl_D6g5qLtNqMdRUrLW9kbBm2CFqhct`. O resultado de B e suas pendências estão em `ENTREGA-17-11.md`.
