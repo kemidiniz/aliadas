@@ -28,17 +28,16 @@ export function Privacidade() {
       <Titulo>Privacidade</Titulo>
       <p className={p}>Guardamos só o necessário, e você manda nos seus dados (LGPD).</p>
       <h2 className={h2}>O que guardamos</h2>
-      <p className={p}>Nome de apresentação, ocupação, momento de carreira, áreas, assuntos com que pode ajudar e sobre os quais quer conversar, disponibilidade, foto opcional, contatos que você escolheu, link opcional da sua sala de chamada e consentimentos. O e-mail de login fica separado dos contatos que você decide compartilhar.</p>
+      <p className={p}>Como quer ser chamada, nome completo (opcional), sua situação hoje, área de atuação ou estudo, áreas de interesse, assuntos com que pode ajudar e sobre os quais quer conversar, foto opcional, contatos que você escolheu e consentimentos. O e-mail de login fica separado dos contatos que você decide compartilhar.</p>
       <h2 className={h2}>Quem vê o quê</h2>
       <ul className="mt-4 list-disc space-y-2 pl-6">
-        <li>Nome, ocupação e áreas: a pessoa para quem você foi indicada ou com quem tem um convite, e a curadoria.</li>
-        <li>Contatos e sala de chamada: só você e, depois do aceite mútuo, a outra participante. O bloqueio interrompe o acesso; contatos já vistos não podem ser recuperados.</li>
-        <li>Horários propostos: só as duas participantes de um convite aceito.</li>
+        <li>Como quer ser chamada, situação e áreas: a pessoa para quem você foi indicada ou com quem tem um convite, e a curadoria.</li>
+        <li>Contatos e nome completo: só você e, depois do aceite mútuo, a outra participante. O bloqueio interrompe o acesso; contatos já vistos não podem ser recuperados.</li>
         <li>Fotos ficam num armazenamento privado e só abrem por links temporários.</li>
       </ul>
       <h2 id="ia" className={h2}>A inteligência artificial</h2>
       <p className={p}>A indicação usa regras fixas: o objetivo da conversa precisa estar entre os assuntos com que a outra pessoa pode ajudar, e vocês precisam ter um canal em comum. Não há IA nessa escolha.</p>
-      <p className={p}>Só quando as duas autorizam, o Gemini (Google) recebe o objetivo e categorias de áreas, momento e assuntos para sugerir uma justificativa, duas perguntas e um rascunho de mensagem. Nunca enviamos nomes, contatos, links, ocupação ou o contexto que você escreve.</p>
+      <p className={p}>Só quando as duas autorizam, o Gemini (Google) recebe o objetivo e categorias de situação, áreas e assuntos para sugerir uma justificativa, duas perguntas e um rascunho de mensagem. Nunca enviamos nomes, nome completo, contatos, links ou textos que você escreve, como o objetivo em "Outro".</p>
       <p className={p}>Usamos o plano gratuito do Gemini. Nos termos desse plano, o Google pode usar o conteúdo enviado para melhorar seus modelos. Por isso enviamos só categorias. Você pode retirar a autorização no seu perfil a qualquer momento; sem ela, a indicação continua, sem texto gerado.</p>
       <p className={p}>Nada é enviado automaticamente à outra participante: você revisa e decide se manda o convite.</p>
       <h2 className={h2}>Feedback</h2>

@@ -4,7 +4,6 @@ import {
   useRef,
   useState,
   type InputHTMLAttributes,
-  type KeyboardEvent,
   type ReactNode,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
@@ -437,117 +436,6 @@ export function EscolhaChips<T extends string>({
           </label>
         ))}
       </div>
-    </fieldset>
-  );
-}
-
-// Grade de disponibilidade 7 dias × 3 períodos. Células são botões
-// (aria-pressed); setas movem o foco, Espaço/Enter marca.
-const DIAS_CURTOS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-const DIAS_LONGOS = [
-  "segunda",
-  "terça",
-  "quarta",
-  "quinta",
-  "sexta",
-  "sábado",
-  "domingo",
-];
-const PERIODOS = [
-  { id: "manha", rotulo: "Manhã" },
-  { id: "tarde", rotulo: "Tarde" },
-  { id: "noite", rotulo: "Noite" },
-];
-export function GradeDisponibilidade({
-  rotulo,
-  ajuda,
-  valores,
-  aoMudar,
-}: {
-  rotulo: ReactNode;
-  ajuda?: ReactNode;
-  valores: string[];
-  aoMudar: (v: string[]) => void;
-}) {
-  const id = useId();
-  const grade = useRef<HTMLDivElement>(null);
-  const alternar = (slot: string) =>
-    aoMudar(
-      valores.includes(slot)
-        ? valores.filter((x) => x !== slot)
-        : [...valores, slot],
-    );
-  function mover(e: KeyboardEvent<HTMLButtonElement>, d: number, p: number) {
-    const delta: Record<string, [number, number]> = {
-      ArrowRight: [1, 0],
-      ArrowLeft: [-1, 0],
-      ArrowDown: [0, 1],
-      ArrowUp: [0, -1],
-    };
-    const m = delta[e.key];
-    if (!m) return;
-    e.preventDefault();
-    const nd = (d + m[0] + 7) % 7;
-    const np = (p + m[1] + 3) % 3;
-    grade.current
-      ?.querySelector<HTMLButtonElement>(`[data-celula="${nd}-${np}"]`)
-      ?.focus();
-  }
-  return (
-    <fieldset className="space-y-2">
-      <legend className={`${rotuloCampo} mb-2`} id={`${id}-rotulo`}>
-        {rotulo}
-      </legend>
-      <div
-        ref={grade}
-        role="group"
-        aria-labelledby={`${id}-rotulo`}
-        className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))] gap-1 sm:gap-1.5"
-      >
-        <span />
-        {DIAS_CURTOS.map((d) => (
-          <span
-            key={d}
-            className="pb-1 text-center text-xs font-semibold text-suave"
-            aria-hidden
-          >
-            {d}
-          </span>
-        ))}
-        {PERIODOS.map((per, p) => (
-          <div key={per.id} className="contents">
-            <span className="flex items-center text-xs font-semibold text-suave">
-              {per.rotulo}
-            </span>
-            {DIAS_CURTOS.map((_, d) => {
-              const slot = `${d + 1}_${per.id}`;
-              const marcado = valores.includes(slot);
-              return (
-                <button
-                  key={slot}
-                  type="button"
-                  data-celula={`${d}-${p}`}
-                  aria-pressed={marcado}
-                  aria-label={`${DIAS_LONGOS[d]}, ${per.rotulo.toLowerCase()}`}
-                  tabIndex={d === 0 && p === 0 ? 0 : -1}
-                  onClick={() => alternar(slot)}
-                  onKeyDown={(e) => mover(e, d, p)}
-                  className={`h-11 rounded-lg border-2 transition-colors sm:h-12 ${
-                    marcado
-                      ? "border-destaque bg-destaque text-sobre-destaque"
-                      : "border-linha bg-fundo hover:border-destaque"
-                  }`}
-                >
-                  <span aria-hidden className="text-sm font-bold">
-                    {marcado ? "✓" : ""}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      {ajuda && <p className="text-sm text-suave">{ajuda}</p>}
     </fieldset>
   );
 }

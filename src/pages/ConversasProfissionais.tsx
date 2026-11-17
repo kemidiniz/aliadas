@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Pagina, Titulo } from "../components/Pagina";
 import { Botao, BotaoLink } from "../components/Botao";
-import { CampoArea, EscolhaChips, Nota1a5, rotuloCampo, caixa } from "../components/Campo";
+import { CampoArea, EscolhaChips, Nota1a5, rotuloCampo } from "../components/Campo";
 import { Avatar } from "../components/Avatar";
 import { Abas, Badge, CartaoCarregando, Vazio, type EstadoConversa } from "../components/ui";
 import {
-  IconeCalendario,
   IconeEmail,
   IconeLinkedin,
   IconeMais,
-  IconeVideo,
   IconeWhatsapp,
 } from "../components/Icones";
 import { useToast } from "../components/Toast";
@@ -17,21 +15,11 @@ import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
 import {
-  baixarIcs,
-  formatarHorario,
-  hojeBrasilia,
-  isoBrasilia,
-  limiteBrasilia,
-  linkGoogleAgenda,
-  sugerirHorarios,
-} from "../lib/agenda";
-import {
   AREAS_PRO,
   GOALS_PRO,
   type ProCard,
   type ProContacts,
   type ProInvite,
-  type ProProposal,
 } from "../lib/professional";
 
 type Feedback = { invite_id: string; happened: boolean; utility: number | null; outcome: string };
@@ -43,15 +31,12 @@ export default function ConversasProfissionais() {
   const [invites, setInvites] = useState<ProInvite[] | null>(null);
   const [cards, setCards] = useState<ProCard[]>([]);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
-  const [propostas, setPropostas] = useState<ProProposal[]>([]);
-  const [minhaSala, setMinhaSala] = useState<string | null>(null);
-  const [meusSlots, setMeusSlots] = useState<string[]>([]);
   const [erro, setErro] = useState("");
   const [aba, setAba] = useState<Aba>("recebidos");
   const escolhida = useRef(false);
 
   async function load() {
-    const [i, c, f, p, sala, pro] = await Promise.all([
+    const [i, c, f] = await Promise.all([
       supabase
         .from("conversation_invites")
         .select("*")
@@ -59,9 +44,6 @@ export default function ConversasProfissionais() {
         .order("created_at", { ascending: false }),
       supabase.rpc("mvp_cards"),
       supabase.from("conversation_feedback").select("*").eq("author_id", eu),
-      supabase.from("conversation_time_proposals").select("*").order("inicio"),
-      supabase.from("professional_contacts").select("meet").eq("profile_id", eu).maybeSingle(),
-      supabase.from("professional_profiles").select("slots").eq("profile_id", eu).maybeSingle(),
     ]);
     if (i.error || c.error) {
       setErro("Não foi possível carregar as conversas. Tente novamente.");
@@ -73,9 +55,6 @@ export default function ConversasProfissionais() {
     setInvites(lista);
     setCards(c.data);
     setFeedback(fb);
-    setPropostas((p.data as ProProposal[]) ?? []);
-    setMinhaSala(sala.data?.meet ?? null);
-    setMeusSlots(pro.data?.slots ?? []);
     // abre na aba com algo esperando resposta
     if (!escolhida.current) {
       escolhida.current = true;
@@ -128,9 +107,6 @@ export default function ConversasProfissionais() {
                     eu={eu}
                     card={cards.find((c) => c.id === outra)}
                     feedback={feedback.find((f) => f.invite_id === i.id)}
-                    propostas={propostas.filter((p) => p.invite_id === i.id)}
-                    minhaSala={minhaSala}
-                    meusSlots={meusSlots}
                     reload={load}
                   />
                 );
@@ -151,7 +127,7 @@ function grupo(i: ProInvite, eu: string, fb: Feedback[]): Aba {
   return i.recipient_id === eu ? "recebidos" : "enviados";
 }
 
-const PASSOS = ["Convite", "Aceite", "Horário", "Conversa", "Avaliação"];
+const PASSOS = ["Convite", "Aceite", "Contatos liberados", "Avaliação"];
 function Linha({ atual, parada }: { atual: number; parada?: boolean }) {
   return (
     <ol className="flex items-center gap-1" aria-label="Etapas da conversa">
@@ -179,18 +155,12 @@ function Conversa({
   eu,
   card,
   feedback,
-  propostas,
-  minhaSala,
-  meusSlots,
   reload,
 }: {
   invite: ProInvite;
   eu: string;
   card?: ProCard;
   feedback?: Feedback;
-  propostas: ProProposal[];
-  minhaSala: string | null;
-  meusSlots: string[];
   reload: () => Promise<void>;
 }) {
   const toast = useToast();
@@ -221,10 +191,9 @@ function Conversa({
     return !error;
   }
 
-  const horario = i.horario_confirmado;
-  const passou = horario ? new Date(horario).getTime() < Date.now() - 30 * 60_000 : false;
+  // Convite → Aceite → Contatos liberados → Avaliação
   const atual =
-    i.state === "pendente" || i.state === "recusada" || i.state === "expirado" ? 1 : feedback ? 5 : !horario ? 2 : !passou ? 3 : 4;
+    i.state === "pendente" || i.state === "recusada" || i.state === "expirado" ? 1 : feedback ? 4 : 3;
   const estado: EstadoConversa =
     i.state === "pendente"
       ? "pendente"
@@ -232,13 +201,9 @@ function Conversa({
         ? "recusada"
         : i.state === "expirado"
           ? "expirado"
-        : feedback?.happened
-          ? "realizada"
-          : horario
-            ? "horario"
+          : feedback?.happened
+            ? "realizada"
             : "aceita";
-  const sala = (souRemetente ? minhaSala : contatos?.meet) || (souRemetente ? contatos?.meet : minhaSala) || null;
-  const titulo = `Conversa aliadas com ${nome}`;
 
   return (
     <article className="space-y-5 rounded-3xl border border-linha p-5 sm:p-6">
@@ -301,39 +266,8 @@ function Conversa({
       {i.state === "aceita" && (
         <>
           <Contatos c={contatos} />
-          {atual === 2 && (
-            <Agendar
-              invite={i}
-              eu={eu}
-              propostas={propostas}
-              slots={contatos?.common_slots?.length ? contatos.common_slots : meusSlots}
-              busy={busy}
-              rpc={rpc}
-            />
-          )}
-          {horario && atual < 5 && (
-            <div className="space-y-3 rounded-2xl border-2 border-destaque p-4">
-              <p className="flex items-center gap-2 font-semibold">
-                <IconeCalendario /> {formatarHorario(horario)} <span className="text-sm font-normal text-suave">(Brasília)</span>
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {sala ? (
-                  <a href={sala} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-xl bg-destaque px-5 font-semibold text-sobre-destaque">
-                    <IconeVideo /> Entrar na chamada
-                  </a>
-                ) : (
-                  <p className="text-sm text-suave">Combinem o link pelo contato liberado.</p>
-                )}
-                <a href={linkGoogleAgenda(horario, titulo, sala)} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-destaque px-5 font-semibold text-destaque">
-                  <IconeCalendario /> Adicionar à agenda
-                </a>
-                <button type="button" onClick={() => baixarIcs(horario, titulo, sala, i.id)} className="text-sm font-semibold text-destaque underline underline-offset-4">
-                  Baixar .ics
-                </button>
-              </div>
-            </div>
-          )}
-          {(atual === 4 || avaliar) && !feedback ? (
+          <p className="text-sm text-suave">Combinem a conversa por onde preferirem.</p>
+          {avaliar && !feedback ? (
             <Avaliacao invite={i.id} busy={busy} rpc={rpc} />
           ) : (
             !feedback && (
@@ -447,6 +381,7 @@ function Contatos({ c }: { c: ProContacts | null }) {
   return (
     <div>
       <p className={rotuloCampo}>Contatos liberados</p>
+      {c.nome_completo && <p className="mt-1 text-sm">Nome completo: {c.nome_completo}</p>}
       {itens.length ? (
         <div className="mt-2 flex flex-wrap gap-2">
           {itens.map(({ href, rotulo, Icone, ext }) => (
@@ -464,132 +399,6 @@ function Contatos({ c }: { c: ProContacts | null }) {
         <p className="mt-1 text-sm text-suave">Ela ainda não liberou um contato.</p>
       )}
     </div>
-  );
-}
-
-function Agendar({
-  invite: i,
-  eu,
-  propostas,
-  slots,
-  busy,
-  rpc,
-}: {
-  invite: ProInvite;
-  eu: string;
-  propostas: ProProposal[];
-  slots: string[];
-  busy: boolean;
-  rpc: (n: string, a: Record<string, unknown>, ok: string) => Promise<boolean>;
-}) {
-  const dela = propostas.filter((p) => p.autora !== eu && new Date(p.inicio).getTime() > Date.now());
-  const minhas = propostas.filter((p) => p.autora === eu);
-  const [editar, setEditar] = useState(false);
-  const sugestoes = sugerirHorarios(slots);
-  const [linhas, setLinhas] = useState(() =>
-    (sugestoes.length ? sugestoes : [new Date(Date.now() + 2 * 86400_000).toISOString()]).map((iso) => {
-      const b = new Date(new Date(iso).getTime() - 3 * 3600_000).toISOString();
-      return { data: b.slice(0, 10), hora: b.slice(11, 16) };
-    }),
-  );
-  const proponho = editar || (!minhas.length && !dela.length);
-  return (
-    <section className="space-y-3 rounded-2xl bg-superficie p-4" aria-label="Combinar horário">
-      {dela.length > 0 && (
-        <div className="space-y-2">
-          <p className={rotuloCampo}>Escolha um dos horários que ela propôs</p>
-          <div className="flex flex-wrap gap-2">
-            {dela.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                disabled={busy}
-                onClick={() => rpc("mvp_confirm_time", { proposal: p.id }, "Horário confirmado.")}
-                className="chip"
-              >
-                {formatarHorario(p.inicio)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {minhas.length > 0 && !editar && (
-        <div className="text-sm">
-          <p>
-            Você propôs: {minhas.map((p) => formatarHorario(p.inicio)).join(" · ")}. Aguardando ela escolher.
-          </p>
-          <button type="button" className="mt-1 font-semibold text-destaque underline underline-offset-4" onClick={() => setEditar(true)}>
-            Mudar horários
-          </button>
-        </div>
-      )}
-      {!proponho && !minhas.length && (
-        <button type="button" className="text-sm font-semibold text-destaque underline underline-offset-4" onClick={() => setEditar(true)}>
-          Nenhum serve? Propor outros
-        </button>
-      )}
-      {proponho && (
-        <form
-          className="space-y-3"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const ok = await rpc(
-              "mvp_propose_times",
-              { invite: i.id, horarios: linhas.filter((l) => l.data && l.hora).map((l) => isoBrasilia(l.data, l.hora)) },
-              "Horários enviados.",
-            );
-            if (ok) setEditar(false);
-          }}
-        >
-          <p className={rotuloCampo}>Proponha até 3 horários (Brasília)</p>
-          {linhas.map((l, n) => (
-            <div key={n} className="grid grid-cols-[1fr_7rem_auto] items-start gap-2">
-              <input
-                aria-label={`Data ${n + 1}`}
-                type="date"
-                required
-                min={hojeBrasilia()}
-                max={limiteBrasilia()}
-                value={l.data}
-                onChange={(e) => setLinhas(linhas.map((x, k) => (k === n ? { ...x, data: e.target.value } : x)))}
-                className={`${caixa} h-12`}
-              />
-              <input
-                aria-label={`Hora ${n + 1}`}
-                type="time"
-                required
-                step={900}
-                value={l.hora}
-                onChange={(e) => setLinhas(linhas.map((x, k) => (k === n ? { ...x, hora: e.target.value } : x)))}
-                className={`${caixa} h-12`}
-              />
-              <button
-                type="button"
-                aria-label={`Remover horário ${n + 1}`}
-                disabled={linhas.length === 1}
-                onClick={() => setLinhas(linhas.filter((_, k) => k !== n))}
-                className="h-12 w-10 rounded-xl text-suave hover:text-erro disabled:opacity-30"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          <div className="flex flex-wrap items-center gap-3">
-            <Botao type="submit" carregando={busy}>Enviar horários</Botao>
-            {linhas.length < 3 && (
-              <button
-                type="button"
-                className="text-sm font-semibold text-destaque underline underline-offset-4"
-                onClick={() => setLinhas([...linhas, { ...linhas[linhas.length - 1] }])}
-              >
-                Adicionar horário
-              </button>
-            )}
-          </div>
-          {sugestoes.length > 0 && <p className="text-xs text-suave">Sugeridos a partir dos períodos em comum.</p>}
-        </form>
-      )}
-    </section>
   );
 }
 

@@ -152,7 +152,7 @@ export default function LandingInstitucional() {
           {[
             { title: "Escolha o objetivo", text: "Diga sobre o que quer conversar." },
             { title: "Receba uma indicação", text: "Alguém que pode ajudar com esse objetivo." },
-            { title: "Converse por onde preferir", text: "Depois do aceite, combinem horário e canal." },
+            { title: "Converse por onde preferir", text: "Depois do aceite, os contatos aparecem e vocês combinam a conversa." },
           ].map((step, i) => (
             <li key={step.title}>
               <span className="step-number" aria-hidden>

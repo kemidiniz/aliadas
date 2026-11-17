@@ -138,14 +138,12 @@ export function tempoRelativo(iso: string) {
 export type EstadoConversa =
   | "pendente"
   | "aceita"
-  | "horario"
   | "realizada"
   | "recusada"
   | "expirado";
 const BADGE: Record<EstadoConversa, [string, string]> = {
   pendente: ["Pendente", "border border-campo text-texto"],
   aceita: ["Aceita", "bg-superficie text-destaque ring-1 ring-destaque"],
-  horario: ["Horário confirmado", "bg-destaque text-sobre-destaque"],
   realizada: ["Realizada", "bg-coral text-vinho-noite"],
   recusada: ["Recusada", "border border-linha text-suave"],
   expirado: ["Expirou", "border border-linha text-suave"],

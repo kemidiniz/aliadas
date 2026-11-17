@@ -8,7 +8,6 @@ import {
   CampoArquivo,
   CampoSelect,
   CampoTexto,
-  GradeDisponibilidade,
   MultiEscolha,
 } from "../components/Campo";
 import { Botao } from "../components/Botao";
@@ -18,7 +17,6 @@ import { useToast } from "../components/Toast";
 import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
 import { enviarFoto, useFotoUrl, validarFoto } from "../lib/fotos";
-import { SALA_VALIDA } from "../lib/agenda";
 import {
   AREAS_PRO,
   CHANNELS_PRO,
@@ -47,7 +45,6 @@ const SECOES = [
   { id: "quem", titulo: "Quem é você" },
   { id: "assuntos", titulo: "Assuntos" },
   { id: "contatos", titulo: "Contatos e sala" },
-  { id: "disponibilidade", titulo: "Disponibilidade" },
   { id: "privacidade", titulo: "Privacidade" },
 ] as const;
 
@@ -67,14 +64,12 @@ function validar(nome: string, p: Dados, c: ProContacts, termos: boolean, modos:
     e.whatsapp = "Use o código do país, sem espaços. Ex.: +5511999999999";
   if (p.channels.includes("email") && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email ?? ""))
     e.email = "Confira o e-mail.";
-  if (c.meet && !SALA_VALIDA.test(c.meet))
-    e.meet = "Use um link https do Google Meet, Zoom, Teams, Whereby ou Jitsi.";
   if (!termos) e.termos = "Confirme para continuar.";
   return e;
 }
 const secaoDoErro: Record<string, string> = {
   nome: "quem", occupation: "quem", areas: "quem", modos: "assuntos", can_help: "assuntos", want_talk: "assuntos", assuntos: "assuntos",
-  channels: "contatos", linkedin: "contatos", whatsapp: "contatos", email: "contatos", meet: "contatos",
+  channels: "contatos", linkedin: "contatos", whatsapp: "contatos", email: "contatos",
   termos: "privacidade",
 };
 
@@ -154,8 +149,7 @@ export default function PerfilProfissional() {
   const completa: Record<string, boolean> = {
     quem: !e.nome && !e.occupation && !e.areas,
     assuntos: !e.assuntos && !e.modos && !e.can_help && !e.want_talk,
-    contatos: !e.channels && !e.linkedin && !e.whatsapp && !e.email && !e.meet,
-    disponibilidade: p.slots.length > 0,
+    contatos: !e.channels && !e.linkedin && !e.whatsapp && !e.email,
     privacidade: !e.termos,
   };
   const feitas = Object.values(completa).filter(Boolean).length;
@@ -177,10 +171,11 @@ export default function PerfilProfissional() {
     setBusy(true);
     try {
       const path = foto ? await enviarFoto(session!.user.id, foto) : semFoto ? null : (perfil?.foto_path ?? null);
-      const limpar = (k: keyof ProContacts) => (k === "meet" || p.channels.includes(k) ? c[k] : "");
+      const limpar = (k: keyof ProContacts) => (p.channels.includes(k) ? c[k] : "");
       const { error } = await supabase.rpc("mvp_save_profile", {
         p: { ...p, name: nome, photo: path },
-        c: { linkedin: limpar("linkedin"), whatsapp: limpar("whatsapp"), email: limpar("email"), meet: c.meet },
+        // sala e horários saíram da tela: não são enviados, e o banco mantém o que já existia
+        c: { linkedin: limpar("linkedin"), whatsapp: limpar("whatsapp"), email: limpar("email") },
         terms: termos,
       });
       if (error) throw error;
@@ -279,26 +274,8 @@ export default function PerfilProfissional() {
           {p.channels.includes("email") && (
             <CampoTexto rotulo="E-mail para contato" type="email" value={c.email ?? ""} maxLength={254} erro={err("email")} onChange={(x) => setC({ ...c, email: x.target.value })} />
           )}
-          <CampoTexto
-            rotulo="Link da minha sala de chamada (opcional)"
-            ajuda="Crie uma vez e use em todas as conversas."
-            type="url"
-            placeholder="https://meet.google.com/..."
-            value={c.meet ?? ""}
-            maxLength={250}
-            erro={err("meet")}
-            onChange={(x) => setC({ ...c, meet: x.target.value })}
-          />
         </div>
       </div>
-    ),
-    disponibilidade: (
-      <GradeDisponibilidade
-        rotulo="Quando você costuma ter tempo"
-        ajuda="Horário de Brasília. Usamos para sugerir horários."
-        valores={p.slots}
-        aoMudar={(slots) => setP({ ...p, slots })}
-      />
     ),
     privacidade: (
       <div className="space-y-3">
@@ -327,11 +304,10 @@ export default function PerfilProfissional() {
       { titulo: "Quem é você", conteudo: blocos.quem },
       { titulo: "Posso ajudar e quero conversar", conteudo: blocos.assuntos },
       {
-        titulo: "Disponibilidade e consentimentos",
+        titulo: "Contatos e consentimentos",
         conteudo: (
           <div className="space-y-8">
             {blocos.contatos}
-            {blocos.disponibilidade}
             {blocos.privacidade}
           </div>
         ),

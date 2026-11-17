@@ -191,7 +191,8 @@ try {
         email: "autorizado@exemplo.invalid",
         whatsapp: null,
         linkedin: null,
-        meet: invites[0]?.horario_confirmado ? "https://meet.jit.si/sala-teste" : null,
+        meet: null,
+        nome_completo: "Aliada de Teste Completa",
         common_slots: ["1_tarde"],
       };
     if (endpoint === "mvp_feedback") {
@@ -259,17 +260,12 @@ try {
   await p.getByRole("link", { name: "E-mail", exact: true }).waitFor();
   await p.getByText(/Quer conversar sobre:\s*Dicas de carreira/).first().waitFor();
   assert.equal(await p.getByRole("link", { name: "WhatsApp", exact: true }).count(), 0);
-  await p.locator('[aria-current="step"]').getByText("Horário").waitFor();
-  await p.getByText("Proponha até 3 horários (Brasília)").waitFor();
-  await p.getByRole("button", { name: "Enviar horários" }).click();
-  await p.getByText("Horários enviados.").waitFor();
-  const prop = calls.find((x) => x.endpoint === "mvp_propose_times").body;
-  assert(prop.horarios.length >= 1 && prop.horarios.length <= 3);
-  for (const h of prop.horarios) {
-    const t = new Date(h).getTime();
-    assert(t > Date.now() && t < Date.now() + 14 * 86400000, "horário nos próximos 14 dias");
-  }
-  console.log("PASSOU: horários sugeridos dos períodos em comum, até 3 e nos próximos 14 dias");
+  await p.locator('[aria-current="step"]').getByText("Avaliação").waitFor();
+  await p.getByText("Combinem a conversa por onde preferirem.").waitFor();
+  await p.getByText("Nome completo: Aliada de Teste Completa").waitFor();
+  for (const fora of [/Entrar na chamada/, /Adicionar à agenda/, /Baixar \.ics/, /Proponha/, /Horário/])
+    assert.equal(await p.getByText(fora).count(), 0, `sem ${fora}`);
+  console.log("PASSOU: depois do aceite, 4 passos, contatos e nome completo, sem agenda nem chamada");
   // menu ⋯ pelo teclado
   await p.getByRole("button", { name: "Mais opções" }).focus();
   await p.keyboard.press("Enter");
@@ -279,12 +275,6 @@ try {
   await p.keyboard.press("Escape");
   assert.equal(await p.getByRole("menu").count(), 0);
   console.log("PASSOU: menu de bloqueio e denúncia acessível pelo teclado");
-  invites = [{ ...invite, horario_confirmado: new Date(Date.now() + 2 * 86400000).toISOString() }];
-  await p.goto(base + "/minhas-conversas");
-  await p.getByText("Horário confirmado", { exact: true }).waitFor();
-  assert.equal(await p.getByRole("link", { name: /Entrar na chamada/ }).getAttribute("href"), "https://meet.jit.si/sala-teste");
-  assert.match(await p.getByRole("link", { name: /Adicionar à agenda/ }).getAttribute("href"), /^https:\/\/calendar\.google\.com\/calendar\/render\?action=TEMPLATE/);
-  console.log("PASSOU: horário confirmado mostra sala e link de agenda");
   await p.getByRole("button", { name: /Avaliar a conversa/ }).click();
   await p.getByText("Sim", { exact: true }).click();
   await p.getByRole("button", { name: "5", exact: true }).click();
@@ -303,14 +293,9 @@ try {
 
   await p.goto(base + "/meu-perfil");
   await p.getByRole("heading", { name: "Meu perfil", exact: true }).waitFor();
-  await p.getByText("de 5 seções completas").waitFor();
-  const celula = p.getByRole("button", { name: "segunda, manhã" });
-  assert.equal(await celula.getAttribute("aria-pressed"), "false");
-  await celula.click();
-  assert.equal(await celula.getAttribute("aria-pressed"), "true");
-  await celula.focus();
-  await p.keyboard.press("ArrowRight");
-  assert.equal(await p.evaluate(() => document.activeElement?.getAttribute("aria-label")), "terça, manhã");
+  await p.getByText("de 4 seções completas").waitFor();
+  assert.equal(await p.getByText("Link da minha sala de chamada (opcional)").count(), 0, "sem sala de chamada");
+  assert.equal(await p.getByText("Quando você costuma ter tempo").count(), 0, "sem grade de disponibilidade");
   await p.getByRole("button", { name: "Salvar", exact: true }).click();
   await p.getByText("Confira o e-mail.").waitFor();
   assert(!calls.some((x) => x.endpoint === "mvp_save_profile"), "não salva com erro");
@@ -321,8 +306,8 @@ try {
   assert.equal(savedProfile.c.email, "contato@exemplo.invalid");
   assert.notEqual(savedProfile.c.email, session.user.email);
   assert.deepEqual(savedProfile.p.can_help, ["entrevista"]);
-  assert(savedProfile.p.slots.includes("1_manha"));
-  console.log("PASSOU: perfil com seções abertas, erro ao lado do campo, grade pelo teclado e sem consentimento automático de IA");
+  assert(!("meet" in savedProfile.c), "sala não é enviada");
+  console.log("PASSOU: perfil com seções abertas, erro ao lado do campo, sem sala nem grade e sem consentimento automático de IA");
   assert.equal(await p.getByRole("checkbox", { name: "Topo ajudar alguém" }).isChecked(), true, "estado inicial vem das listas");
   assert.equal(await p.getByRole("checkbox", { name: "Quero uma conversa" }).isChecked(), true);
   p.once("dialog", (d) => d.dismiss());

@@ -28,18 +28,6 @@ export const IconeEmail = ({ className }: P) => (
     <path d="m3 7 9 6 9-6" />
   </svg>
 );
-export const IconeVideo = ({ className }: P) => (
-  <svg {...base(className)}>
-    <rect x="3" y="6" width="13" height="12" rx="2" />
-    <path d="m16 10 5-3v10l-5-3" />
-  </svg>
-);
-export const IconeCalendario = ({ className }: P) => (
-  <svg {...base(className)}>
-    <rect x="3" y="5" width="18" height="16" rx="2" />
-    <path d="M3 10h18M8 3v4M16 3v4" />
-  </svg>
-);
 export const IconeMais = ({ className }: P) => (
   <svg {...base(className)}>
     <circle cx="5" cy="12" r="1" />
