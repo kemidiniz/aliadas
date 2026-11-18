@@ -26,6 +26,13 @@ run -f tests/avisos_email_test.sql 2>&1 | grep -E "ok:|FALHOU|ERRO|ERROR|---|PAS
 
 # 044 amplia a fila; mantém antes os testes do contrato de 043.
 for f in migrations/*.sql; do
-  if [[ "$(basename "$f")" > "20261118000043z" ]]; then apply_migration "$f"; fi
+  if [[ "$(basename "$f")" > "20261118000043z" && "$(basename "$f")" < "20261118000045" ]]; then apply_migration "$f"; fi
 done
 run -f tests/avisos_aceite_test.sql 2>&1 | grep -E "ok:|FALHOU|ERRO|ERROR|---|PASSARAM" | sed "s/^psql:[^ ]* NOTICE:  /  /"
+
+# Um registro legado apenas no banco local permite testar a preservação do histórico.
+run -c "insert into public.feedback(tipo,nota_facilidade,encontrou_aliadas,email) values('avaliacao',4,'nao','historico45@example.invalid');"
+for f in migrations/*.sql; do
+  if [[ "$(basename "$f")" > "20261118000044z" ]]; then apply_migration "$f"; fi
+done
+run -f tests/feedback_obrigatorio_test.sql 2>&1 | grep -E "ok:|FALHOU|ERRO|ERROR|---|PASSARAM" | sed "s/^psql:[^ ]* NOTICE:  /  /"

@@ -23,11 +23,11 @@ Se futuramente houver uma exigência para uso contínuo, considerar apenas uma a
 
 | Pergunta | Medida | Como tratar quem não usou |
 |---|---|---|
-| Ficou claro o próximo passo em cada tela? | Clareza do fluxo, de 1 a 5 | Pode não responder |
+| Ficou claro o próximo passo em cada tela? | Clareza do fluxo, de 1 a 5 | Resposta exigida ao avaliar o site |
 | As habilidades sugeridas pela IA combinaram com seu objetivo? | Adequação percebida, de 1 a 5 | Não usei a IA / A IA não trouxe sugestões |
 | Foi fácil encontrar onde acompanhar seus convites? | Facilidade de acompanhamento, de 1 a 5 | Não enviei nem recebi convites |
 
-São opcionais. Respostas antigas continuam sem notas novas. O painel mostra média, número de notas, quantidade/proporção de 4 e 5, e contagens separadas das opções não aplicáveis. Ausência de resposta não vale zero.
+Desde a migration 045 (18/11), essas três perguntas e a nota de facilidade são obrigatórias ao enviar a avaliação. A participação continua voluntária. Respostas antigas continuam sem notas novas. O painel mostra média, número de notas, quantidade/proporção de 4 e 5, e contagens separadas das opções não aplicáveis. Ausência de resposta não vale zero.
 
 Em Painel → Avaliações e feedback, filtrar **Avaliação** e o mês desejado. **Exportar medidas (CSV)** inclui todos os registros carregados do filtro, com notas numéricas para cálculo; exclui e-mail e conteúdo aberto. O texto aberto continua disponível apenas na área administrativa autorizada, para leitura e resposta.
 
@@ -69,3 +69,9 @@ Os três passos da página institucional **Sobre nós** preservam a disposição
 - O indicador de 97% passa a ter a legenda **com mais conexões para eles**, em uma linha. O parágrafo de contexto abaixo dos indicadores foi retirado da interface a pedido da titular; fontes e datas continuam clicáveis. **Dá para estar dos dois lados.** fica sem o complemento anterior.
 
 Esta alteração não requer migration nem republicação da Edge Function. O limite de três objetivos em 24h, o limite global da IA, os consentimentos, RLS e contatos após aceite mútuo continuam no servidor. Os testes de reabertura usam somente dados locais simulados; não criam registros de validação humana.
+
+## Quatro perguntas obrigatórias — 18/11/2026
+
+A avaliação começa por facilidade de uso, clareza do próximo passo, adequação das habilidades da IA e acompanhamento dos convites. As quatro precisam ser respondidas para enviar, com opções de não uso da IA/convites. A pergunta sobre conseguir se conectar, a resposta aberta e o e-mail são opcionais. O placeholder dos menus é apenas **Escolha**. Participar não é requisito para continuar usando ou encontrar aliadas.
+
+A migration 045 identifica os registros históricos como versão 1, sem preencher notas, e exige as quatro respostas em novas avaliações, de versão 2. O navegador não tem permissão de escolher a versão antiga nem de retroagir a data. Atualizar o status de um registro histórico continua possível para quem tem permissão. Dúvidas e relatos de problema mantêm seus próprios campos.

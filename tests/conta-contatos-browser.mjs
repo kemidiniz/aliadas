@@ -1,4 +1,4 @@
-// Sessão renovada, falha transitória de perfil, telefone e opcionais. Só API simulada.
+// Sessão, telefone e quatro perguntas obrigatórias. Só API simulada.
 import {createRequire} from 'node:module';
 import {mkdirSync} from 'node:fs';
 import assert from 'node:assert/strict';
@@ -56,16 +56,25 @@ try {
  await p.getByRole('button',{name:'Tentar novamente',exact:true}).click();await p.getByRole('heading',{name:'Minhas alianças',exact:true}).waitFor();
  await p.goto(base+'/ajuda');await p.getByText('Avaliar o site',{exact:true}).click();
  assert.equal(await p.getByRole('option',{name:'Prefiro não responder',exact:true}).count(),0);
- for(const titulo of ['Ficou claro o próximo passo em cada tela?','As habilidades sugeridas pela IA combinaram com seu objetivo?','Foi fácil encontrar onde acompanhar seus convites?'])assert.equal(await p.getByRole('combobox',{name:titulo}).getAttribute('required'),null);
+ for(const titulo of ['Ficou claro o próximo passo em cada tela?','As habilidades sugeridas pela IA combinaram com seu objetivo?','Foi fácil encontrar onde acompanhar seus convites?'])assert.equal(await p.getByRole('combobox',{name:titulo}).getAttribute('required')!==null,true);
+ await p.getByRole('button',{name:'Enviar',exact:true}).click();
+ assert.equal(avaliacao,undefined,'avaliação incompleta não chega ao banco');
+ await p.getByText('Escolha uma nota',{exact:true}).waitFor();
+ await p.getByText('Escolha uma nota de 1 a 5.',{exact:true}).waitFor();
  await p.locator('label').filter({has:p.getByRole('radio',{name:'4',exact:true})}).click();
- await p.locator('label').filter({has:p.getByRole('radio',{name:'Em parte',exact:true})}).click();
+ await p.getByRole('combobox',{name:'Ficou claro o próximo passo em cada tela?'}).selectOption('5');
+ await p.getByRole('combobox',{name:'As habilidades sugeridas pela IA combinaram com seu objetivo?'}).selectOption('nao_usei');
+ await p.getByRole('combobox',{name:'Foi fácil encontrar onde acompanhar seus convites?'}).selectOption('nao_cheguei');
+ assert.equal(await p.getByText('Escolha uma nota de 1 a 5.',{exact:true}).count(),0,'aviso de campo corrigido desaparece ao responder');
+ assert.equal(await p.getByRole('option',{name:'Escolha (opcional)',exact:true}).count(),0);
  for(const width of [390,1440]){
   await p.setViewportSize({width,height:1000});const copyright=p.getByText('© 2026 Kemily Diniz',{exact:true});
   if(width===390){const x=await copyright.evaluate(n=>{const r=document.createRange();r.selectNodeContents(n);const t=r.getBoundingClientRect(),c=n.parentElement.getBoundingClientRect();return Math.abs(t.left+t.width/2-(c.left+c.width/2));});assert(x<1,'copyright centralizado no celular');}
   await p.screenshot({path:`${pasta}/feedback-${width}.png`,fullPage:true});await p.locator('footer').screenshot({path:`${pasta}/rodape-${width}.png`});
  }
  await p.getByRole('button',{name:'Enviar',exact:true}).click();await p.getByRole('heading',{name:'Recebemos!',exact:true}).waitFor();
- for(const campo of ['clareza_fluxo','adequacao_ia','acompanhar_convites'])assert.equal(avaliacao[campo],null,'pergunta opcional pode ficar em branco');
+ assert.equal(avaliacao.clareza_fluxo,'5');assert.equal(avaliacao.adequacao_ia,'nao_usei');assert.equal(avaliacao.acompanhar_convites,'nao_cheguei');
+ assert.equal(avaliacao.encontrou_aliadas,null,'depois das quatro primeiras, responder é opcional');
  assert.deepEqual(errors,[]);
- console.log('PASSOU: falha inicial da conta oferece nova tentativa sem sair; feedback sem opção redundante continua opcional; copyright mobile centralizado.');
+ console.log('PASSOU: falha inicial da conta oferece nova tentativa sem sair; quatro primeiras perguntas exigidas, opções não aplicáveis e demais respostas opcionais; copyright mobile centralizado.');
 }finally{await b.close();}

@@ -22,7 +22,7 @@ const profile = {
   onde_esta: "estudando",
   areas: ["saude"],
   formas_conexao: ["mensagem"],
-  status: "aprovado",
+  status: "pendente",
 };
 const professional = {
   profile_id: uid,

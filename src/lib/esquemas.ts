@@ -53,14 +53,14 @@ const emailOpcional = z
   .max(254)
   .refine((v) => v === '' || z.string().email().safeParse(v).success, 'Confira o e-mail')
 
-const escalaOpcional = z.enum(['', '1', '2', '3', '4', '5']).optional();
+const escalaObrigatoria = z.enum(['1', '2', '3', '4', '5'], { message: 'Escolha uma nota de 1 a 5.' });
 export const feedbackAvaliacao = z.object({
   tipo: z.literal('avaliacao'),
-  clareza_fluxo: escalaOpcional,
-  adequacao_ia: z.enum(['', '1', '2', '3', '4', '5', 'nao_usei', 'sem_sugestoes']).optional(),
-  acompanhar_convites: z.enum(['', '1', '2', '3', '4', '5', 'nao_cheguei']).optional(),
+  clareza_fluxo: escalaObrigatoria,
+  adequacao_ia: z.enum(['1', '2', '3', '4', '5', 'nao_usei', 'sem_sugestoes'], { message: 'Escolha uma nota ou informe que não usou a IA.' }),
+  acompanhar_convites: z.enum(['1', '2', '3', '4', '5', 'nao_cheguei'], { message: 'Escolha uma nota ou informe que ainda não enviou nem recebeu convites.' }),
   nota_facilidade: z.number({ message: 'Escolha uma nota' }).int().min(1).max(5),
-  encontrou_aliadas: z.enum(['sim', 'em_parte', 'nao'], { message: 'Escolha uma opção' }),
+  encontrou_aliadas: z.enum(['', 'sim', 'em_parte', 'nao']).optional(),
   mudaria: z.string().trim().max(LIMITES.feedbackCurto),
   email: emailOpcional,
 })

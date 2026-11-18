@@ -14,6 +14,7 @@
     "test:browser": "node tests/mvp-browser.mjs",
     "test:carregamento": "node tests/carregamento-browser.mjs",
     "test:avisos": "node --test tests/aviso-convite.test.mjs",
+    "test:feedback": "node --test tests/feedback.test.mjs",
     "test:admin-browser": "node tests/admin-browser.mjs",
     "test:visual": "node tests/visual-final.mjs",
     "test:validacao": "node tests/validacao-local.mjs",

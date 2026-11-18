@@ -39,7 +39,10 @@ export default function FeedbackPagina() {
   const [erros, setErros] = useState<Record<string, string>>({})
   const [estado, setEstado] = useState<'idle' | 'enviando' | 'ok' | 'erro'>('idle')
   const [msgErro, setMsgErro] = useState('')
-  const muda = <K extends keyof typeof vazio>(k: K, v: (typeof vazio)[K]) => setF((x) => ({ ...x, [k]: v }))
+  const muda = <K extends keyof typeof vazio>(k: K, v: (typeof vazio)[K]) => {
+    setF((x) => ({ ...x, [k]: v }))
+    setErros((anteriores) => { const novos = { ...anteriores }; delete novos[k]; return novos })
+  }
 
   async function enviar(e: FormEvent) {
     e.preventDefault()
@@ -53,7 +56,7 @@ export default function FeedbackPagina() {
     for (const k of Object.keys(dados)) if (dados[k] === '') dados[k] = null
     // sem .select(): quem envia não tem (nem precisa ter) permissão de leitura
     const { error } = await supabase.from('feedback').insert(dados)
-    setMsgErro(error ? mensagemAmigavel(error, 'Não conseguimos enviar agora. Tente de novo em instantes.') : '')
+    setMsgErro(error?.code === '23514' && error.message.includes('feedback_avaliacao_quatro_perguntas') ? 'Responda às quatro primeiras perguntas para enviar a avaliação.' : error ? mensagemAmigavel(error, 'Não conseguimos enviar agora. Tente de novo em instantes.') : '')
     setEstado(error ? 'erro' : 'ok')
   }
 
@@ -105,22 +108,23 @@ export default function FeedbackPagina() {
             >
               {caminho === 'avaliacao' && (
                 <>
+                  <p className="text-sm text-suave">Responder à pesquisa é voluntário. Para enviá-la, responda às quatro primeiras perguntas. As demais são opcionais.</p>
                   <fieldset>
                     <legend className="mb-3 font-titulo text-lg font-semibold">Foi fácil usar a aliadas?</legend>
                     <div className="flex gap-2">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <label key={n} className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border-2 font-titulo font-bold ${f.nota_facilidade === n ? 'border-destaque bg-destaque text-sobre-destaque' : 'border-campo text-texto hover:border-destaque'} focus-within:outline focus-within:outline-3 focus-within:outline-offset-3`}>
-                          <input type="radio" name="nota" value={n} className="sr-only" checked={f.nota_facilidade === n} onChange={() => muda('nota_facilidade', n)} />
+                          <input type="radio" name="nota" value={n} className="sr-only" required aria-invalid={Boolean(erros.nota_facilidade) || undefined} aria-describedby="nota-facilidade-erro" checked={f.nota_facilidade === n} onChange={() => muda('nota_facilidade', n)} />
                           {n}
                         </label>
                       ))}
                     </div>
                     <p className="mt-2 flex justify-between text-sm text-suave"><span>1: muito difícil</span><span>5: muito fácil</span></p>
-                    <p className="text-sm text-erro" aria-live="polite">{erros.nota_facilidade}</p>
+                    <p id="nota-facilidade-erro" className="text-sm text-erro" aria-live="polite">{erros.nota_facilidade}</p>
                   </fieldset>
                   <section aria-labelledby="experiencia-site" className="space-y-5">
-                    <div><h3 id="experiencia-site" className="text-lg">Sua experiência no site</h3><p className="mt-2 text-sm text-suave">Estas três respostas são opcionais. Avalie apenas as etapas que você usou.</p></div>
-                    {PERGUNTAS_USABILIDADE.map(q => <CampoSelect key={q.campo} rotulo={q.titulo} value={f[q.campo]} onChange={e=>muda(q.campo,e.target.value)} erro={erros[q.campo]} opcoes={[{valor:"",rotulo:"Escolha (opcional)",hidden:true},...[1,2,3,4,5].map(n=>({valor:String(n),rotulo:n===1?q.extremos[0]:n===5?q.extremos[1]:String(n)})),...q.extras]} />)}
+                    <div><h3 id="experiencia-site" className="text-lg">Sua experiência no site</h3><p className="mt-2 text-sm text-suave">Se não usou a IA ou não enviou nem recebeu convites, escolha a opção correspondente.</p></div>
+                    {PERGUNTAS_USABILIDADE.map(q => <CampoSelect key={q.campo} rotulo={q.titulo} required value={f[q.campo]} onChange={e=>muda(q.campo,e.target.value)} erro={erros[q.campo]} opcoes={[{valor:"",rotulo:"Escolha",hidden:true,disabled:true},...[1,2,3,4,5].map(n=>({valor:String(n),rotulo:n===1?q.extremos[0]:n===5?q.extremos[1]:String(n)})),...q.extras]} />)}
                   </section>
                   <Escolha
                     nome="encontrou"

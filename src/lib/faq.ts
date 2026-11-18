@@ -25,6 +25,7 @@ export const FAQ = [
 
 // Perguntas a mais da página de Ajuda (no máximo 2 frases cada).
 export const FAQ_AJUDA = [
+  { q: "Preciso esperar aprovação para usar a aliadas?", a: "Não. Depois de confirmar seu e-mail e criar o perfil, você já pode usar a aliadas; antes de enviar um convite, complete os dados de contato que o site solicitar." },
   { q: "Preciso avaliar para encontrar outra aliada?", a: "Você pode continuar buscando. Em Alianças, conte se vocês já conversaram, ainda não ou não vão conversar; a nota de utilidade aparece só quando a conversa aconteceu." },
 
   ...FAQ,
