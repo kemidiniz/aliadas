@@ -72,10 +72,10 @@ export default function LandingInstitucional() {
         <div className="stats-grid">
           <article>
             <p className="stat-number">
-              27% <span>Brasil</span>
+              27% <span>menos chance, para elas</span>
             </p>
             <p>
-              Em análise de dados do LinkedIn, mulheres no Brasil tinham 27% menos probabilidade de possuir uma rede profissional forte em comparação aos homens.
+              Em análise de dados do LinkedIn, mulheres no Brasil têm 27% menos probabilidade de possuir uma rede de contatos forte em comparação aos homens.
             </p>
             <a className="source-link" href={LINKEDIN} target="_blank" rel="noopener noreferrer">
               LinkedIn, 11/03/2020 <Arrow />
@@ -83,17 +83,17 @@ export default function LandingInstitucional() {
           </article>
           <article>
             <p className="stat-number">
-              97% <span>Global</span>
+              97% <span>dos países: eles com mais conexões</span>
             </p>
             <p>
-              Em 97% das economias analisadas, os homens tinham redes de conexões maiores que as mulheres no LinkedIn.
+              Em 97% dos países analisados, os homens têm redes de conexões maiores que as mulheres.
             </p>
             <a className="source-link" href={WEF} target="_blank" rel="noopener noreferrer">
               Fórum Econômico Mundial, 2024 <Arrow />
             </a>
           </article>
         </div>
-        <p className="mt-5 text-xs text-suave">Estudos históricos de membros do LinkedIn. A força da rede considera tamanho e diversidade; 97% se refere às economias analisadas. Esses dados contextualizam a desigualdade e não comprovam a eficácia da aliadas.</p>
+        <p className="mt-5 text-xs text-suave">Estudos históricos do LinkedIn (2020 e 2024). A força da rede considera tamanho e diversidade. Na fonte, 97% se refere a economias, incluindo países e territórios. Os dados contextualizam a desigualdade; a eficácia da aliadas depende de validação.</p>
       </section>
       <section id="como-funciona" className="institutional-section scroll-mt-28" aria-labelledby="solution-title">
         <p className="eyebrow">Como funciona</p>

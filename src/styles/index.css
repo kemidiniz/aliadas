@@ -251,8 +251,8 @@ a {
 }
 .stat-number {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 0.75rem;
   font-size: var(--text-display);
   font-family: var(--font-titulo);
@@ -263,6 +263,10 @@ a {
   margin-bottom: 1.25rem;
 }
 .stat-number span {
+  min-width: 0;
+  max-width: 15rem;
+  flex: 1;
+  line-height: 1.5;
   font-size: var(--text-pequeno);
   font-family: var(--font-texto);
   letter-spacing: 0;

@@ -10,6 +10,18 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try {
  const guest=await browser.newContext();const g=await guest.newPage();let avaliacao;
  await guest.route('**/rest/v1/feedback',async route=>{avaliacao=route.request().postDataJSON();await route.fulfill({status:201,contentType:'application/json',body:'[]'});});
+ await g.goto(base);
+ for(const width of [375,390,768,1440]) {
+  await g.setViewportSize({width,height:1000});
+  const passos=await g.locator('.steps-list > li').evaluateAll(ns=>ns.map(n=>n.getBoundingClientRect().top));
+  if(width<768) assert(passos[0]<passos[1]&&passos[1]<passos[2],`Sobre nós preserva a disposição original em ${width}`);
+  else assert(Math.max(...passos)-Math.min(...passos)<1,`Sobre nós preserva as três colunas no desktop em ${width}`);
+  for(const stat of await g.locator('.stat-number').all()) {
+    const alinhado=await stat.evaluate(n=>{const span=n.querySelector('span'),r=document.createRange();r.selectNodeContents(n.firstChild);return {numero:r.getBoundingClientRect().right,legenda:span.getBoundingClientRect().left};});
+    assert(alinhado.legenda>=alinhado.numero,`legenda fica ao lado do número em ${width}`);
+  }
+  if([390,1440].includes(width)){await g.evaluate(()=>scrollTo(0,0));await g.screenshot({path:`${pasta}/institucional-${width}.png`,fullPage:true});}
+ }
  for(const width of [390,1440]) {
   await g.setViewportSize({width,height:1000});
   for(const path of ['/termos-e-privacidade','/ajuda','/entrar']) {

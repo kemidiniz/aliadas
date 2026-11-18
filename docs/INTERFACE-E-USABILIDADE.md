@@ -56,3 +56,5 @@ As respostas de usabilidade dos testes são simuladas e ficam fora do banco de p
 ## Complemento mobile
 
 As etapas de Encontrar usam três colunas fixas, com números destacados e rótulos curtos no celular. Em Alianças, as quatro etapas têm a mesma posição inicial e espaço reservado para duas linhas, alinhando Contatos liberados às demais. Alinhamento conferido no navegador em 375, 390, 768 e 1440px, além das capturas em 390/1440. Ajuste somente de interface, sem nova migration.
+
+Os três passos da página institucional **Sobre nós** preservam a disposição anterior: empilhados no celular e lado a lado no desktop. O novo alinhamento aplica-se à busca com IA e às Alianças. Os indicadores da página institucional receberam os textos e as legendas solicitados, mantendo fontes clicáveis, datas dos estudos e a observação sobre economias, países e territórios.

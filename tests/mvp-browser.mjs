@@ -115,6 +115,11 @@ try {
   assert.equal(await g.locator('a[href="/#quem-somos"]').count(), 0, "nenhum link para /#quem-somos");
   assert.equal(await g.getByText(/Criada na formação em IA Aplicada/).count(), 0, "frase da reprograma só em Quem somos");
   await g.getByText("© 2026 Kemily Diniz", { exact: true }).waitFor();
+  await g.getByText("menos chance, para elas",{exact:true}).waitFor();
+  await g.getByText("dos países: eles com mais conexões",{exact:true}).waitFor();
+  await g.getByText("Em análise de dados do LinkedIn, mulheres no Brasil têm 27% menos probabilidade de possuir uma rede de contatos forte em comparação aos homens.",{exact:true}).waitFor();
+  await g.getByText("Em 97% dos países analisados, os homens têm redes de conexões maiores que as mulheres.",{exact:true}).waitFor();
+
   assert.equal(await g.locator('a[href="/forum"]').count(), 0);
   assert.deepEqual(await g.locator("main section[aria-labelledby]").evaluateAll(nodes=>nodes.map(n=>n.getAttribute("aria-labelledby"))),["hero-title","why-title","solution-title","audience-title","faq-title","final-title"]);
   await g.getByText("Escreva seu objetivo, revise as habilidades sugeridas pela IA e encontre quem pode ajudar.",{exact:true}).waitFor();
