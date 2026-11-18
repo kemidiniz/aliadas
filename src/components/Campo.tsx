@@ -127,7 +127,7 @@ export function CampoSelect({
   ...props
 }: Base &
   SelectHTMLAttributes<HTMLSelectElement> & {
-    opcoes: { valor: string; rotulo: string }[];
+    opcoes: { valor: string; rotulo: string; disabled?: boolean; hidden?: boolean }[];
   }) {
   const id = useId();
   return (
@@ -141,7 +141,7 @@ export function CampoSelect({
           {...props}
         >
           {opcoes.map((o) => (
-            <option key={o.valor} value={o.valor}>
+            <option key={o.valor} value={o.valor} disabled={o.disabled} hidden={o.hidden}>
               {o.rotulo}
             </option>
           ))}

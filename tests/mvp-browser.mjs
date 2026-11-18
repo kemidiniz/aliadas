@@ -716,3 +716,4 @@ try {
 
 await import('./ajustes-browser.mjs');
 await import('./buscas-browser.mjs');
+await import('./conta-contatos-browser.mjs');

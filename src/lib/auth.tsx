@@ -34,6 +34,7 @@ type AuthCtx = {
   curadora: boolean;
   adminAccess: AdminAccess;
   carregando: boolean;
+  erroPerfil: boolean;
   recarregar: () => Promise<void>;
   sair: () => Promise<void>;
 };
@@ -52,15 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     adminAccess.handle_reports ||
     Boolean(adminAccess.ver_visao_geral || adminAccess.ver_feedback || adminAccess.ver_ia_automacoes);
   const [carregando, setCarregando] = useState(true);
+  const [erroPerfil, setErroPerfil] = useState(false);
 
   const carregarDados = useCallback(async (s: Session | null) => {
     const requestRevision = ++revision.current;
     if (!s) {
       setPerfil(null);
       setAdminAccess(NO_ADMIN);
+      setErroPerfil(false);
       return true;
     }
-    const [{ data: p }, { data: r }, access] = await Promise.all([
+    const [resultadoPerfil, { data: r }, access] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", s.user.id).maybeSingle(),
       supabase
         .from("roles")
@@ -71,7 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.rpc("mvp_admin_access"),
     ]);
     if (requestRevision !== revision.current) return false;
-    setPerfil((p as Perfil) ?? null);
+    setErroPerfil(Boolean(resultadoPerfil.error));
+    // Uma falha de conexão não significa que o perfil deixou de existir.
+    setPerfil(anterior => resultadoPerfil.error ? (anterior?.id === s.user.id ? anterior : null) : (resultadoPerfil.data as Perfil) ?? null);
     if (!access.error && access.data && !Array.isArray(access.data))
       setAdminAccess(access.data as AdminAccess);
     else if (["PGRST202", "42883"].includes(access.error?.code ?? "") && r)
@@ -90,13 +95,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let ativo = true;
+    let eventoRecebido = false;
     supabase.auth.getSession().then(async ({ data }) => {
-      if (!ativo) return;
+      if (!ativo || eventoRecebido) return;
       setSession(data.session);
       const applied = await carregarDados(data.session);
       if (ativo && applied) setCarregando(false);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((evento, s) => {
+      eventoRecebido = true;
       // link de "esqueci a senha" aberto: leva para criar a senha nova
       if (evento === "PASSWORD_RECOVERY")
         sessionStorage.setItem(CHAVE_NOVA_SENHA, "1");
@@ -121,12 +128,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await carregarDados(session);
   }, [carregarDados, session]);
   useEffect(() => {
-    const refresh = () => {
-      if (session) carregarDados(session);
+    let atualizando = false, ativo = true;
+    const refresh = async () => {
+      if (!session || atualizando || document.visibilityState === "hidden") return;
+      atualizando = true;
+      try {
+        // O SDK renova um token próximo de expirar usando o refresh token.
+        const { data } = await supabase.auth.getSession();
+        if (ativo && data.session) await carregarDados(data.session);
+      } catch { if (ativo) setErroPerfil(true); }
+      finally { atualizando = false; }
     };
     window.addEventListener("focus", refresh);
-    return () => window.removeEventListener("focus", refresh);
-  }, [session, carregarDados]);
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { ativo = false; window.removeEventListener("focus", refresh); window.removeEventListener("online", refresh); document.removeEventListener("visibilitychange", refresh); };
+  }, [session?.user.id, carregarDados]);
   const sair = useCallback(async () => {
     limparRascunhosPerfil();
     await supabase.auth.signOut();
@@ -140,6 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         curadora,
         adminAccess,
         carregando,
+        erroPerfil,
         recarregar,
         sair,
       }}

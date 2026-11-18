@@ -5,6 +5,10 @@ project_id = "aliadas"
 [functions.excluir-conta]
 verify_jwt = false
 
+[functions.aviso-convite]
+# Fila interna autenticada pelo segredo do worker, sem acesso do navegador.
+verify_jwt = false
+
 [functions.conversa-ia]
 # Chamada interna pelo gatilho; autenticação por segredo no Vault, nunca no navegador.
 verify_jwt = false

@@ -120,7 +120,7 @@ export default function FeedbackPagina() {
                   </fieldset>
                   <section aria-labelledby="experiencia-site" className="space-y-5">
                     <div><h3 id="experiencia-site" className="text-lg">Sua experiência no site</h3><p className="mt-2 text-sm text-suave">Estas três respostas são opcionais. Avalie apenas as etapas que você usou.</p></div>
-                    {PERGUNTAS_USABILIDADE.map(q => <CampoSelect key={q.campo} rotulo={q.titulo} value={f[q.campo]} onChange={e=>muda(q.campo,e.target.value)} erro={erros[q.campo]} opcoes={[{valor:"",rotulo:"Prefiro não responder"},...[1,2,3,4,5].map(n=>({valor:String(n),rotulo:n===1?q.extremos[0]:n===5?q.extremos[1]:String(n)})),...q.extras]} />)}
+                    {PERGUNTAS_USABILIDADE.map(q => <CampoSelect key={q.campo} rotulo={q.titulo} value={f[q.campo]} onChange={e=>muda(q.campo,e.target.value)} erro={erros[q.campo]} opcoes={[{valor:"",rotulo:"Escolha (opcional)",hidden:true},...[1,2,3,4,5].map(n=>({valor:String(n),rotulo:n===1?q.extremos[0]:n===5?q.extremos[1]:String(n)})),...q.extras]} />)}
                   </section>
                   <Escolha
                     nome="encontrou"

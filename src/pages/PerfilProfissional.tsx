@@ -11,6 +11,7 @@ import { supabase } from "../lib/supabase";
 import { mensagemAmigavel } from "../lib/erros";
 import { apagarFoto, enviarFoto, useFotoUrl } from "../lib/fotos";
 import { FotoPerfil } from "../components/FotoPerfil";
+import { CampoWhatsApp } from "../components/CampoWhatsApp";
 import { AREAS_PRO, CHANNELS_PRO, SITUACAO_PRO, type ProContacts, type ProProfile } from "../lib/professional";
 
 import { EscolhaHabilidades } from "../components/EscolhaHabilidades";
@@ -28,8 +29,9 @@ type Dados = {
   ai_consent: boolean;
   ai_consent_version: string;
   available: boolean;
+  invite_email_notifications: boolean;
 };
-const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], habilidades: [], channels: [], ai_consent: false, ai_consent_version: "habilidades-v1", available: false };
+const vazio: Dados = { nome: "", situacao: "", area: "", interesses: [], can_help: [], habilidades: [], channels: [], ai_consent: false, ai_consent_version: "habilidades-v1", available: false, invite_email_notifications: true };
 
 function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
   const e: Record<string, string> = {};
@@ -41,7 +43,7 @@ function erros(d: Dados, c: ProContacts, termos: boolean, completar: boolean) {
   if (d.channels.includes("linkedin") && !/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(c.linkedin ?? ""))
     e.linkedin = "Cole o link completo, começando com https://www.linkedin.com/";
   if (d.channels.includes("whatsapp") && !/^\+[1-9][0-9]{7,14}$/.test(c.whatsapp ?? ""))
-    e.whatsapp = "Use o código do país, sem espaços. Ex.: +5511999999999";
+    e.whatsapp = "Confira o país, o DDD e o número do WhatsApp.";
   if (d.channels.includes("email") && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email ?? "")) e.email = "Confira o e-mail.";
   if (d.available && !d.habilidades.length) e.habilidades = "Escolha uma habilidade ou desative a disponibilidade para receber convites.";
   if (completar) {
@@ -91,7 +93,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       if (pr.error || co.error || info.error) { toast("Não foi possível carregar seu perfil. Atualize a página.", "erro"); return; }
       const p = pr.data as ProProfile | null;
       const salvo = {
-        d: p ? { nome: (info.data?.apelido ?? ""), situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels.filter(c => c in CHANNELS_PRO), ai_consent: p.ai_consent && p.ai_consent_version === "habilidades-v1", ai_consent_version: "habilidades-v1", available: p.available } : { ...vazio, nome: (info.data?.apelido ?? "") },
+        d: p ? { nome: (info.data?.apelido ?? ""), situacao: p.situacao ?? "", area: p.area_principal ?? "", interesses: p.interesses ?? [], can_help: p.can_help ?? [], habilidades: p.habilidades ?? [], channels: p.channels.filter(c => c in CHANNELS_PRO), ai_consent: p.ai_consent && p.ai_consent_version === "habilidades-v1", ai_consent_version: "habilidades-v1", available: p.available, invite_email_notifications: p.invite_email_notifications ?? true } : { ...vazio, nome: (info.data?.apelido ?? "") },
         c: (co.data as ProContacts) ?? { linkedin: "", whatsapp: "", email: "", meet: null, nome_completo: "" },
         termos: Boolean(p),
       };
@@ -203,6 +205,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           ai_consent: d.ai_consent,
           ai_consent_version: "habilidades-v1",
           available: d.available,
+          invite_email_notifications: d.invite_email_notifications,
         },
         // Disponibilidade histórica é preservada; os contatos seguem as permissões atuais.
         c: { linkedin: contato("linkedin"), whatsapp: contato("whatsapp"), email: contato("email"), nome_completo: c.nome_completo ?? "" },
@@ -262,7 +265,7 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
             <CampoTexto rotulo="LinkedIn" type="url" placeholder="https://www.linkedin.com/in/..." value={c.linkedin ?? ""} maxLength={250} erro={err("linkedin")} onChange={(x) => setC({ ...c, linkedin: x.target.value })} />
           )}
           {d.channels.includes("whatsapp") && (
-            <CampoTexto rotulo="WhatsApp" type="tel" placeholder="+5511999999999" value={c.whatsapp ?? ""} maxLength={16} erro={err("whatsapp")} onChange={(x) => setC({ ...c, whatsapp: x.target.value })} />
+            <div className="sm:col-span-2"><CampoWhatsApp value={c.whatsapp ?? ""} erro={err("whatsapp")} onChange={whatsapp => setC({ ...c, whatsapp })} /></div>
           )}
           {d.channels.includes("email") && (
             <CampoTexto rotulo="E-mail para contato" type="email" value={c.email ?? ""} maxLength={254} erro={err("email")} onChange={(x) => setC({ ...c, email: x.target.value })} />
@@ -302,6 +305,8 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           </div>
           <div className="space-y-3">
             {campos.ia}
+          <Caixinha marcado={d.invite_email_notifications} aoMudar={invite_email_notifications => set({invite_email_notifications})}>Receber um e-mail quando chegar um novo convite de aliança.</Caixinha>
+          <p className="text-sm text-suave">O aviso usa seu e-mail de acesso, sem nomes ou a mensagem do convite. Esse endereço não é compartilhado com outras participantes.</p>
             {campos.termos}
           </div>
           {sujo && <p role="status" className="text-sm text-suave">Mudanças não salvas</p>}
@@ -369,6 +374,8 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       conteudo: (
         <div className="space-y-3">
           {campos.ia}
+          <Caixinha marcado={d.invite_email_notifications} aoMudar={invite_email_notifications => set({invite_email_notifications})}>Receber um e-mail quando chegar um novo convite de aliança.</Caixinha>
+          <p className="text-sm text-suave">O aviso usa seu e-mail de acesso, sem nomes ou a mensagem do convite. Esse endereço não é compartilhado com outras participantes.</p>
         </div>
       ),
     },

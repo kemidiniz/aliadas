@@ -24,7 +24,7 @@ export function Rodape() {
             ))}
           </ul>
         </nav>
-        <p className="text-xs text-suave">© 2026 Kemily Diniz</p>
+        <p className="text-center text-xs text-suave sm:text-left">© 2026 Kemily Diniz</p>
       </div>
     </footer>
   );

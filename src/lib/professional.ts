@@ -74,6 +74,7 @@ export type ProProfile = {
   ai_consent: boolean;
   ai_consent_version?: string;
   available: boolean;
+  invite_email_notifications?: boolean;
 };
 export type ProContacts = {
   linkedin: string | null;
