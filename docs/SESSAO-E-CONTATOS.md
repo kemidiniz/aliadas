@@ -4,7 +4,7 @@
 - **WhatsApp:** seletor de países com Brasil (+55) como padrão. A participante informa DDD e número; o código internacional é incluído automaticamente. Colar número internacional identifica o país quando possível; números existentes são preservados. O formato salvo continua E.164 e o acesso aos contatos continua no banco, após aceite mútuo.
 - **Rodapé:** copyright centralizado apenas no celular; links mantêm margens e tamanho anteriores.
 - **Feedback:** removido "Prefiro não responder". Os três campos começam vazios, indicados como opcionais, e podem ser enviados sem seleção; o banco recebe nulo, nunca uma nota zero. As opções de não uso de IA e de não ter enviado convites continuam distinguindo situações reais.
-- **Avisos de convite:** migration 043 e função `aviso-convite`; veja AVISO-CONVITE.md. A ativação depende do secret SMTP válido. O teste retornou 535/EAUTH; nenhum envio foi declarado como bem-sucedido.
+- **Avisos de convite:** migration 043 e função `aviso-convite`; veja AVISO-CONVITE.md. Ativado em 18/11, depois do cadastro seguro da senha de aplicativo: teste SMTP com um endereço aceito e nenhum rejeitado. Fila vazia na ativação; teste apenas para o remetente, sem criar convite fictício. SMTP dos códigos preservado.
 
 ## Verificação
 

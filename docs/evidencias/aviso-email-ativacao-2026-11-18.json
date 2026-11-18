@@ -1,0 +1,27 @@
+{
+  "registrado_em": "2026-11-18T07:20:00-03:00",
+  "tipo": "ativacao_de_aviso_de_convite",
+  "smtp": {
+    "http": 200,
+    "enderecos_aceitos": 1,
+    "enderecos_rejeitados": 0,
+    "destino": "somente_remetente_configurado",
+    "confirma_entrega_na_caixa_principal": false
+  },
+  "ativacao": {
+    "habilitada": true,
+    "cron": [
+      {
+        "name": "aliadas-avisos-convite",
+        "active": true,
+        "schedule": "*/5 * * * *"
+      }
+    ],
+    "fila_na_ativacao": {}
+  },
+  "notificacoes_de_convite_real_processadas_na_verificacao": 0,
+  "contas_ou_aliancas_ficticias_criadas": false,
+  "smtp_dos_codigos_alterado": false,
+  "funcao_temporaria_removida": true,
+  "observacao": "Teste real de configuracao SMTP. Nao e uma geracao de IA nem um caso de validacao humana."
+}

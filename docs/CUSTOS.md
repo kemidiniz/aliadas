@@ -63,3 +63,7 @@ Usando **como hipótese** duas buscas por participante/mês e uma geração por 
 O aviso usa Gmail/SMTP já existente, Edge Function e fila no Supabase. Nenhum plano, faturamento ou crédito foi contratado. Há cota própria de 100 avisos/24h, e no máximo três despachos de fila por aviso ainda não reivindicado. O uso do SMTP se soma ao dos códigos de acesso na conta Gmail; a cota própria não garante disponibilidade do provedor. A rotina Cron reutiliza a extensão já disponível no projeto.
 
 Medição desta configuração: um teste SMTP recusado (535/EAUTH), zero e-mails comprovadamente aceitos. A ativação aguarda senha de aplicativo cadastrada diretamente nos Secrets. Não projetar custo ou taxa de entrega a partir de um teste recusado. O token de autenticação já tem uma hora; não foram ativados timebox/inatividade do plano Pro. A dependência de formatação de telefone é uma biblioteca local, sem API ou cobrança por uso.
+
+### Ativação confirmada — 18/11/2026
+
+Após a titular cadastrar a senha de aplicativo nos Secrets, o segundo teste SMTP foi aceito pelo Gmail: uma mensagem de teste para o próprio remetente, um endereço aceito e nenhum rejeitado. Avisos de novos convites ativados; fila vazia no momento da ativação. Isso não comprova entrega/leitura na caixa principal nem mede o consumo futuro. O teste inicial recusado permanece como ocorrência histórica. Nenhum novo plano ou faturamento foi habilitado.

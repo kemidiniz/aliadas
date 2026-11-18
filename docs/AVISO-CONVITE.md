@@ -1,10 +1,12 @@
 # Aviso de novos convites por e-mail
 
-## Estado em 17/11/2026
+## Estado em 18/11/2026
 
-Código, migration 043, fila privada e função `aviso-convite` preparados e publicados no Supabase. **Envio ainda desativado, aguardando uma senha de aplicativo utilizável no secret `ALIADAS_SMTP_PASSWORD`.** O teste SMTP foi recusado pelo Gmail (535 / EAUTH); não comprova envio nem chegada de e-mail. A função temporária de diagnóstico foi removida.
+**Envios ativados em produção.** A titular cadastrou a senha de aplicativo diretamente nos Secrets. O teste SMTP retornou HTTP 200: um endereço aceito pelo Gmail e nenhum rejeitado. Foi enviada uma mensagem identificada como teste somente para o remetente configurado; isso comprova aceite pelo SMTP, não leitura ou chegada à caixa principal.
 
-O acesso à configuração do Auth não forneceu uma credencial utilizável para esta função. Não alterar o SMTP do Auth nem enviar senhas pelo chat. A titular deve cadastrar uma senha de aplicativo do Gmail diretamente em **Edge Functions → Secrets**, no projeto existente. Host, porta 465, usuário e remetente já foram configurados como secrets privados.
+A chave `mvp_invite_email_enabled` está ativa e a rotina `aliadas-avisos-convite` está habilitada. A fila estava vazia na ativação: nenhum convite antigo foi reenviado, nenhuma conta ou aliança fictícia foi criada e nenhuma notificação de convite real foi declarada como processada neste teste. A função temporária de diagnóstico foi removida. A configuração SMTP dos códigos de login foi conferida e permaneceu igual.
+
+O registro sem dados pessoais está em `docs/evidencias/aviso-email-ativacao-2026-11-18.json`.
 
 ## Funcionamento
 
@@ -16,15 +18,15 @@ O acesso à configuração do Auth não forneceu uma credencial utilizável para
 
 Há um limite próprio de 100 avisos em 24h, além dos limites existentes de convites. O Gmail continua sujeito às cotas da conta e compartilha seu uso com os e-mails de autenticação. Não foi contratado outro serviço.
 
-A rotina `aliadas-avisos-convite` executa a cada cinco minutos. Reencaminha até três vezes uma chamada de fila ainda não reivindicada, mas não reenvia automaticamente uma mensagem de resultado SMTP incerto. Uma execução interrompida fica marcada para investigação. Até a ativação, a fila permanece aguardando sem consumir tentativas ou enviar usando uma credencial inválida.
+A rotina `aliadas-avisos-convite` executa a cada cinco minutos. Reencaminha até três vezes uma chamada de fila ainda não reivindicada, mas não reenvia automaticamente uma mensagem de resultado SMTP incerto. Uma execução interrompida fica marcada para investigação. Se os envios forem suspensos pela chave de ativação, a fila aguarda sem consumir tentativas.
 
 ## Controle da participante
 
 Em **Meu perfil → Privacidade**, a participante pode desativar "Receber um e-mail quando chegar um novo convite de aliança" e salvar. O padrão é receber o aviso transacional de novos convites. O e-mail de acesso serve somente para o aviso; não aparece para a outra participante. A preferência é revalidada no servidor.
 
-## Ativação final
+## Manutenção e nova configuração
 
-Depois de cadastrar o secret correto:
+A ativação inicial foi concluída. Se for necessário trocar a credencial futuramente:
 
 1. Testar SMTP com mensagem identificada como teste apenas para o remetente configurado, sem criar alianças ou contas fictícias.
 2. Confirmar aceite do Gmail e remover a função temporária de diagnóstico.
