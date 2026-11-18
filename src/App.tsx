@@ -1,5 +1,7 @@
 import { AnimatePresence } from "framer-motion";
-import { lazy, Suspense, useEffect } from "react";
+import { Suspense, useEffect } from "react";
+import { paginaSobDemanda } from "./lib/paginaSobDemanda";
+import { FalhaPagina } from "./components/FalhaPagina";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Cabecalho } from "./components/Cabecalho";
 import { Rodape } from "./components/Rodape";
@@ -11,12 +13,12 @@ import { Aviso, Carregando } from "./components/Aviso";
 import { supabaseConfigurado } from "./lib/supabase";
 import Home from "./pages/InicioProfissional";
 import Entrar from "./pages/Entrar";
-const Cadastro = lazy(() => import("./pages/PerfilProfissional"));
-const Conversas = lazy(() => import("./pages/ConversasProfissionais"));
-const Curadoria = lazy(() => import("./pages/Curadoria"));
-const FeedbackPagina = lazy(() => import("./pages/Feedback"));
+const Cadastro = paginaSobDemanda(() => import("./pages/PerfilProfissional"));
+const Conversas = paginaSobDemanda(() => import("./pages/ConversasProfissionais"));
+const Curadoria = paginaSobDemanda(() => import("./pages/Curadoria"));
+const FeedbackPagina = paginaSobDemanda(() => import("./pages/Feedback"));
 import Sobre from "./pages/LandingInstitucional";
-const TermosEPrivacidade = lazy(() => import("./pages/Textos").then(m => ({ default:m.TermosEPrivacidade })));
+const TermosEPrivacidade = paginaSobDemanda(() => import("./pages/Textos").then(m => ({ default:m.TermosEPrivacidade })));
 function RedirecionarLegal({ parte }: { parte: string }) {
  const local=useLocation();
  return <Navigate to={`/termos-e-privacidade${local.search}${local.hash || `#${parte}`}`} replace />;
@@ -49,6 +51,7 @@ export function App() {
         </div>
       )}
       <main id="conteudo" className="flex-1">
+        <FalhaPagina key={local.pathname}>
         <Suspense fallback={<Carregando />}>
           <AnimatePresence mode="wait">
             <Routes location={local} key={local.pathname}>
@@ -125,6 +128,7 @@ export function App() {
             </Routes>
           </AnimatePresence>
         </Suspense>
+        </FalhaPagina>
       </main>
       <Rodape />
       <NavInferior />

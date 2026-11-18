@@ -10,8 +10,9 @@ import "./styles/index.css";
 import { App } from "./App";
 import { AuthProvider } from "./lib/auth";
 import { TemaProvider } from "./lib/tema";
+import { TelaFalhaPagina } from "./components/FalhaPagina";
 
-const router = createBrowserRouter([{ path: "*", element: <App /> }]);
+const router = createBrowserRouter([{ path: "*", element: <App />, errorElement: <TelaFalhaPagina /> }]);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

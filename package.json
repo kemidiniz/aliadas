@@ -12,6 +12,7 @@
     "test:ia": "node --test tests/conversa-ia.test.mjs",
     "test:worker": "node tests/worker-local.mjs",
     "test:browser": "node tests/mvp-browser.mjs",
+    "test:carregamento": "node tests/carregamento-browser.mjs",
     "test:admin-browser": "node tests/admin-browser.mjs",
     "test:visual": "node tests/visual-final.mjs",
     "test:validacao": "node tests/validacao-local.mjs",
