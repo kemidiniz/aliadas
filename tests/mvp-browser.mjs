@@ -116,7 +116,7 @@ try {
   assert.equal(await g.getByText(/Criada na formação em IA Aplicada/).count(), 0, "frase da reprograma só em Quem somos");
   await g.getByText("© 2026 Kemily Diniz", { exact: true }).waitFor();
   await g.getByText("menos chance, para elas",{exact:true}).waitFor();
-  await g.getByText("dos países: eles com mais conexões",{exact:true}).waitFor();
+  await g.getByText("com mais conexões para eles",{exact:true}).waitFor();
   await g.getByText("Em análise de dados do LinkedIn, mulheres no Brasil têm 27% menos probabilidade de possuir uma rede de contatos forte em comparação aos homens.",{exact:true}).waitFor();
   await g.getByText("Em 97% dos países analisados, os homens têm redes de conexões maiores que as mulheres.",{exact:true}).waitFor();
 
@@ -234,9 +234,12 @@ try {
         review_profiles: false,
         handle_reports: false,
       };
-    if (endpoint === "conversation_objectives") data = objective && !(url.searchParams.get("confirmed_at")==="is.null" && objective.confirmed_at) ? [objective] : [];
+    if (endpoint === "conversation_objectives") {
+      data = objective && !(url.searchParams.get("confirmed_at")==="is.null" && objective.confirmed_at) ? [objective] : [];
+      if (r.headers().accept?.includes("application/vnd.pgrst.object+json")) data = data[0] ?? null;
+    }
     if (endpoint === "mvp_start_objective") {
-      objective = { id: "38000000-0000-4000-8000-000000000001", description: body.description, suggested_skills: body.use_ai ? ["networking", "planejamento_carreira"] : [], selected_skills: [], state: "pronta", mode: body.use_ai ? "ia" : "regra", attempts: 1, confirmed_at: null, ai_authorized: body.use_ai };
+      objective = { id: "38000000-0000-4000-8000-000000000001", created_at: new Date().toISOString(), description: body.description, suggested_skills: body.use_ai ? ["networking", "planejamento_carreira"] : [], selected_skills: [], state: "pronta", mode: body.use_ai ? "ia" : "regra", attempts: 1, confirmed_at: null, ai_authorized: body.use_ai };
       data = objective.id;
     }
     if (endpoint === "mvp_retry_objective") { objective = {...objective, attempts: objective.attempts+1, suggested_skills:["transicao_carreira"]}; data = null; }
@@ -390,7 +393,8 @@ try {
   await p.getByRole("heading",{name:"Encontre sua aliada",exact:true}).waitFor();
   assert.equal(await p.getByText("Convites esperando sua resposta",{exact:true}).count(),0);
   assert.equal(await p.getByRole("button",{name:"Aceitar convite",exact:true}).count(),0);
-  assert.equal(await p.getByRole("button",{name:/Descobrir habilidades|Escolher habilidades sem IA/}).count(),1,"busca disponível mesmo com avaliação pendente");
+  await p.getByRole("button",{name:"Etapa 1: Objetivo",exact:true}).click();
+  assert.equal(await p.getByRole("button",{name:/Descobrir habilidades|Escolher habilidades sem IA|Rever habilidades/}).count(),1,"busca disponível mesmo com avaliação pendente");
   await p.goto(base+"/minhas-aliancas");
   await p.getByRole("button",{name:"Aceitar convite",exact:true}).waitFor();
   const contatosAntes=calls.filter(c=>c.endpoint==="mvp_shared_contacts").length;
@@ -641,6 +645,7 @@ try {
   // perfil incompleto: buscar leva ao "Falta pouco" e a busca continua depois
   const completo = { ...professional };
   Object.assign(professional, { channels: [], interesses: [] });
+  requests = []; objective = null; invites = [];
   await p.goto(base + "/");
   await p.getByRole("textbox", { name: "Qual é o objetivo da sua próxima conversa?" }).fill("Quero ampliar minha rede profissional");
   await p.getByRole("checkbox", {name:/Autorizo a IA a sugerir/}).check();
@@ -710,3 +715,4 @@ try {
 }
 
 await import('./ajustes-browser.mjs');
+await import('./buscas-browser.mjs');

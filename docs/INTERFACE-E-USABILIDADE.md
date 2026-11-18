@@ -58,3 +58,14 @@ As respostas de usabilidade dos testes são simuladas e ficam fora do banco de p
 As etapas de Encontrar usam três colunas fixas, com números destacados e rótulos curtos no celular. Em Alianças, as quatro etapas têm a mesma posição inicial e espaço reservado para duas linhas, alinhando Contatos liberados às demais. Alinhamento conferido no navegador em 375, 390, 768 e 1440px, além das capturas em 390/1440. Ajuste somente de interface, sem nova migration.
 
 Os três passos da página institucional **Sobre nós** preservam a disposição anterior: empilhados no celular e lado a lado no desktop. O novo alinhamento aplica-se à busca com IA e às Alianças. Os indicadores da página institucional receberam os textos e as legendas solicitados, mantendo fontes clicáveis, datas dos estudos e a observação sobre economias, países e territórios.
+
+## Retomar buscas e navegar entre etapas
+
+- O card de Encontrar reúne objetivo, habilidades e indicação. Os botões **1 Objetivo**, **2 Habilidades** e **3 Aliada** permitem voltar às etapas disponíveis; uma etapa futura continua desabilitada até o passo necessário ser concluído.
+- **Suas últimas buscas** recupera os 30 objetivos mais recentes da própria conta, inclusive concluídos e antigos. Exibe três por vez, com **+ Ver mais**. Atingir o limite de novos objetivos não impede a consulta; o aviso inclui um atalho para o histórico.
+- Reabrir consulta o objetivo e sua busca existente sob RLS. Não cria objetivo, não chama a IA nem consome nova tentativa. Para um objetivo ainda sem indicação, a participante pode continuar a revisão e confirmar as habilidades, respeitando os limites atuais do servidor.
+- Habilidades já confirmadas ficam disponíveis para consulta. Uma indicação com convite enviado direciona para Alianças e não oferece um segundo envio. A mensagem em edição permanece ao alternar as etapas da mesma busca.
+- No celular, os três botões ficam numa barra segmentada, com alvos de toque de pelo menos 44px. Os três passos institucionais de Sobre nós permanecem com o desenho anterior.
+- O indicador de 97% passa a ter a legenda **com mais conexões para eles**, em uma linha. O parágrafo de contexto abaixo dos indicadores foi retirado da interface a pedido da titular; fontes e datas continuam clicáveis. **Dá para estar dos dois lados.** fica sem o complemento anterior.
+
+Esta alteração não requer migration nem republicação da Edge Function. O limite de três objetivos em 24h, o limite global da IA, os consentimentos, RLS e contatos após aceite mútuo continuam no servidor. Os testes de reabertura usam somente dados locais simulados; não criam registros de validação humana.

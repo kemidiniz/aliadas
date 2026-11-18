@@ -33,23 +33,23 @@ export default function InicioProfissional() {
   const [ready, setReady] = useState(false);
   const [atual, setAtual] = useState<ProRequest | null>(null);
   const [cards, setCards] = useState<ProCard[]>([]);
+  const [convitesEnviados, setConvitesEnviados] = useState<string[]>([]);
   const [busy, setBusy] = useState("");
   const [erro, setErro] = useState("");
   const { job, stalled, refresh } = useConversationJob(atual?.id, load);
   const rev = useRef(0);
+  const selecionado = useRef<string | null | undefined>(undefined);
 
-  async function load() {
+  async function load(pedidoId?: string) {
+    if (pedidoId) selecionado.current = pedidoId;
     const v = ++rev.current;
     if (!session) return setReady(true);
     const eu = session.user.id;
+    const busca = supabase.from("conversation_requests").select("*").eq("owner_id", eu);
+    if (selecionado.current) busca.eq("id", selecionado.current);
     const [p, r, c, i] = await Promise.all([
       supabase.from("professional_profiles").select("*").eq("profile_id", eu).maybeSingle(),
-      // só a busca mais recente dos últimos 7 dias; o histórico fica em Meu perfil
-      supabase
-        .from("conversation_requests")
-        .select("*")
-        .eq("owner_id", eu)
-        .gt("created_at", new Date(Date.now() - 7 * 86400_000).toISOString())
+      busca
         .order("created_at", { ascending: false })
         .limit(1),
       supabase.rpc("mvp_cards"),
@@ -63,9 +63,17 @@ export default function InicioProfissional() {
     const inv = (i.data as { request_id: string }[]) ?? [];
     const ultima = (r.data as ProRequest[])?.[0];
     setPro(p.data);
-    setAtual(ultima && !inv.some((x) => x.request_id === ultima.id) ? ultima : null);
+    setConvitesEnviados(inv.map(x => x.request_id));
+    setAtual(selecionado.current === undefined ? ultima ?? null : (r.data as ProRequest[]).find(x => x.id === selecionado.current) ?? null);
     setCards((c.data as ProCard[]) ?? []);
     setReady(true);
+  }
+  async function abrirBusca(objetivoId: string) {
+    const { data, error } = await supabase.from("conversation_requests").select("*").eq("owner_id", session!.user.id).eq("objective_id", objetivoId).maybeSingle();
+    if (error) throw error;
+    selecionado.current = data?.id ?? null;
+    setAtual(data);
+    return Boolean(data);
   }
   useEffect(() => {
     setReady(false);
@@ -106,7 +114,7 @@ export default function InicioProfissional() {
       {pro.available && !pro.habilidades?.length && <p className="mb-6 rounded-xl bg-superficie p-4 text-sm">Escolha suas habilidades para poder ser indicada. <Link to="/meu-perfil#ajudar" className="text-link">Escolher habilidades</Link></p>}
       {erro && <p className="mb-6 text-erro" role="alert">{erro}</p>}
       <div className="space-y-6">
-          <ObjetivoConversa pro={pro} aoEncontrar={load} />
+          <ObjetivoConversa pro={pro} pedido={atual} aoEncontrar={load} aoAbrirBusca={abrirBusca} aoLimparBusca={() => { selecionado.current = null; setAtual(null); }}>
 
           {atual && (
             <section aria-labelledby="indicacao" className="space-y-4">
@@ -116,6 +124,7 @@ export default function InicioProfissional() {
                 r={atual}
                 card={cards.find((c) => c.id === atual.candidate_id)}
                 status={conversationStatus(job ? { ...job, has_candidate: Boolean(atual.candidate_id) } : null, false, stalled)}
+                enviado={convitesEnviados.includes(atual.id)}
                 busy={busy}
                 setBusy={setBusy}
                 depois={async (outraSugestao) => {
@@ -125,6 +134,7 @@ export default function InicioProfissional() {
               />
             </section>
           )}
+          </ObjetivoConversa>
 
       </div>
     </Pagina>
@@ -135,6 +145,7 @@ function Indicacao({
   r,
   card,
   status,
+  enviado,
   busy,
   setBusy,
   depois,
@@ -142,6 +153,7 @@ function Indicacao({
   r: ProRequest;
   card?: ProCard;
   status: string | null;
+  enviado: boolean;
   busy: string;
   setBusy: (v: string) => void;
   depois: (acompanhar?: string) => Promise<void>;
@@ -209,7 +221,7 @@ function Indicacao({
       {r.habilidades_necessarias?.length > 1 && <p className="text-xs text-suave">Ela oferece {r.habilidades_que_ajudam?.length ?? 0} de {r.habilidades_necessarias.length} habilidades que você escolheu.</p>}
       <p className="text-xs text-suave">Você precisa de: {(r.habilidades_necessarias ?? []).map(nomeHabilidade).join(" · ")}</p>
       {status && <p className="text-xs text-suave" role="status">{status}</p>}
-      <CampoArea
+      {enviado ? <p className="text-sm">Você já enviou um convite nesta busca. <Link to="/minhas-aliancas" className="text-link">Acompanhar em Alianças</Link></p> : <><CampoArea
         rotulo="Sua mensagem"
         ajuda="Revise antes de enviar. Contatos só aparecem depois do aceite."
         maxLength={600}
@@ -228,6 +240,7 @@ function Indicacao({
           Ver outra indicação
         </Botao>
       </div>
+      </>}
     </article>
   );
 }

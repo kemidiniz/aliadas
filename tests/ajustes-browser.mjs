@@ -19,9 +19,13 @@ try {
   for(const stat of await g.locator('.stat-number').all()) {
     const alinhado=await stat.evaluate(n=>{const span=n.querySelector('span'),r=document.createRange();r.selectNodeContents(n.firstChild);return {numero:r.getBoundingClientRect().right,legenda:span.getBoundingClientRect().left};});
     assert(alinhado.legenda>=alinhado.numero,`legenda fica ao lado do número em ${width}`);
+    assert(await stat.locator('span').evaluate(n=>{const r=document.createRange();r.selectNodeContents(n);return r.getClientRects().length===1;}),`legenda em uma linha em ${width}`);
   }
   if([390,1440].includes(width)){await g.evaluate(()=>scrollTo(0,0));await g.screenshot({path:`${pasta}/institucional-${width}.png`,fullPage:true});}
  }
+ assert.equal(await g.getByText(/Estudos históricos do LinkedIn/).count(),0);
+ await g.getByText('Dá para estar dos dois lados.',{exact:true}).waitFor();
+ assert.equal(await g.getByText('Dá para estar dos dois lados. Para nós mulheres.',{exact:true}).count(),0);
  for(const width of [390,1440]) {
   await g.setViewportSize({width,height:1000});
   for(const path of ['/termos-e-privacidade','/ajuda','/entrar']) {

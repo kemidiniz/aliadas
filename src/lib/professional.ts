@@ -98,6 +98,7 @@ export type ProCard = {
 };
 export type ProRequest = {
   id: string;
+  objective_id?: string | null;
   candidate_id: string | null;
   state: string;
   mode: string;

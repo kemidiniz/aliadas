@@ -264,7 +264,7 @@ a {
 }
 .stat-number span {
   min-width: 0;
-  max-width: 15rem;
+  white-space: nowrap;
   flex: 1;
   line-height: 1.5;
   font-size: var(--text-pequeno);

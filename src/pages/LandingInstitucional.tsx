@@ -83,7 +83,7 @@ export default function LandingInstitucional() {
           </article>
           <article>
             <p className="stat-number">
-              97% <span>dos países: eles com mais conexões</span>
+              97% <span>com mais conexões para eles</span>
             </p>
             <p>
               Em 97% dos países analisados, os homens têm redes de conexões maiores que as mulheres.
@@ -93,7 +93,6 @@ export default function LandingInstitucional() {
             </a>
           </article>
         </div>
-        <p className="mt-5 text-xs text-suave">Estudos históricos do LinkedIn (2020 e 2024). A força da rede considera tamanho e diversidade. Na fonte, 97% se refere a economias, incluindo países e territórios. Os dados contextualizam a desigualdade; a eficácia da aliadas depende de validação.</p>
       </section>
       <section id="como-funciona" className="institutional-section scroll-mt-28" aria-labelledby="solution-title">
         <p className="eyebrow">Como funciona</p>
@@ -135,7 +134,7 @@ export default function LandingInstitucional() {
           </div>
         </div>
         <p className="mt-7">
-          Dá para estar dos dois lados. Para nós mulheres.
+          Dá para estar dos dois lados.
         </p>
       </section>
       <section id="perguntas" className="institutional-section scroll-mt-28" aria-labelledby="faq-title">
