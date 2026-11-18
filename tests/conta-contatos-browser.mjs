@@ -38,7 +38,7 @@ try {
  assert.equal(await pais.inputValue(),'BR');
  const telefone=p.getByRole('textbox',{name:'WhatsApp',exact:true});
  await telefone.fill('(11) 99999-9999');
- await p.getByRole('checkbox',{name:'Receber um e-mail quando chegar um novo convite de aliança.',exact:true}).uncheck();
+ await p.getByRole('checkbox',{name:'Receber e-mails de novos convites e de convites aceitos.',exact:true}).uncheck();
  await p.getByRole('button',{name:'Salvar',exact:true}).click();await p.getByText('Perfil salvo.',{exact:true}).waitFor();
  assert.equal(salvo.c.whatsapp,'+5511999999999');assert.equal(salvo.p.invite_email_notifications,false);
  await pais.selectOption('PT');await telefone.fill('912 345 678');

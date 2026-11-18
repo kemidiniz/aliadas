@@ -40,7 +40,7 @@ export function TermosEPrivacidade() {
       <p className={p}>E-mails, telefones e links colados no apoio ficam ocultos para a destinatária. Só os canais autorizados no perfil são liberados após aceite mútuo, por LinkedIn, WhatsApp ou e-mail. Se escolherem uma chamada, combinem o link diretamente entre vocês.</p>
       <p className={p}>Você revisa e decide se manda o convite. Depois do envio, a destinatária pode receber um aviso por e-mail.</p>
       <h3 className={h2}>Avisos de novos convites</h3>
-      <p className={p}>Usamos seu e-mail de acesso para avisar quando você receber um novo convite de aliança. O envio passa pelo Gmail da aliadas e traz apenas um aviso e o link para responder no site, sem nomes, contatos ou a mensagem do convite. Seu endereço não é mostrado à outra participante. Você pode desativar esses avisos em Meu perfil › Privacidade.</p>
+      <p className={p}>Usamos seu e-mail de acesso para avisar quando você receber um novo convite de aliança ou quando um convite que você enviou for aceito. O envio passa pelo Gmail da aliadas e traz apenas um aviso e o link para responder no site, sem nomes, contatos ou a mensagem do convite. Seu endereço não é mostrado à outra participante. Você pode desativar esses avisos em Meu perfil › Privacidade.</p>
       <h3 className={h2}>Feedback</h3>
       <p className={p}>O e-mail que você informa no formulário de feedback é opcional e usado só para responder a sua mensagem. Ele passa pelo Make, que avisa as embaixadoras, e pelo Gmail, de onde sai a resposta.</p>
       <h3 className={h2}>Seus direitos</h3>

@@ -67,3 +67,7 @@ Medição desta configuração: um teste SMTP recusado (535/EAUTH), zero e-mails
 ### Ativação confirmada — 18/11/2026
 
 Após a titular cadastrar a senha de aplicativo nos Secrets, o segundo teste SMTP foi aceito pelo Gmail: uma mensagem de teste para o próprio remetente, um endereço aceito e nenhum rejeitado. Avisos de novos convites ativados; fila vazia no momento da ativação. Isso não comprova entrega/leitura na caixa principal nem mede o consumo futuro. O teste inicial recusado permanece como ocorrência histórica. Nenhum novo plano ou faturamento foi habilitado.
+
+### Aviso de aceite — 18/11/2026
+
+A migration 044 permite um segundo aviso por convite: recebimento para a destinatária e aceite para a remetente. Os dois compartilham a mesma fila, SMTP e cota técnica de 100 avisos/24h; não há nova ferramenta ou plano. Cada convite aceito pode gerar até dois e-mails, conforme preferências e elegibilidade. Não houve disparo de aceite fictício em produção para medir consumo.

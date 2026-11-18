@@ -305,8 +305,8 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
           </div>
           <div className="space-y-3">
             {campos.ia}
-          <Caixinha marcado={d.invite_email_notifications} aoMudar={invite_email_notifications => set({invite_email_notifications})}>Receber um e-mail quando chegar um novo convite de aliança.</Caixinha>
-          <p className="text-sm text-suave">O aviso usa seu e-mail de acesso, sem nomes ou a mensagem do convite. Esse endereço não é compartilhado com outras participantes.</p>
+          <Caixinha marcado={d.invite_email_notifications} aoMudar={invite_email_notifications => set({invite_email_notifications})}>Receber e-mails de novos convites e de convites aceitos.</Caixinha>
+          <p className="text-sm text-suave">Os avisos usam seu e-mail de acesso, sem nomes ou a mensagem do convite. Esse endereço não é compartilhado com outras participantes.</p>
             {campos.termos}
           </div>
           {sujo && <p role="status" className="text-sm text-suave">Mudanças não salvas</p>}
@@ -374,8 +374,8 @@ export default function PerfilProfissional({ completar = false }: { completar?: 
       conteudo: (
         <div className="space-y-3">
           {campos.ia}
-          <Caixinha marcado={d.invite_email_notifications} aoMudar={invite_email_notifications => set({invite_email_notifications})}>Receber um e-mail quando chegar um novo convite de aliança.</Caixinha>
-          <p className="text-sm text-suave">O aviso usa seu e-mail de acesso, sem nomes ou a mensagem do convite. Esse endereço não é compartilhado com outras participantes.</p>
+          <Caixinha marcado={d.invite_email_notifications} aoMudar={invite_email_notifications => set({invite_email_notifications})}>Receber e-mails de novos convites e de convites aceitos.</Caixinha>
+          <p className="text-sm text-suave">Os avisos usam seu e-mail de acesso, sem nomes ou a mensagem do convite. Esse endereço não é compartilhado com outras participantes.</p>
         </div>
       ),
     },

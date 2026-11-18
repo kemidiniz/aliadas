@@ -18,8 +18,14 @@ for f in migrations/*.sql; do
 done
 run -f tests/rls_test.sql 2>&1 | grep -E "ok:|FALHOU|ERRO|ERROR|---|PASSARAM" | sed "s/^psql:[^ ]* NOTICE:  /  /"
 for f in migrations/*.sql; do
-  if [[ "$(basename "$f")" > "20261117000036z" ]]; then apply_migration "$f"; fi
+  if [[ "$(basename "$f")" > "20261117000036z" && "$(basename "$f")" < "20261118000044" ]]; then apply_migration "$f"; fi
 done
 run -f tests/objetivo_atual_test.sql 2>&1 | grep -E "ok:|FALHOU|ERRO|ERROR|---|PASSARAM" | sed "s/^psql:[^ ]* NOTICE:  /  /"
 run -f tests/usabilidade_e_canais_test.sql 2>&1 | grep -E "ok:|FALHOU|ERRO|ERROR|---|PASSARAM" | sed "s/^psql:[^ ]* NOTICE:  /  /"
 run -f tests/avisos_email_test.sql 2>&1 | grep -E "ok:|FALHOU|ERRO|ERROR|---|PASSARAM" | sed "s/^psql:[^ ]* NOTICE:  /  /"
+
+# 044 amplia a fila; mantém antes os testes do contrato de 043.
+for f in migrations/*.sql; do
+  if [[ "$(basename "$f")" > "20261118000043z" ]]; then apply_migration "$f"; fi
+done
+run -f tests/avisos_aceite_test.sql 2>&1 | grep -E "ok:|FALHOU|ERRO|ERROR|---|PASSARAM" | sed "s/^psql:[^ ]* NOTICE:  /  /"
